@@ -9,6 +9,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities"
 import { Button } from "@/components/ui/button"
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,6 +22,9 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { FileText, Sparkles, Hand, Trash2 } from "lucide-react"
+=======
+import { FileText, Sparkles, Grip } from "lucide-react"
+>>>>>>> Stashed changes
 =======
 import { FileText, Sparkles, Grip } from "lucide-react"
 >>>>>>> Stashed changes
@@ -51,15 +55,21 @@ export function BuilderCanvas({ onOpenTemplates, onOpenAIChat }: BuilderCanvasPr
         >
             {!elements.length && (
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 <div className="flex flex-col items-center justify-center h-full w-full gap-8">
                     <div className="flex flex-col items-center gap-4 text-center max-w-md">
                         <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
                             <Hand className="h-10 w-10 text-primary" />
 =======
+=======
+>>>>>>> Stashed changes
                 <div className="flex flex-col items-center justify-center h-full w-full gap-10 opacity-100 transition-all duration-500">
                     <div className="flex flex-col items-center gap-6 text-center max-w-lg p-10 border-2 border-dashed border-primary/20 rounded-3xl bg-background/50 backdrop-blur-sm hover:border-primary/40 transition-colors">
                         <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-inner">
                             <Grip className="h-12 w-12 text-primary animate-pulse duration-[3000ms]" />
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                         </div>
                         <div className="space-y-3">
