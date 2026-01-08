@@ -79,7 +79,7 @@ export async function submitForm(formUrl: string, content: string) {
 export async function getTemplates() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     if (!user) {
         throw new Error("User not authenticated")
     }
@@ -102,17 +102,83 @@ export async function getTemplates() {
 export async function generateFormWithAI(prompt: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     if (!user) {
         return { success: false, error: "Usuário não autenticado" }
     }
 
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+        // Fallback or error if no key
+        console.warn("GOOGLE_API_KEY not found. Using partial mock for demonstration purposes if needed, or failing.");
+        return { success: false, error: "Configuração de IA ausente no servidor." }
+    }
+
     try {
-        // TODO: Integrate with actual AI service (OpenAI, Anthropic, etc.)
-        // For now, we'll create a simple rule-based generator
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const systemPrompt = `
+        You are a specialized form generator assistant.
+        Your goal is to create a valid JSON structure for a web form based on the user's description.
         
-        const elements = generateFormElementsFromPrompt(prompt)
+        The Output must be a purely VALID JSON array of objects. Do not include markdown formatting like \`\`\`json \`\`\`.
         
+        The available field types are:
+        - "TextField": Short text input
+        - "TitleField": Section title
+        - "ParagraphField": Static text description
+        - "SubTitleField": Static subtitle
+        - "SeparatorField": horizontal line
+        - "SpacerField": vertical space
+        - "NumberField": Numeric input
+        - "TextArea": Long text input
+        - "DateField": Date picker
+        - "SelectField": Dropdown menu
+        - "CheckboxField": Single checkbox
+        - "EmailField": Email validation
+        - "PhoneField": text input with phone mask
+        - "NameField": text input specialized for names
+        - "StarRatingField": Star rating input
+        - "ImageUploadField": Image upload (only if requested)
+
+        Each object in the array represents a field and must follow this structure:
+        {
+          "type": "FieldType",
+          "extraAttributes": {
+             "label": "Visible Label",
+             "helperText": "Small help text below field",
+             "required": boolean,
+             "placeHolder": "Placeholder text"
+          }
+        }
+        
+        For "TitleField", "SubTitleField", "ParagraphField", use the "title" or "text" attribute in extraAttributes instead of label/helperText/required/placeHolder as appropriate for the content.
+        For "SelectField", include "options": ["Option 1", "Option 2"] in extraAttributes.
+
+        Rules:
+        1. Always start with a "TitleField" summarizing the form purpose.
+        2. Always add a "ParagraphField" with a brief description if context allows.
+        3. Use "NameField", "EmailField" for contact info.
+        4. Be creative but practical and conversion-focused.
+        5. Return ONLY the JSON array.
+        `;
+
+        const result = await model.generateContent(systemPrompt + "\nUser Request: " + prompt);
+        const responseText = result.response.text();
+
+        // Clean up markdown code blocks if the model puts them
+        const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        const generatedElements = JSON.parse(cleanedText);
+
+        // Post-process to ensure IDs and valid structure
+        const elements: FormElementInstance[] = generatedElements.map((el: any) => ({
+            ...el,
+            id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        }));
+
         return {
             success: true,
             elements,
@@ -124,165 +190,6 @@ export async function generateFormWithAI(prompt: string) {
             error: "Erro ao gerar formulário. Tente novamente."
         }
     }
-}
-
-// Simple rule-based form generator (to be replaced with actual AI)
-function generateFormElementsFromPrompt(prompt: string): FormElementInstance[] {
-    const lowerPrompt = prompt.toLowerCase()
-    const elements: FormElementInstance[] = []
-    let idCounter = 0
-
-    const generateId = () => `ai-${Date.now()}-${idCounter++}`
-
-    // Add title
-    elements.push({
-        id: generateId(),
-        type: "TitleField",
-        extraAttributes: {
-            title: extractTitle(prompt) || "Formulário"
-        }
-    })
-
-    // Add description
-    elements.push({
-        id: generateId(),
-        type: "ParagraphField",
-        extraAttributes: {
-            text: "Preencha os dados abaixo para continuar."
-        }
-    })
-
-    // Always add name field
-    elements.push({
-        id: generateId(),
-        type: "NameField",
-        extraAttributes: {
-            label: "Nome Completo",
-            helperText: "Digite seu nome completo",
-            required: true,
-            placeHolder: "Seu nome aqui"
-        }
-    })
-
-    // Always add email field
-    elements.push({
-        id: generateId(),
-        type: "EmailField",
-        extraAttributes: {
-            label: "E-mail",
-            helperText: "Digite seu e-mail",
-            required: true,
-            placeHolder: "seu@email.com"
-        }
-    })
-
-    // Add phone if mentioned
-    if (lowerPrompt.includes("telefone") || lowerPrompt.includes("contato") || lowerPrompt.includes("whatsapp")) {
-        elements.push({
-            id: generateId(),
-            type: "PhoneField",
-            extraAttributes: {
-                label: "Telefone",
-                helperText: "Digite seu número de telefone",
-                required: true,
-                placeHolder: "(00) 00000-0000"
-            }
-        })
-    }
-
-    // Add specific fields based on prompt
-    if (lowerPrompt.includes("lead") || lowerPrompt.includes("captar") || lowerPrompt.includes("contato")) {
-        elements.push({
-            id: generateId(),
-            type: "TextArea",
-            extraAttributes: {
-                label: "Mensagem",
-                helperText: "Como podemos ajudar?",
-                required: true,
-                placeHolder: "Digite sua mensagem...",
-                rows: 4
-            }
-        })
-    }
-
-    if (lowerPrompt.includes("evento") || lowerPrompt.includes("inscrição")) {
-        elements.push({
-            id: generateId(),
-            type: "DateField",
-            extraAttributes: {
-                label: "Data do Evento",
-                helperText: "Selecione a data",
-                required: true
-            }
-        })
-    }
-
-    if (lowerPrompt.includes("venda") || lowerPrompt.includes("orçamento") || lowerPrompt.includes("cotação")) {
-        elements.push({
-            id: generateId(),
-            type: "TextField",
-            extraAttributes: {
-                label: "Produto/Serviço de Interesse",
-                helperText: "Qual produto ou serviço você precisa?",
-                required: true,
-                placeHolder: "Descreva o produto ou serviço"
-            }
-        })
-    }
-
-    if (lowerPrompt.includes("pesquisa") || lowerPrompt.includes("feedback") || lowerPrompt.includes("satisfação")) {
-        elements.push({
-            id: generateId(),
-            type: "StarRatingField",
-            extraAttributes: {
-                label: "Avaliação",
-                helperText: "Como você avalia?",
-                required: true
-            }
-        })
-
-        elements.push({
-            id: generateId(),
-            type: "TextArea",
-            extraAttributes: {
-                label: "Comentários",
-                helperText: "Deixe seu comentário",
-                required: false,
-                placeHolder: "Digite seus comentários...",
-                rows: 4
-            }
-        })
-    }
-
-    if (lowerPrompt.includes("cadastro") || lowerPrompt.includes("registro")) {
-        elements.push({
-            id: generateId(),
-            type: "DateField",
-            extraAttributes: {
-                label: "Data de Nascimento",
-                helperText: "Selecione sua data de nascimento",
-                required: false
-            }
-        })
-    }
-
-    // Add message/textarea if not already added
-    const hasTextArea = elements.some(el => el.type === "TextArea")
-    if (!hasTextArea && (lowerPrompt.includes("mensagem") || lowerPrompt.includes("comentário") || lowerPrompt.includes("observação"))) {
-        elements.push({
-            id: generateId(),
-            type: "TextArea",
-            extraAttributes: {
-                label: "Mensagem",
-                helperText: "Digite sua mensagem",
-                required: false,
-                placeHolder: "Digite aqui...",
-                rows: 4
-            }
-        })
-    }
-
-    return elements
 }
 
 function extractTitle(prompt: string): string {

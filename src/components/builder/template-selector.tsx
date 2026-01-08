@@ -51,8 +51,8 @@ export function TemplateSelector({ open, onOpenChange, onInsert }: TemplateSelec
             // Parse content if it's a string
             const parsedTemplates = data.map((template: any) => ({
                 ...template,
-                content: typeof template.content === 'string' 
-                    ? JSON.parse(template.content) 
+                content: typeof template.content === 'string'
+                    ? JSON.parse(template.content)
                     : template.content
             }))
             setTemplates(parsedTemplates as Template[])
@@ -120,11 +120,10 @@ export function TemplateSelector({ open, onOpenChange, onInsert }: TemplateSelec
                                                         .map((template) => (
                                                             <Card
                                                                 key={template.id}
-                                                                className={`cursor-pointer transition-all hover:border-primary ${
-                                                                    selectedTemplate?.id === template.id
+                                                                className={`cursor-pointer transition-all hover:border-primary ${selectedTemplate?.id === template.id
                                                                         ? "border-primary bg-primary/5"
                                                                         : ""
-                                                                }`}
+                                                                    }`}
                                                                 onClick={() => setSelectedTemplate(template)}
                                                             >
                                                                 <CardHeader className="pb-3">
@@ -166,9 +165,7 @@ export function TemplateSelector({ open, onOpenChange, onInsert }: TemplateSelec
 
                                             return (
                                                 <div key={element.id}>
-                                                    {FormElement.designerComponent({
-                                                        elementInstance: element,
-                                                    })}
+                                                    <FormElement.designerComponent elementInstance={element} />
                                                 </div>
                                             )
                                         })}
