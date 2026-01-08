@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useBuilder } from "@/context/builder-context"
 import { useDroppable } from "@dnd-kit/core"
 import { cn } from "@/lib/utils"
@@ -7,7 +8,18 @@ import { FormElements } from "./form-elements"
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Button } from "@/components/ui/button"
-import { FileText, Sparkles, DragDrop } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { FileText, Sparkles, Hand, Trash2 } from "lucide-react"
 
 interface BuilderCanvasProps {
     onOpenTemplates?: () => void
@@ -37,7 +49,7 @@ export function BuilderCanvas({ onOpenTemplates, onOpenAIChat }: BuilderCanvasPr
                 <div className="flex flex-col items-center justify-center h-full w-full gap-8">
                     <div className="flex flex-col items-center gap-4 text-center max-w-md">
                         <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                            <DragDrop className="h-10 w-10 text-primary" />
+                            <Hand className="h-10 w-10 text-primary" />
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-2xl font-bold text-foreground">
@@ -90,21 +102,6 @@ export function BuilderCanvas({ onOpenTemplates, onOpenAIChat }: BuilderCanvasPr
         </div>
     )
 }
-
-import { Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { useState } from "react"
 
 function SortableElement({ element }: { element: any }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
