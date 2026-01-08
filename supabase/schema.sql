@@ -197,3 +197,26 @@ create policy "Workspace members can view leads"
 create policy "Public can create leads"
   on leads for insert
   with check ( true ); -- You might want to restrict this to only existing project_ids via trigger or backend check
+
+
+-- TEMPLATES
+-- Pre-built form templates that users can use to create projects
+create table templates (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null,
+  description text,
+  category text not null, -- Contato, Eventos, Pesquisa, Feedback, Vendas, Cadastro
+  content jsonb not null, -- The form builder content (array of FormElementInstance)
+  is_active boolean default true,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- RLS for Templates
+alter table templates enable row level security;
+
+-- Templates are public (read-only for all authenticated users)
+-- Admin management will be handled separately
+create policy "Authenticated users can view active templates"
+  on templates for select
+  using ( auth.role() = 'authenticated' and is_active = true );

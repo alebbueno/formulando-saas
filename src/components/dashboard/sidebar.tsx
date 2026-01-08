@@ -2,10 +2,17 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Settings, Plug, Plus } from "lucide-react"
+import { LayoutDashboard, Users, Settings, Plug, Plus, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useSidebar } from "@/context/sidebar-context"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const sidebarItems = [
     {
@@ -33,47 +40,116 @@ const sidebarItems = [
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 export function Sidebar({ className }: SidebarProps) {
+    const { isOpen, toggle } = useSidebar()
+    const pathname = usePathname()
+
     return (
-        <div className={cn("pb-12 h-full bg-muted/10", className)}>
-            <div className="space-y-4 py-4">
-                <div className="px-3 py-2">
-                    <div className="mb-2 px-4 flex items-center gap-2 font-bold text-xl text-primary">
-                        <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-                            F
+        <TooltipProvider>
+            <div className={cn("pb-12 h-full bg-muted/10 flex flex-col", className)}>
+                <div className="space-y-4 py-4 flex-1">
+                    <div className="px-3 py-2">
+                        <div className={cn(
+                            "mb-2 flex items-center gap-2 font-bold text-xl text-primary transition-all relative",
+                            isOpen ? "px-4" : "px-2 justify-center"
+                        )}>
+                            <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                                F
+                            </div>
+                            {isOpen && <span className="flex-1">Formu</span>}
+                            {/* Botão de toggle no canto superior direito */}
+                            <div className={cn(
+                                "absolute transition-all",
+                                isOpen ? "right-0 top-0" : "right-1 top-1"
+                            )}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 hover:bg-accent"
+                                            onClick={toggle}
+                                        >
+                                            {isOpen ? (
+                                                <ChevronLeft className="h-4 w-4" />
+                                            ) : (
+                                                <ChevronRight className="h-4 w-4" />
+                                            )}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        <p>{isOpen ? "Fechar sidebar" : "Abrir sidebar"}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                         </div>
-                        Formu
-                    </div>
-                    <div className="px-2 mb-4">
-                        <div className="text-xs text-muted-foreground font-medium mb-1 px-2 uppercase">Workspace</div>
-                        <div className="bg-card border rounded-md p-2 text-sm font-medium flex items-center justify-between">
-                            <span>Meu Workspace</span>
+                        {isOpen && (
+                            <div className="px-2 mb-4">
+                                <div className="text-xs text-muted-foreground font-medium mb-1 px-2 uppercase">Workspace</div>
+                                <div className="bg-card border rounded-md p-2 text-sm font-medium flex items-center justify-between">
+                                    <span>Meu Workspace</span>
+                                </div>
+                            </div>
+                        )}
+                        <div className="space-y-1">
+                            {sidebarItems.map((item) => {
+                                const isActive = pathname === item.href
+                                const button = (
+                                    <Button
+                                        key={item.href}
+                                        variant={isActive ? "secondary" : "ghost"}
+                                        className={cn(
+                                            "w-full transition-all",
+                                            isOpen ? "justify-start" : "justify-center px-0"
+                                        )}
+                                        asChild
+                                    >
+                                        <Link href={item.href}>
+                                            <item.icon className={cn("h-4 w-4", isOpen && "mr-2")} />
+                                            {isOpen && item.title}
+                                        </Link>
+                                    </Button>
+                                )
+
+                                if (!isOpen) {
+                                    return (
+                                        <Tooltip key={item.href}>
+                                            <TooltipTrigger asChild>
+                                                {button}
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right">
+                                                <p>{item.title}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    )
+                                }
+
+                                return button
+                            })}
                         </div>
                     </div>
-                    <div className="space-y-1">
-                        {sidebarItems.map((item) => (
-                            <Button
-                                key={item.href}
-                                variant="ghost" // Logic for active state could be added here
-                                className="w-full justify-start"
-                                asChild
-                            >
-                                <Link href={item.href}>
-                                    <item.icon className="mr-2 h-4 w-4" />
-                                    {item.title}
-                                </Link>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-                <div className="px-3 py-2">
-                    <div className="space-y-1">
-                        <Button className="w-full justify-start" variant="secondary">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Novo Projeto
-                        </Button>
+                    <div className="px-3 py-2">
+                        <div className="space-y-1">
+                            {isOpen ? (
+                                <Button className="w-full justify-start" variant="secondary">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Novo Projeto
+                                </Button>
+                            ) : (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button className="w-full justify-center px-0" variant="secondary" size="icon">
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right">
+                                        <p>Novo Projeto</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </TooltipProvider>
     )
 }

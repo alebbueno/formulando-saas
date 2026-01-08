@@ -6,8 +6,15 @@ import { cn } from "@/lib/utils"
 import { FormElements } from "./form-elements"
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { Button } from "@/components/ui/button"
+import { FileText, Sparkles, DragDrop } from "lucide-react"
 
-export function BuilderCanvas() {
+interface BuilderCanvasProps {
+    onOpenTemplates?: () => void
+    onOpenAIChat?: () => void
+}
+
+export function BuilderCanvas({ onOpenTemplates, onOpenAIChat }: BuilderCanvasProps) {
     const { elements, selectedElement, setSelectedElement } = useBuilder()
 
     const { setNodeRef, isOver } = useDroppable({
@@ -27,8 +34,47 @@ export function BuilderCanvas() {
             )}
         >
             {!elements.length && (
-                <div className="flex flex-col items-center justify-center h-full w-full text-muted-foreground">
-                    <p className="text-2xl font-bold">Arraste elementos aqui</p>
+                <div className="flex flex-col items-center justify-center h-full w-full gap-8">
+                    <div className="flex flex-col items-center gap-4 text-center max-w-md">
+                        <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                            <DragDrop className="h-10 w-10 text-primary" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-bold text-foreground">
+                                Comece criando seu formulário
+                            </h3>
+                            <p className="text-muted-foreground">
+                                Arraste componentes da barra lateral ou use uma das opções abaixo para começar rapidamente
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                        {onOpenTemplates && (
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                className="flex-1 h-auto py-6 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all"
+                                onClick={onOpenTemplates}
+                            >
+                                <FileText className="h-8 w-8 text-primary" />
+                                <span className="font-semibold">Usar Template</span>
+                                <span className="text-xs text-muted-foreground">Escolha um template pronto</span>
+                            </Button>
+                        )}
+                        {onOpenAIChat && (
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                className="flex-1 h-auto py-6 flex flex-col gap-2 hover:border-primary hover:bg-primary/5 transition-all"
+                                onClick={onOpenAIChat}
+                            >
+                                <Sparkles className="h-8 w-8 text-primary" />
+                                <span className="font-semibold">Gerar com IA</span>
+                                <span className="text-xs text-muted-foreground">Crie automaticamente</span>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             )}
 

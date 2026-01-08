@@ -9,6 +9,8 @@ import { FormElements } from "@/components/builder/form-elements"
 import { useState } from "react"
 
 import { BuilderHeader } from "@/components/builder/builder-header"
+import { TemplateSelector } from "@/components/builder/template-selector"
+import { AIChat } from "@/components/builder/ai-chat"
 import { toast } from "sonner"
 
 import { updateProjectContent } from "@/actions/form"
@@ -20,6 +22,8 @@ function BuilderPageContent({ project }: { project: any }) {
     const { elements, addElement, setElements } = useBuilder()
     const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true)
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true)
+    const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false)
+    const [isAIChatOpen, setIsAIChatOpen] = useState(false)
 
     const sensors = useSensors(
         useSensor(MouseSensor, {
@@ -52,8 +56,33 @@ function BuilderPageContent({ project }: { project: any }) {
         window.open(`/submit/${projectId}`, '_blank')
     }
 
+    const handleInsertTemplate = (templateElements: FormElementInstance[]) => {
+        // Add all template elements to the current form
+        templateElements.forEach((element, index) => {
+            addElement(elements.length + index, element)
+        })
+    }
+
+    const handleInsertAI = (aiElements: FormElementInstance[]) => {
+        // Add all AI-generated elements to the current form
+        aiElements.forEach((element, index) => {
+            addElement(elements.length + index, element)
+        })
+    }
+
     return (
-        <DndContext
+        <>
+            <TemplateSelector
+                open={isTemplateSelectorOpen}
+                onOpenChange={setIsTemplateSelectorOpen}
+                onInsert={handleInsertTemplate}
+            />
+            <AIChat
+                open={isAIChatOpen}
+                onClose={() => setIsAIChatOpen(false)}
+                onInsert={handleInsertAI}
+            />
+            <DndContext
             sensors={sensors}
             onDragStart={(event) => {
                 setActiveDragItem(event.active.data.current)
@@ -132,6 +161,7 @@ function BuilderPageContent({ project }: { project: any }) {
                     onPreview={handlePreview}
                     projectName={projectName}
                     onProjectNameChange={setProjectName}
+                    onOpenTemplates={() => setIsTemplateSelectorOpen(true)}
                 />
                 <div className="flex flex-grow w-full h-[calc(100vh-64px)] relative">
 
@@ -146,7 +176,10 @@ function BuilderPageContent({ project }: { project: any }) {
                         </Button>
                     </div>
 
-                    <BuilderCanvas />
+                    <BuilderCanvas
+                        onOpenTemplates={() => setIsTemplateSelectorOpen(true)}
+                        onOpenAIChat={() => setIsAIChatOpen(true)}
+                    />
 
                     <div className="flex h-full relative">
                         <Button
@@ -176,6 +209,7 @@ function BuilderPageContent({ project }: { project: any }) {
                 ) : null}
             </DragOverlay>
         </DndContext>
+        </>
     )
 }
 

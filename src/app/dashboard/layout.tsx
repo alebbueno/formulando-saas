@@ -1,14 +1,23 @@
+"use client"
+
 import { Header } from "@/components/dashboard/header"
 import { Sidebar } from "@/components/dashboard/sidebar"
+import { SidebarProvider, useSidebar } from "@/context/sidebar-context"
+import { cn } from "@/lib/utils"
 
-export default function DashboardLayout({
+function DashboardLayoutContent({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const { isOpen } = useSidebar()
+
     return (
         <div className="flex h-screen overflow-hidden bg-background">
-            <aside className="hidden w-64 flex-col border-r md:flex">
+            <aside className={cn(
+                "hidden flex-col border-r md:flex transition-all duration-300",
+                isOpen ? "w-64" : "w-16"
+            )}>
                 <Sidebar className="bg-background" />
             </aside>
             <div className="flex flex-col flex-1 overflow-hidden">
@@ -18,5 +27,19 @@ export default function DashboardLayout({
                 </main>
             </div>
         </div>
+    )
+}
+
+export default function DashboardLayout({
+    children,
+}: {
+    children: React.ReactNode
+}) {
+    return (
+        <SidebarProvider>
+            <DashboardLayoutContent>
+                {children}
+            </DashboardLayoutContent>
+        </SidebarProvider>
     )
 }
