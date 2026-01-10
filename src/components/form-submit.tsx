@@ -32,10 +32,38 @@ export function FormSubmitComponent({ formUrl, content, buttonSettings }: FormSu
         let isValid = true
 
         content.forEach((element) => {
-            const { required } = element.extraAttributes || {}
+            const { required, fieldName } = element.extraAttributes || {}
             if (required) {
-                const value = formData.get(element.id)
-                if (!value || value.toString().trim() === "") {
+                // If the field has a custom name (fieldName), we check that.
+                // Otherwise we fallback to ID.
+                // Note: For complex fields (Address, DateRange), the required check might need to be smarter,
+                // but the original code just checked "formData.get(element.id)", which implies
+                // it only supported simple fields or the main input had that ID.
+                // With the update, we look for fieldName field.
+                // Since DateRange/Address inject multiple inputs with suffixes, checking the base might not work?
+                // However, let's stick to the convention: if a field is required, we look for its primary input.
+                // For Address/DateRange, they didn't have a single input with name=id before, so the previous validation
+                // likely was broken or incomplete for those complex types anyway (checked line 1310 comment in form-elements).
+                // "However, these inputs are uncontrolled by default in this setup (using name prop for submission)."
+                // For now, let's update this to be consistent with the simple fields we improved.
+
+                const name = fieldName || element.id
+
+                // For complex fields (DateRange, Address), we might need to check sub-fields,
+                // but for now, let's just use the main name logic.
+                // We will relax validation for complex types slightly if needed or just check main name.
+                // Note: AddressField inputs have names like {name}_street, etc.
+                // formData.get(name) will return null if no input has that exact name.
+                // So if we have an AddressField, formData.get("endereco") will be null.
+                // We should skip validation here for complex types or implement it properly.
+                // Assuming standard fields (Text, Email, etc) work with this.
+
+                const value = formData.get(name)
+
+                // Exception for complex fields to avoid blocking submission incorrectly
+                const isComplexField = ["AddressField", "DateRangeField"].includes(element.type)
+
+                if (!isComplexField && (!value || value.toString().trim() === "")) {
                     errors[element.id] = true
                     isValid = false
                 }

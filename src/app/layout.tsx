@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NextTopLoader from "nextjs-toploader";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -26,6 +27,17 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} font-sans antialiased`}
       >
+        <NextTopLoader
+          color="#A665E6"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={true}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #A665E6,0 0 5px #A665E6"
+        />
         {children}
         <Toaster />
       </body>

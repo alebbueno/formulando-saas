@@ -90,6 +90,20 @@ function PropertiesComponent({ elementInstance }: { elementInstance: FormElement
 
                 <div className="space-y-2">
                     <Label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <Hash className="h-3 w-3" /> Identificador (Campo)
+                    </Label>
+                    <Input
+                        className="h-9"
+                        placeholder="ex: nome, email, telefone"
+                        value={elementInstance.extraAttributes?.fieldName || ""}
+                        onChange={(e) => setExtraAttributes("fieldName", e.target.value.replace(/\s+/g, '_').toLowerCase())}
+                        onKeyDown={(e) => e.stopPropagation()}
+                    />
+                    <p className="text-[0.7rem] text-muted-foreground">Nome usado para salvar os dados.</p>
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         <HelpCircle className="h-3 w-3" /> Texto de Ajuda
                     </Label>
                     <Input
@@ -138,6 +152,7 @@ const TextFieldFormElement: FormElement = {
             helperText: "Texto de ajuda",
             required: false,
             placeHolder: "Valor aqui",
+            fieldName: "texto_curto",
         },
     }),
     designerBtnElement: {
@@ -163,7 +178,7 @@ const TextFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4 group animate-in fade-in duration-500">
                 <label className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 transition-colors", elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -171,7 +186,7 @@ const TextFieldFormElement: FormElement = {
                     {required && <span className="text-destructive ml-1">*</span>}
                 </label>
                 <Input
-                    name={elementInstance.id}
+                    name={fieldName || elementInstance.id}
                     className={cn(
                         "h-10 transition-all focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:border-primary/50",
                         elementInstance.extraAttributes?.error && "border-destructive focus-visible:ring-destructive/30"
@@ -201,6 +216,7 @@ const NumberFieldFormElement: FormElement = {
             helperText: "Ajuda",
             required: false,
             placeHolder: "0",
+            fieldName: "numero",
         },
     }),
     designerBtnElement: {
@@ -220,7 +236,7 @@ const NumberFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <label className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -228,7 +244,7 @@ const NumberFieldFormElement: FormElement = {
                     {required && "*"}
                 </label>
                 <Input
-                    name={elementInstance.id}
+                    name={fieldName || elementInstance.id}
                     type="number"
                     className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                     placeholder={placeHolder}
@@ -340,6 +356,7 @@ const CheckboxFieldFormElement: FormElement = {
             helperText: "Selecione as opções",
             required: false,
             options: ["Opção 1", "Opção 2"],
+            fieldName: "selecao_multipla",
         },
     }),
     designerBtnElement: {
@@ -371,7 +388,7 @@ const CheckboxFieldFormElement: FormElement = {
         )
     },
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText, options } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, options, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -383,7 +400,7 @@ const CheckboxFieldFormElement: FormElement = {
                         <div key={i} className="flex items-center space-x-2">
                             <input
                                 type="checkbox"
-                                name={elementInstance.id}
+                                name={fieldName || elementInstance.id}
                                 value={option}
                                 id={`${elementInstance.id}-${i}`}
                                 className="h-4 w-4 rounded border-gray-300"
@@ -417,6 +434,7 @@ const SelectFieldFormElement: FormElement = {
             required: false,
             placeHolder: "Selecione...",
             options: ["Opção 1", "Opção 2", "Opção 3"],
+            fieldName: "selecao",
         },
     }),
     designerBtnElement: {
@@ -439,7 +457,7 @@ const SelectFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText, options } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, options, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <label className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -448,7 +466,7 @@ const SelectFieldFormElement: FormElement = {
                 </label>
                 <div className="relative">
                     <select
-                        name={elementInstance.id}
+                        name={fieldName || elementInstance.id}
                         defaultValue=""
                         className={cn("flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50", elementInstance.extraAttributes?.error && "border-destructive")}
                     >
@@ -483,6 +501,7 @@ const RadioGroupFieldFormElement: FormElement = {
             helperText: "Selecione uma",
             required: false,
             options: ["Opção 1", "Opção 2"],
+            fieldName: "opcao_unica",
         },
     }),
     designerBtnElement: {
@@ -514,14 +533,14 @@ const RadioGroupFieldFormElement: FormElement = {
         )
     },
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText, options } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, options, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
                     {label}
                     {required && "*"}
                 </Label>
-                <RadioGroup name={elementInstance.id} className={cn("flex flex-col space-y-1", elementInstance.extraAttributes?.error && "p-2 border border-destructive rounded-md")}>
+                <RadioGroup name={fieldName || elementInstance.id} className={cn("flex flex-col space-y-1", elementInstance.extraAttributes?.error && "p-2 border border-destructive rounded-md")}>
                     {options?.map((option: string) => (
                         <div key={option} className="flex items-center space-x-2">
                             <RadioGroupItem value={option} id={`${elementInstance.id}-${option}`} />
@@ -552,6 +571,7 @@ const TextAreaFormElement: FormElement = {
             required: false,
             placeHolder: "Digite aqui...",
             rows: 3,
+            fieldName: "texto_longo",
         },
     }),
     designerBtnElement: {
@@ -575,7 +595,7 @@ const TextAreaFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText, rows } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, rows, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <label className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -583,7 +603,7 @@ const TextAreaFormElement: FormElement = {
                     {required && "*"}
                 </label>
                 <textarea
-                    name={elementInstance.id}
+                    name={fieldName || elementInstance.id}
                     className={cn("flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50", elementInstance.extraAttributes?.error && "border-destructive")}
                     placeholder={placeHolder}
                     required={required}
@@ -675,6 +695,7 @@ const NameFieldFormElement: FormElement = {
             helperText: "Digite seu nome",
             required: true,
             placeHolder: "Seu nome aqui",
+            fieldName: "nome",
         },
     }),
     designerBtnElement: {
@@ -697,7 +718,7 @@ const NameFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -707,7 +728,7 @@ const NameFieldFormElement: FormElement = {
                 <div className="relative">
                     <User className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        name={elementInstance.id}
+                        name={fieldName || elementInstance.id}
                         className={cn("pl-8", elementInstance.extraAttributes?.error && "border-destructive")}
                         placeholder={placeHolder}
                         required={required}
@@ -735,6 +756,7 @@ const EmailFieldFormElement: FormElement = {
             helperText: "Digite seu e-mail",
             required: true,
             placeHolder: "seu@email.com",
+            fieldName: "email",
         },
     }),
     designerBtnElement: {
@@ -757,7 +779,7 @@ const EmailFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -768,7 +790,7 @@ const EmailFieldFormElement: FormElement = {
                     <Mail className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="email"
-                        name={elementInstance.id}
+                        name={fieldName || elementInstance.id}
                         className={cn("pl-8", elementInstance.extraAttributes?.error && "border-destructive")}
                         placeholder={placeHolder}
                         required={required}
@@ -805,6 +827,7 @@ const PhoneFieldFormElement: FormElement = {
             helperText: "Digite seu número",
             required: true,
             placeHolder: "(00) 00000-0000",
+            fieldName: "telefone",
         },
     }),
     designerBtnElement: {
@@ -827,7 +850,7 @@ const PhoneFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -837,7 +860,7 @@ const PhoneFieldFormElement: FormElement = {
                 <div className="relative">
                     <Phone className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        name={elementInstance.id}
+                        name={fieldName || elementInstance.id}
                         className={cn("pl-8", elementInstance.extraAttributes?.error && "border-destructive")}
                         placeholder={placeHolder}
                         required={required}
@@ -870,6 +893,7 @@ const UrlFieldFormElement: FormElement = {
             helperText: "Digite a URL",
             required: false,
             placeHolder: "https://",
+            fieldName: "url",
         },
     }),
     designerBtnElement: {
@@ -892,7 +916,7 @@ const UrlFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, placeHolder, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, placeHolder, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -903,7 +927,7 @@ const UrlFieldFormElement: FormElement = {
                     <LinkIcon className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="url"
-                        name={elementInstance.id}
+                        name={fieldName || elementInstance.id}
                         className={cn("pl-8", elementInstance.extraAttributes?.error && "border-destructive")}
                         placeholder={placeHolder}
                         required={required}
@@ -1078,6 +1102,7 @@ const DateFieldFormElement: FormElement = {
             label: "Data",
             helperText: "Selecione uma data",
             required: true,
+            fieldName: "data",
         },
     }),
     designerBtnElement: {
@@ -1097,7 +1122,7 @@ const DateFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -1106,7 +1131,7 @@ const DateFieldFormElement: FormElement = {
                 </Label>
                 <Input
                     type="date"
-                    name={elementInstance.id}
+                    name={fieldName || elementInstance.id}
                     className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                     required={required}
                 />
@@ -1131,6 +1156,7 @@ const DateRangeFieldFormElement: FormElement = {
             label: "Período",
             helperText: "Selecione o período",
             required: true,
+            fieldName: "periodo",
         },
     }),
     designerBtnElement: {
@@ -1153,7 +1179,8 @@ const DateRangeFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
+        const baseName = fieldName || elementInstance.id
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -1163,13 +1190,13 @@ const DateRangeFieldFormElement: FormElement = {
                 <div className="flex gap-2">
                     <Input
                         type="date"
-                        name={`${elementInstance.id}_start`}
+                        name={`${baseName}_start`}
                         className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                         required={required}
                     />
                     <Input
                         type="date"
-                        name={`${elementInstance.id}_end`}
+                        name={`${baseName}_end`}
                         className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                         required={required}
                     />
@@ -1195,6 +1222,7 @@ const DateTimeFieldFormElement: FormElement = {
             label: "Data e Hora",
             helperText: "Selecione data e hora",
             required: true,
+            fieldName: "data_hora",
         },
     }),
     designerBtnElement: {
@@ -1214,7 +1242,7 @@ const DateTimeFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -1223,7 +1251,7 @@ const DateTimeFieldFormElement: FormElement = {
                 </Label>
                 <Input
                     type="datetime-local"
-                    name={elementInstance.id}
+                    name={fieldName || elementInstance.id}
                     className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                     required={required}
                 />
@@ -1639,6 +1667,7 @@ const SignatureFieldFormElement: FormElement = {
             label: "Assinatura",
             helperText: "Assine acima",
             required: true,
+            fieldName: "assinatura",
         },
     }),
     designerBtnElement: {
@@ -1698,6 +1727,7 @@ const StarRatingFieldFormElement: FormElement = {
             label: "Avaliação com Estrelas",
             helperText: "Selecione uma avaliação",
             required: true,
+            fieldName: "avaliacao",
         },
     }),
     designerBtnElement: {
@@ -1718,7 +1748,7 @@ const StarRatingFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
         // Simulating state for visual feedback in builder/preview if we wanted, but keeping simple for now
         // Normally you'd use a useState here, but formComponent inside generator
         return (
@@ -1732,7 +1762,7 @@ const StarRatingFieldFormElement: FormElement = {
                         <div key={idx} className="relative cursor-pointer">
                             <input
                                 type="radio"
-                                name={elementInstance.id}
+                                name={fieldName || elementInstance.id}
                                 value={idx}
                                 className="peer opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
                                 required={required}
@@ -1763,6 +1793,7 @@ const OpinionScaleFieldFormElement: FormElement = {
             label: "Escala de Opinião",
             helperText: "Selecione uma nota",
             required: true,
+            fieldName: "opiniao",
         },
     }),
     designerBtnElement: {
@@ -1789,7 +1820,7 @@ const OpinionScaleFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -1803,7 +1834,7 @@ const OpinionScaleFieldFormElement: FormElement = {
                             <div key={val} className="relative">
                                 <input
                                     type="radio"
-                                    name={elementInstance.id}
+                                    name={fieldName || elementInstance.id}
                                     value={val}
                                     className="peer opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
                                     required={required}
@@ -1840,6 +1871,7 @@ const ToggleFieldFormElement: FormElement = {
             label: "Alternar",
             helperText: "Selecione a opção",
             required: false,
+            fieldName: "alternar",
         },
     }),
     designerBtnElement: {
@@ -1860,7 +1892,7 @@ const ToggleFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -1872,7 +1904,7 @@ const ToggleFieldFormElement: FormElement = {
                     <div className="relative flex items-center">
                         <input
                             type="checkbox"
-                            name={elementInstance.id}
+                            name={fieldName || elementInstance.id}
                             value="true"
                             className="peer opacity-0 absolute w-11 h-6 cursor-pointer z-10"
                         />
@@ -1901,6 +1933,7 @@ const VerificationFieldFormElement: FormElement = {
         extraAttributes: {
             label: "Verificação",
             required: true, // Always required to act as captcha
+            fieldName: "verificacao",
         },
     }),
     designerBtnElement: {
@@ -1918,14 +1951,14 @@ const VerificationFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required } = elementInstance.extraAttributes || {}
+        const { label, required, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <div className={cn("flex items-center gap-4 p-4 border rounded-md bg-card shadow-sm w-fit", elementInstance.extraAttributes?.error && "border-destructive")}>
                     <div className="relative flex items-center">
                         <Input
                             type="checkbox"
-                            name={elementInstance.id}
+                            name={fieldName || elementInstance.id}
                             value="verified"
                             required={required}
                             className="h-6 w-6 cursor-pointer accent-primary"
