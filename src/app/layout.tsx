@@ -12,7 +12,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: "Formulando - Crie Formulários Profissionais com Facilidade",
-  description: "Plataforma poderosa para criar formulários profissionais, páginas de captura e pesquisas interativas com interface intuitiva de arrastar e soltar.",
+  description: "Plataforma poderosa para criar formulários profissionais com IA, páginas de captura e pesquisas interativas com interface intuitiva de arrastar e soltar.",
 };
 
 import { Toaster } from "@/components/ui/sonner";
