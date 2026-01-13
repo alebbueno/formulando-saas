@@ -183,13 +183,24 @@ export function DomainSettings({ initialDomain, projectId }: { initialDomain: st
                                     </p>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100 text-amber-800 text-xs">
-                            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                            <div>
-                                <span className="font-bold block mb-0.5">Aviso Importante para Cloudflare</span>
-                                Se você usa a Cloudflare, certifique-se de definir o status do proxy para o registro CNAME como <strong>DNS Only</strong> (nuvem cinza), e não Proxy (nuvem laranja).
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100 text-red-800 text-xs">
+                                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                                    <div>
+                                        <span className="font-bold block mb-0.5">Erro "CNAME and other data"?</span>
+                                        Isso significa que existe outro registro (Tipo A, TXT, etc.) com o mesmo nome <strong>{hostName}</strong>.
+                                        Você precisa <strong>excluir</strong> o registro antigo antes de criar o CNAME.
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100 text-amber-800 text-xs">
+                                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                                    <div>
+                                        <span className="font-bold block mb-0.5">Aviso Importante para Cloudflare</span>
+                                        Se você usa a Cloudflare, certifique-se de definir o status do proxy para o registro CNAME como <strong>DNS Only</strong> (nuvem cinza), e não Proxy (nuvem laranja).
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -198,3 +209,4 @@ export function DomainSettings({ initialDomain, projectId }: { initialDomain: st
         </div>
     )
 }
+
