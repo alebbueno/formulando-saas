@@ -44,14 +44,25 @@ export function LeadProfile({ lead }: LeadProfileProps) {
                 </div>
 
                 {/* Score & Status */}
-                <div className="flex items-center gap-3">
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-bold shadow-sm ${scoreColor}`}>
-                        <TrendingUp className="w-4 h-4" />
-                        {lead.score} <span className="text-[10px] font-normal uppercase opacity-70">Score</span>
+                {/* Strong Visual Score */}
+                <div className="flex items-center gap-4 bg-muted/20 p-4 rounded-xl border border-muted/50">
+                    <div className={`flex flex-col items-center justify-center h-20 w-20 rounded-full border-4 ${scoreColor.replace('bg-', 'border-').split(' ')[2]} bg-background shadow-inner`}>
+                        <span className={`text-3xl font-bold ${scoreColor.split(' ')[0]}`}>{lead.score}</span>
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter">Score</span>
                     </div>
-                    <Badge variant="outline" className="px-3 py-1.5 text-sm font-medium border-primary/20 bg-primary/5 text-primary">
-                        {lead.status}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground">Score de Qualificação</h3>
+                            <Badge variant="outline" className={`border-0 ${scoreColor}`}>
+                                {lead.status}
+                            </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-tight max-w-[200px]">
+                            {lead.score >= 70 ? "Este lead tem alto potencial de conversão." :
+                                lead.score >= 30 ? "Lead com potencial moderado. Nutrição recomendada." :
+                                    "Lead frio ou com poucos dados."}
+                        </p>
+                    </div>
                 </div>
 
                 <Separator />

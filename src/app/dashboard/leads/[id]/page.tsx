@@ -1,6 +1,9 @@
 import { getLead, getLeadEvents } from "@/actions/leads"
 import { LeadProfile } from "@/components/leads/lead-profile"
 import { LeadTimeline } from "@/components/leads/lead-timeline"
+import { LeadNotes } from "@/components/leads/lead-notes"
+import { LeadFormViewer } from "@/components/leads/lead-form-viewer"
+import { LeadAIAnalysis } from "@/components/leads/lead-ai-analysis"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, ChevronRight, Home, LayoutDashboard, Users } from "lucide-react"
 import Link from "next/link"
@@ -59,6 +62,16 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
 
                 {/* Right Column: Timeline & Activities */}
                 <div className="lg:col-span-8 space-y-6">
+                    {/* 1. Manual Notes - Top priority for "Olhou, entendeu, decidiu" */}
+                    <LeadNotes leadId={lead.id} initialNotes={lead.notes} />
+
+                    {/* 1.1 AI Analysis - Lightweight Assistant */}
+                    <LeadAIAnalysis lead={lead} />
+
+                    {/* 2. Form Data - Explicitly shown */}
+                    <LeadFormViewer events={events} />
+
+                    {/* 3. Timeline */}
                     <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-transparent pointer-events-none h-12 z-10" />
                         <LeadTimeline events={events} />

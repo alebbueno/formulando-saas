@@ -176,6 +176,8 @@ create table leads (
   project_id uuid references projects(id) on delete cascade not null,
   data jsonb not null, -- The submitted form data
   metadata jsonb default '{}'::jsonb, -- IP, User Agent, etc
+  notes text, -- Manual notes field
+  ai_analysis jsonb default null, -- AI Analysis (optional)
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

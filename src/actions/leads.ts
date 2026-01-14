@@ -348,6 +348,18 @@ export type Lead = {
     status: string
     tags: string[]
     custom_fields?: Record<string, any>
+    notes?: string
+    ai_analysis?: {
+        score_final?: number
+        score_adjustment_reason?: string
+        lead_temperature?: 'frio' | 'morno' | 'quente'
+        tags?: string[]
+        marketing_summary?: string
+        // Keep legacy fields for backward compatibility if needed, or migration
+        adjusted_score?: number
+        explanation?: string
+        suggested_tags?: string[]
+    }
     created_at: string
 }
 
@@ -363,15 +375,6 @@ export async function getLeads(opts: {
     if (!user) {
         throw new Error("Usuário não autenticado")
     }
-
-    // Get workspaces owned by user to filter leads
-    // Actually, RLS should handle this if we just query 'leads'.
-    // Let's rely on RLS. If RLS is set up correctly (checking workspace owner), 
-    // we can just select from 'leads'.
-
-    // However, the policy usually checks if the user is a member of the workspace.
-    // So we might need to verify if the user has access to ANY workspace or specific ones.
-    // For the general list, we show leads from ALL workspaces the user has access to.
 
     const page = opts.page || 1
     const pageSize = opts.pageSize || 10
@@ -501,4 +504,222 @@ export async function updateLeadStatus(leadId: string, newStatus: string) {
                 changed_by: user.id
             }
         })
+}
+
+export async function updateLeadNotes(leadId: string, notes: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error("Usuário não autenticado")
+    }
+
+    const { error } = await supabase
+        .from("leads")
+        .update({ notes: notes })
+        .eq("id", leadId)
+
+    if (error) {
+        console.error("Error updating notes:", error)
+        throw new Error("Erro ao salvar notas")
+    }
+}
+
+export async function analyzeLeadWithAI(leadId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error("Usuário não autenticado")
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+        throw new Error("Configuração de IA (OpenAI) ausente no servidor.");
+    }
+
+    // Fetch Lead Data with Events/Submissions
+    const { data: lead, error } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", leadId)
+        .single()
+
+    if (error || !lead) {
+        throw new Error("Lead não encontrado")
+    }
+
+    // We also want the form submission data if possible to give more context
+    const { data: events } = await supabase
+        .from("lead_events")
+        .select("*")
+        .eq("lead_id", leadId)
+        .eq("type", "form_submit")
+        .limit(1)
+        .single()
+
+    // Construct Prompt
+    const submissionData = events?.payload?.data || lead.custom_fields || {};
+    const promptData = {
+        name: lead.name,
+        email: lead.email,
+        company: lead.company,
+        job_title: lead.job_title,
+        score: lead.score,
+        notes: lead.notes,
+        submission: submissionData
+    };
+
+    try {
+        const OpenAI = (await import("openai")).default;
+        const openai = new OpenAI({ apiKey });
+        const { LEAD_ANALYSIS_SYSTEM_PROMPT, LEAD_ANALYSIS_USER_PROMPT_TEMPLATE } = await import("@/lib/ai-prompts");
+
+        // Construct User Prompt
+        const userPrompt = LEAD_ANALYSIS_USER_PROMPT_TEMPLATE({
+            name: lead.name,
+            email: lead.email,
+            company: lead.company,
+            job_title: lead.job_title,
+            source_id: lead.source_id,
+            submission: submissionData,
+            score: lead.score
+        });
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: LEAD_ANALYSIS_SYSTEM_PROMPT },
+                { role: "user", content: userPrompt }
+            ],
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        });
+
+        const content = response.choices[0].message.content;
+        if (!content) throw new Error("No response from AI");
+
+        const analysis = JSON.parse(content);
+
+        // Update Lead with AI Analysis
+        await supabase
+            .from("leads")
+            .update({ ai_analysis: analysis })
+            .eq("id", leadId)
+
+        // Log Event
+        await supabase
+            .from("lead_events")
+            .insert({
+                lead_id: leadId,
+                type: 'ai_analysis',
+                payload: analysis
+            })
+
+        return { success: true, analysis }
+
+    } catch (error) {
+        console.error("AI Analysis Error:", error);
+        throw new Error("Erro ao analisar lead com IA");
+    }
+}
+
+export async function updateLeadScore(leadId: string, newScore: number, reason?: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) throw new Error("Usuário não autenticado")
+
+    const { error } = await supabase
+        .from("leads")
+        .update({ score: newScore, score_reason: reason })
+        .eq("id", leadId)
+
+    if (error) throw new Error("Erro ao atualizar score")
+
+    await supabase.from("lead_events").insert({
+        lead_id: leadId,
+        type: 'score_manual_update',
+        payload: { new_score: newScore, reason, updated_by: user.id }
+    })
+}
+
+export async function addLeadTags(leadId: string, newTags: string[]) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) throw new Error("Usuário não autenticado")
+
+    // First get existing tags
+    const { data: lead } = await supabase
+        .from("leads")
+        .select("tags")
+        .eq("id", leadId)
+        .single()
+
+    if (!lead) throw new Error("Lead não encontrado")
+
+    const currentTags = (lead.tags as string[]) || []
+    // Merge unique tags
+    const updatedTags = Array.from(new Set([...currentTags, ...newTags]))
+
+    const { error } = await supabase
+        .from("leads")
+        .update({ tags: updatedTags })
+        .eq("id", leadId)
+
+    if (error) throw new Error("Erro ao atualizar tags")
+
+    await supabase.from("lead_events").insert({
+        lead_id: leadId,
+        type: 'tags_added',
+        payload: { added_tags: newTags, updated_by: user.id }
+    })
+}
+
+export async function getLeadStats() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) throw new Error("Usuário não autenticado")
+
+    // Get all leads (RLS filters by user/workspace)
+    const { data: leads, error } = await supabase
+        .from("leads")
+        .select("id, status, score, name, company, email, created_at")
+        .order("created_at", { ascending: false })
+
+    if (error) {
+        console.error("Error fetching lead stats:", error)
+        return {
+            total: 0,
+            qualified: 0,
+            byStatus: [],
+            hotLeads: []
+        }
+    }
+
+    const total = leads.length
+    const qualified = leads.filter(l => l.score >= 60 || l.status === 'Qualificado').length
+
+    // Group by status
+    const statusCounts: Record<string, number> = {}
+    leads.forEach(l => {
+        const s = l.status || "Novo Lead"
+        statusCounts[s] = (statusCounts[s] || 0) + 1
+    })
+    const byStatus = Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
+
+    // Hot Leads (Score >= 70)
+    const hotLeads = leads
+        .filter(l => l.score >= 70)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+
+    return {
+        total,
+        qualified,
+        byStatus,
+        hotLeads
+    }
 }
