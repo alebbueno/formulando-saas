@@ -74,9 +74,13 @@ export async function middleware(request: NextRequest) {
         const lp = lps[0]
         console.log(">>> LP Slug:", lp.slug)
 
-        if (path === '/') {
+        if (url.pathname === '/') {
             console.log(">>> Rewriting to:", `/lp/${lp.slug}`)
             return NextResponse.rewrite(new URL(`/lp/${lp.slug}`, request.url))
+        } else {
+            // Block access to other routes (like /login, /dashboard) via custom domain
+            console.log(`>>> Redirecting ${url.pathname} to root for custom domain security.`)
+            return NextResponse.redirect(new URL('/', request.url))
         }
     } else {
         console.log(">>> No LP found in DB for this domain.")
