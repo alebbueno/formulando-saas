@@ -6,11 +6,27 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl
 
     // Get hostname (e.g., 'platform.vercel.app' or 'custom.domain.com')
-    let hostname = request.headers.get("host")!.replace(".localhost:3000", `.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`)
+    // Check x-forwarded-host first (Vercel uses this for custom domains)
+    let hostname = request.headers.get("x-forwarded-host") || request.headers.get("host")
+
+    // Normalize logic
+    hostname = hostname!.split(':')[0].toLowerCase() // Remove port if present and lowercase
+
+    // Remove .localhost:3000 for local dev if detected in a weird way, though split removes port usually
+    // But let's stick to the logic of replacing the root domain suffix if needed for local testing simulation
+    // If it is localhost, we might want to map it to our ROOT_DOMAIN for consistency in checking
+
+    // DEBUG LOGGING
+    console.log(">>> MIDDLEWARE DEBUG <<<")
+    console.log("Full URL:", request.url)
+    console.log("Detected Hostname:", hostname)
+    console.log("ROOT_DOMAIN:", process.env.NEXT_PUBLIC_ROOT_DOMAIN)
 
     // Handle Vercel preview URLs or localhost during dev properly if needed
-    if (hostname.includes("localhost:3000")) {
-        hostname = hostname.replace("localhost:3000", process.env.NEXT_PUBLIC_ROOT_DOMAIN || "localhost")
+    if (hostname.includes("localhost")) {
+        // For local dev, we might treat localhost as the root domain
+        // process.env.NEXT_PUBLIC_ROOT_DOMAIN should be 'localhost:3000' or similar in dev?
+        // Let's assume for now if it contains localhost it's akin to root unless we are testing subdomains locally (e.g. test.localhost)
     }
 
     const searchParams = request.nextUrl.searchParams.toString()
@@ -18,54 +34,49 @@ export async function middleware(request: NextRequest) {
     const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`
 
     // Check if it's the root domain (App)
-    if (hostname === process.env.NEXT_PUBLIC_ROOT_DOMAIN) {
+    // We strictly check if the hostname ENDS with our root domain (for subdomains like app.formulando etc if used) 
+    // OR if it IS the root domain.
+    // NOTE: If you use a subdomain for the app (e.g. app.formulando.com), you need to adjust this.
+
+    const isMainDomain = hostname === process.env.NEXT_PUBLIC_ROOT_DOMAIN || hostname.endsWith(`.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`) || hostname === 'localhost'
+
+    if (isMainDomain) {
+        console.log(">>> Routing: Main Domain detected")
         return await updateSession(request)
     }
 
     // It's a custom domain!
-    // We need to fetch the LP slug associated with this domain.
-    // Note: Middleware runs on Edge, so we need compatible DB access. 
-    // Supabase JS client is Edge compatible.
-
-    // HOWEVER: We can't use 'createClient' from '@/lib/supabase/server' directly as it uses 'cookies' 
-    // which might differ in edge context or we need a specific client.
-    // Let's us a simple non-auth client or the default one.
-    // Ideally we'd use a separate utility for edge data fetching or just fetch directly if possible.
-    // For now, let's assume updateSession handles auth, but for public LPs we just need to read.
+    console.log(">>> Routing: Custom Domain detected")
 
     const response = NextResponse.next()
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ) as any // Cast to avoid type issues with different CreateClient versions if any
+    ) as any
 
-    // Simple fetch
-    // Note: This adds latency to every request on custom domains. 
-    // In prod, you'd cache this (e.g. Vercel KV or Edge Config).
-    const { data: lp } = await supabase
+    const { data: lp, error } = await supabase
         .from("landing_pages")
-        .select("slug")
+        .select("slug, custom_domain")
         .eq("custom_domain", hostname)
         .single()
 
-    if (lp) {
-        // Rewrite to the LP page
-        // We rewrite to /lp/[slug] but we might want to keep the path? 
-        // Typically LPs are single page, but if you have /thank-you, etc.
-        // For this MVP, we rewrite everything to the LP slug, unless we support multi-page LPs.
-        // If path is just /, rewrite to /lp/[slug]
+    if (error) {
+        console.error(">>> DB Error or No LP found:", error.message)
+    }
 
+    if (lp) {
+        console.log(">>> LP Found:", lp.slug)
         if (path === '/') {
+            console.log(">>> Rewriting to:", `/lp/${lp.slug}`)
             return NextResponse.rewrite(new URL(`/lp/${lp.slug}`, request.url))
         }
-
-        // If we want to support assets or specific routes, we'd handle them here.
-        // For now, let's just rewrite root.
     }
 
     // If domain not found, 404
-    if (!lp && hostname !== process.env.NEXT_PUBLIC_ROOT_DOMAIN) {
-        // return NextResponse.rewrite(new URL("/404", request.url)) // Or a custom 404
+    if (!lp) {
+        console.log(">>> No LP found for custom domain. Returning 404.")
+        // STRICT 404 to avoid showing the home page on unknown domains
+        return NextResponse.rewrite(new URL("/404", request.url))
     }
 
     return await updateSession(request)
