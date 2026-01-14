@@ -37,8 +37,13 @@ export async function middleware(request: NextRequest) {
     // We strictly check if the hostname ENDS with our root domain (for subdomains like app.formulando etc if used) 
     // OR if it IS the root domain.
     // NOTE: If you use a subdomain for the app (e.g. app.formulando.com), you need to adjust this.
+    // ALSO: Allow vercel preview URLs to work as main domain
 
-    const isMainDomain = hostname === process.env.NEXT_PUBLIC_ROOT_DOMAIN || hostname.endsWith(`.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`) || hostname === 'localhost'
+    const isMainDomain =
+        hostname === process.env.NEXT_PUBLIC_ROOT_DOMAIN ||
+        (process.env.NEXT_PUBLIC_ROOT_DOMAIN && hostname.endsWith(`.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`)) ||
+        hostname.endsWith('.vercel.app') ||
+        hostname === 'localhost'
 
     if (isMainDomain) {
         console.log(">>> Routing: Main Domain detected")
