@@ -1,15 +1,20 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, Save, Settings, ArrowLeft, Monitor, Smartphone, Tablet, ChevronDown, Check } from "lucide-react"
+import { Eye, Save, Settings, ArrowLeft, Monitor, Smartphone, Tablet, ChevronDown, Check, Globe } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface BuilderHeaderProps {
     onSave: () => void
     onPreview: () => void
     projectName: string
     onProjectNameChange: (name: string) => void
+    isPublished: boolean
+    onPublishToggle: (checked: boolean) => void
+    isSaving?: boolean
 }
 
 import { SettingsModal } from "./settings-modal"
@@ -21,7 +26,10 @@ export function BuilderHeader({
     onSave,
     onPreview,
     projectName,
-    onProjectNameChange
+    onProjectNameChange,
+    isPublished,
+    onPublishToggle,
+    isSaving
 }: BuilderHeaderProps) {
     const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
 
@@ -56,6 +64,28 @@ export function BuilderHeader({
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 w-[300px] justify-end">
+
+                <div className="flex items-center gap-2 mr-2 border-r pr-4 h-6">
+                    <Switch
+                        id="publish-mode"
+                        checked={isPublished}
+                        onCheckedChange={onPublishToggle}
+                        className={cn(
+                            "data-[state=checked]:bg-green-500"
+                        )}
+                    />
+                    <Label htmlFor="publish-mode" className="text-xs font-medium cursor-pointer flex items-center gap-1.5 text-muted-foreground">
+                        {isPublished ? (
+                            <span className="text-green-600 flex items-center gap-1">
+                                <Globe className="h-3 w-3" />
+                                Público
+                            </span>
+                        ) : (
+                            "Rascunho"
+                        )}
+                    </Label>
+                </div>
+
                 <SettingsModal />
 
                 <ShareModal />
@@ -70,11 +100,14 @@ export function BuilderHeader({
                 <Button
                     variant="default"
                     size="sm"
+                    disabled={isSaving}
                     className="gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-indigo-500/20 border-0 transition-all hover:scale-105 active:scale-95"
                     onClick={onSave}
                 >
-                    <span className="font-semibold text-white">Publicar</span>
-                    <Check className="h-3.5 w-3.5 text-white/90" />
+                    <span className="font-semibold text-white">
+                        {isSaving ? "Salvando..." : "Salvar"}
+                    </span>
+                    {!isSaving && <Check className="h-3.5 w-3.5 text-white/90" />}
                 </Button>
             </div>
         </nav>

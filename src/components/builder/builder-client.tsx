@@ -13,7 +13,7 @@ import { TemplateSelector } from "@/components/builder/template-selector"
 import { AIChat } from "@/components/builder/ai-chat"
 import { toast } from "sonner"
 
-import { updateProjectContent } from "@/actions/form"
+import { updateProjectContent, publishProject } from "@/actions/form"
 import { Button } from "@/components/ui/button"
 import { PanelLeftClose, PanelRightClose, PanelLeftOpen, PanelRightOpen, Sparkles } from "lucide-react"
 
@@ -24,6 +24,8 @@ function BuilderPageContent({ project }: { project: any }) {
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true)
     const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false)
     const [isAIChatOpen, setIsAIChatOpen] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [isPublished, setIsPublished] = useState(project.is_published || false)
 
     const sensors = useSensors(
         useSensor(MouseSensor, {
@@ -44,11 +46,30 @@ function BuilderPageContent({ project }: { project: any }) {
 
     const handleSave = async () => {
         try {
+            setIsSaving(true)
             await updateProjectContent(projectId, JSON.stringify(elements), projectName)
             toast.success("Salvo com sucesso!")
         } catch (error) {
             console.error(error)
             toast.error("Erro ao salvar")
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handlePublishToggle = async (checked: boolean) => {
+        setIsPublished(checked) // Optimistic update
+        try {
+            await publishProject(projectId, checked)
+            if (checked) {
+                toast.success("Formulário publicado com sucesso!")
+            } else {
+                toast.info("Formulário despublicado (rascunho).")
+            }
+        } catch (error) {
+            console.error(error)
+            setIsPublished(!checked) // Revert on error
+            toast.error("Erro ao atualizar status de publicação")
         }
     }
 
@@ -171,6 +192,9 @@ function BuilderPageContent({ project }: { project: any }) {
                         onPreview={handlePreview}
                         projectName={projectName}
                         onProjectNameChange={setProjectName}
+                        isPublished={isPublished}
+                        onPublishToggle={handlePublishToggle}
+                        isSaving={isSaving}
                     />
                     <div className="flex flex-grow w-full h-[calc(100vh-64px)] relative">
 

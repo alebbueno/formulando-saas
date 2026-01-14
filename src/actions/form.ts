@@ -276,6 +276,28 @@ export async function getFormContent(formId: string) {
 
     if (!data || data.length === 0) {
         console.error(">>> getFormContent: No Form Found (Empty Response). Check RLS or ID.")
+
+        // DEBUG: Try with Service Role to see if it exists but is hidden
+        // This confirms if it's an RLS issue or if the ID is truly wrong
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            const { createClient } = await import('@supabase/supabase-js')
+            const adminSupabase = createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY
+            )
+            const { data: adminData } = await adminSupabase
+                .from("projects")
+                .select("id, is_published")
+                .eq("id", formId)
+                .single()
+
+            if (adminData) {
+                console.error(`>>> DEBUG ADMIN: Project EXISTS. is_published=${adminData.is_published}. RLS IS BLOCKING IT.`)
+            } else {
+                console.error(">>> DEBUG ADMIN: Project does NOT exist even for Admin. ID is wrong.")
+            }
+        }
+
         return null
     }
 
@@ -287,4 +309,22 @@ export async function getFormContent(formId: string) {
     }
 
     return project
+}
+
+export async function publishProject(id: string, isPublished: boolean) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("User not found")
+
+    const { error } = await supabase
+        .from("projects")
+        .update({ is_published: isPublished })
+        .eq("id", id)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    revalidatePath(`/builder/${id}`)
+    revalidatePath("/dashboard")
 }
