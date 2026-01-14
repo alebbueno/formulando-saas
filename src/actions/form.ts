@@ -260,17 +260,31 @@ function extractTitle(prompt: string): string {
 export async function getFormContent(formId: string) {
     const supabase = await createClient()
 
+    console.log(">>> getFormContent: Accessing form:", formId)
+
     // Public access to fetch form content (needed for public LP pages)
     // We select 'content' and 'settings' to render it properly
     const { data, error } = await supabase
         .from("projects")
-        .select("content, settings")
+        .select("content, settings, is_published")
         .eq("id", formId)
-        .single()
 
-    if (error || !data) {
+    if (error) {
+        console.error(">>> getFormContent: DB Error:", error.message)
         return null
     }
 
-    return data
+    if (!data || data.length === 0) {
+        console.error(">>> getFormContent: No Form Found (Empty Response). Check RLS or ID.")
+        return null
+    }
+
+    const project = data[0]
+    console.log(">>> getFormContent: Found Project. Published?", project.is_published)
+
+    if (!project.is_published) {
+        console.warn(">>> getFormContent: Project found but NOT published. RLS might block, but good to know.")
+    }
+
+    return project
 }
