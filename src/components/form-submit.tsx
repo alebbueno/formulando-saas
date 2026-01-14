@@ -90,9 +90,10 @@ export function FormSubmitComponent({ formUrl, content, buttonSettings }: FormSu
         uniqueKeys.forEach(key => {
             const values = formData.getAll(key)
             if (values.length > 1) {
-                data[key] = values.map(v => v.toString())
+                data[key] = values.map(v => (v instanceof File ? v.name : v.toString()))
             } else {
-                data[key] = values[0].toString()
+                const val = values[0]
+                data[key] = (val instanceof File ? val.name : val.toString())
             }
         })
 

@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useTransition, useEffect } from "react"
-import { getLeads, Lead } from "@/actions/leads"
-import { LeadsTable } from "@/components/leads/leads-table"
-import { LeadDetailsSheet } from "@/components/leads/lead-details-sheet"
+import { getSubmissions, Submission } from "@/actions/submissions"
+import { SubmissionsTable } from "@/components/submissions/submissions-table"
+import { SubmissionDetailsSheet } from "@/components/submissions/submission-details-sheet"
 import { Input } from "@/components/ui/input"
 import {
     Select,
@@ -17,13 +17,13 @@ import { Search, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 interface LeadsClientProps {
-    initialLeads: Lead[]
+    initialSubmissions: Submission[]
     projects: { id: string, name: string }[]
     initialTotal: number
 }
 
-export function LeadsClient({ initialLeads, projects, initialTotal }: LeadsClientProps) {
-    const [leads, setLeads] = useState<Lead[]>(initialLeads)
+export function LeadsClient({ initialSubmissions, projects, initialTotal }: LeadsClientProps) {
+    const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions)
     const [isPending, startTransition] = useTransition()
 
     // Filters and Search State
@@ -35,13 +35,13 @@ export function LeadsClient({ initialLeads, projects, initialTotal }: LeadsClien
     const [totalPages, setTotalPages] = useState(1) // Initial total pages logic depends on page size (10)
 
     // Details Sheet State
-    const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+    const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
     const [isSheetOpen, setIsSheetOpen] = useState(false)
 
-    const fetchLeads = () => {
+    const fetchSubmissions = () => {
         startTransition(async () => {
             try {
-                const result = await getLeads({
+                const result = await getSubmissions({
                     projectId,
                     search,
                     orderBy,
@@ -49,10 +49,10 @@ export function LeadsClient({ initialLeads, projects, initialTotal }: LeadsClien
                     page,
                     pageSize: 10
                 })
-                setLeads(result.leads)
+                setSubmissions(result.submissions)
                 setTotalPages(result.totalPages)
             } catch (error) {
-                console.error("Failed to fetch leads", error)
+                console.error("Failed to fetch submissions", error)
                 // Optionally show error toast
             }
         })
@@ -62,13 +62,13 @@ export function LeadsClient({ initialLeads, projects, initialTotal }: LeadsClien
     useEffect(() => {
         // Debounce search slightly
         const timer = setTimeout(() => {
-            fetchLeads()
+            fetchSubmissions()
         }, 300)
         return () => clearTimeout(timer)
     }, [search, projectId, orderBy, orderDirection, page])
 
-    const handleViewDetails = (lead: Lead) => {
-        setSelectedLead(lead)
+    const handleViewDetails = (submission: Submission) => {
+        setSelectedSubmission(submission)
         setIsSheetOpen(true)
     }
 
@@ -160,7 +160,7 @@ export function LeadsClient({ initialLeads, projects, initialTotal }: LeadsClien
                     </div>
                 )}
 
-                <LeadsTable leads={leads} onViewDetails={handleViewDetails} />
+                <SubmissionsTable submissions={submissions} onViewDetails={handleViewDetails} />
 
                 {/* Pagination Controls */}
                 <div className="flex items-center justify-end space-x-2 py-4">
@@ -186,8 +186,8 @@ export function LeadsClient({ initialLeads, projects, initialTotal }: LeadsClien
                 </div>
             </div>
 
-            <LeadDetailsSheet
-                lead={selectedLead}
+            <SubmissionDetailsSheet
+                submission={selectedSubmission}
                 open={isSheetOpen}
                 onOpenChange={setIsSheetOpen}
             />

@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useTransition, useEffect } from "react"
-import { getLeads, Lead } from "@/actions/leads"
-import { LeadsTable } from "@/components/leads/leads-table"
-import { LeadDetailsSheet } from "@/components/leads/lead-details-sheet"
+import { getSubmissions, Submission } from "@/actions/submissions"
+import { SubmissionsTable } from "@/components/submissions/submissions-table"
+import { SubmissionDetailsSheet } from "@/components/submissions/submission-details-sheet"
 import { Input } from "@/components/ui/input"
 import {
     Select,
@@ -17,13 +17,13 @@ import { Search, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 interface ProjectLeadsClientProps {
-    initialLeads: Lead[]
+    initialSubmissions: Submission[]
     projectId: string
     initialTotal: number
 }
 
-export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: ProjectLeadsClientProps) {
-    const [leads, setLeads] = useState<Lead[]>(initialLeads)
+export function ProjectLeadsClient({ initialSubmissions, projectId, initialTotal }: ProjectLeadsClientProps) {
+    const [submissions, setSubmissions] = useState<Submission[]>(initialSubmissions)
     const [isPending, startTransition] = useTransition()
 
     // Filters and Search State
@@ -34,13 +34,13 @@ export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: Pr
     const [totalPages, setTotalPages] = useState(Math.ceil(initialTotal / 10))
 
     // Details Sheet State
-    const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+    const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
     const [isSheetOpen, setIsSheetOpen] = useState(false)
 
-    const fetchLeads = () => {
+    const fetchSubmissions = () => {
         startTransition(async () => {
             try {
-                const result = await getLeads({
+                const result = await getSubmissions({
                     projectId,
                     search,
                     orderBy,
@@ -48,10 +48,10 @@ export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: Pr
                     page,
                     pageSize: 10
                 })
-                setLeads(result.leads)
+                setSubmissions(result.submissions)
                 setTotalPages(result.totalPages)
             } catch (error) {
-                console.error("Failed to fetch leads", error)
+                console.error("Failed to fetch submissions", error)
             }
         })
     }
@@ -60,13 +60,13 @@ export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: Pr
     useEffect(() => {
         // Debounce search slightly
         const timer = setTimeout(() => {
-            fetchLeads()
+            fetchSubmissions()
         }, 300)
         return () => clearTimeout(timer)
     }, [search, orderBy, orderDirection, page])
 
-    const handleViewDetails = (lead: Lead) => {
-        setSelectedLead(lead)
+    const handleViewDetails = (submission: Submission) => {
+        setSelectedSubmission(submission)
         setIsSheetOpen(true)
     }
 
@@ -75,7 +75,7 @@ export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: Pr
             <Card>
                 <CardHeader>
                     <CardTitle>Filtros</CardTitle>
-                    <CardDescription>Refine sua busca por leads</CardDescription>
+                    <CardDescription>Refine sua busca por submissões</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -106,7 +106,7 @@ export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: Pr
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="created_at">Data de criação</SelectItem>
-                                    <SelectItem value="project_id">Formulário</SelectItem>
+                                    {/* <SelectItem value="project_id">Formulário</SelectItem> */}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -137,7 +137,7 @@ export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: Pr
                     </div>
                 )}
 
-                <LeadsTable leads={leads} onViewDetails={handleViewDetails} />
+                <SubmissionsTable submissions={submissions} onViewDetails={handleViewDetails} />
 
                 {/* Pagination Controls */}
                 <div className="flex items-center justify-end space-x-2 py-4">
@@ -163,8 +163,8 @@ export function ProjectLeadsClient({ initialLeads, projectId, initialTotal }: Pr
                 </div>
             </div>
 
-            <LeadDetailsSheet
-                lead={selectedLead}
+            <SubmissionDetailsSheet
+                submission={selectedSubmission}
                 open={isSheetOpen}
                 onOpenChange={setIsSheetOpen}
             />

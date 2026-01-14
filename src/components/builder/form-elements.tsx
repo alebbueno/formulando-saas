@@ -1286,6 +1286,7 @@ const AddressFieldFormElement: FormElement = {
             label: "Endereço",
             helperText: "Preencha o endereço completo",
             required: true,
+            fieldName: "endereco",
         },
     }),
     designerBtnElement: {
@@ -1312,7 +1313,7 @@ const AddressFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
         // We need local state for the mask to work properly in a controlled/uncontrolled hybrid if we were fully React,
         // but here formComponent renders inside a form generator usually.
         // However, these inputs are uncontrolled by default in this setup (using name prop for submission).
@@ -1326,33 +1327,33 @@ const AddressFieldFormElement: FormElement = {
                 </Label>
                 <div className="grid grid-cols-1 gap-3">
                     <Input
-                        name={`${elementInstance.id}_street`}
+                        name={`${fieldName || elementInstance.id}_street`}
                         placeholder="Rua / Avenida"
                         required={required}
                         className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                     />
                     <div className="grid grid-cols-2 gap-3">
                         <Input
-                            name={`${elementInstance.id}_number`}
+                            name={`${fieldName || elementInstance.id}_number`}
                             placeholder="Número"
                             required={required}
                             className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                         />
                         <Input
-                            name={`${elementInstance.id}_compl`}
+                            name={`${fieldName || elementInstance.id}_compl`}
                             placeholder="Complemento"
                             className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <Input
-                            name={`${elementInstance.id}_city`}
+                            name={`${fieldName || elementInstance.id}_city`}
                             placeholder="Cidade"
                             required={required}
                             className={cn(elementInstance.extraAttributes?.error && "border-destructive")}
                         />
                         <Input
-                            name={`${elementInstance.id}_state`}
+                            name={`${fieldName || elementInstance.id}_state`}
                             placeholder="Estado (UF)"
                             required={required}
                             maxLength={2}
@@ -1361,7 +1362,7 @@ const AddressFieldFormElement: FormElement = {
                     </div>
                     <div>
                         <Input
-                            name={`${elementInstance.id}_zip`}
+                            name={`${fieldName || elementInstance.id}_zip`}
                             placeholder="CEP (00000-000)"
                             required={required}
                             maxLength={9}
@@ -1562,6 +1563,7 @@ const FileFieldFormElement: FormElement = {
             required: true,
             allowedTypes: ".pdf, .doc, .docx, .png, .jpg",
             maxSize: 5, // MB
+            fieldName: "arquivo",
         },
     }),
     designerBtnElement: {
@@ -1584,7 +1586,7 @@ const FileFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText, allowedTypes, maxSize } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, allowedTypes, maxSize, fieldName } = elementInstance.extraAttributes || {}
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -1594,7 +1596,7 @@ const FileFieldFormElement: FormElement = {
                 <div className="border-2 border-dashed border-input rounded-md p-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer relative">
                     <Input
                         type="file"
-                        name={elementInstance.id}
+                        name={fieldName || elementInstance.id}
                         required={required}
                         accept={allowedTypes}
                         className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
@@ -1686,7 +1688,10 @@ const SignatureFieldFormElement: FormElement = {
         </div>
     ),
     formComponent: ({ elementInstance }) => {
-        const { label, required, helperText } = elementInstance.extraAttributes || {}
+        const { label, required, helperText, fieldName } = elementInstance.extraAttributes || {}
+        const canvasRef = useRef<any>(null)
+        const [signatureData, setSignatureData] = useState("")
+
         return (
             <div className="flex flex-col gap-2 w-full mb-4">
                 <Label className={cn(elementInstance.extraAttributes?.error && "text-destructive")}>
@@ -1694,16 +1699,29 @@ const SignatureFieldFormElement: FormElement = {
                     {required && "*"}
                 </Label>
                 <div className={cn("border rounded-md h-[150px] w-full bg-background relative overflow-hidden", elementInstance.extraAttributes?.error && "border-destructive")}>
-                    {/* In a real form submission, we'd need to capture ref and export to data on submit */}
                     <SignatureCanvas
+                        ref={canvasRef}
                         penColor="black"
                         canvasProps={{ className: "w-full h-full" }}
                         clearOnResize={false}
+                        onEnd={() => {
+                            if (canvasRef.current) {
+                                setSignatureData(canvasRef.current.toDataURL())
+                            }
+                        }}
                     />
                     <div className="absolute bottom-2 right-2 text-xs text-muted-foreground pointer-events-none opacity-50">
                         Assine aqui
                     </div>
                 </div>
+                {/* Hidden input to store signature data */}
+                <input
+                    type="hidden"
+                    name={fieldName || elementInstance.id}
+                    value={signatureData}
+                    required={required}
+                />
+
                 {helperText && (
                     <p className={cn("text-[0.8rem] text-muted-foreground", elementInstance.extraAttributes?.error && "text-destructive")}>{helperText}</p>
                 )}

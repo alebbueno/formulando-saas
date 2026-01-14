@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { addDomainToVercel, removeDomainFromVercel, validDomainRegex } from "@/lib/domains"
 
 export async function saveLandingPage(id: string, content: LPElement[], name?: string, slug?: string, settings?: any) {
+    console.log(">>> SERVER ACTION: saveLandingPage", { id, name, slug, settings })
     try {
         const supabase = await createClient()
 

@@ -31,10 +31,30 @@ export default async function DashboardPage() {
     let activeWorkspaceId = workspaceId
 
     // Validate if user has access to this workspace or pick default
-    const { data: workspaces } = await supabase
+    // Validate if user has access to this workspace or pick default
+
+    // 1. Fetch Owned Workspaces
+    const { data: ownedWorkspaces } = await supabase
         .from("workspaces")
         .select("id, name")
-        .eq("owner_id", user.id) // Or use workspace_members for shared access
+        .eq("owner_id", user.id)
+
+    // 2. Fetch Member Workspaces
+    const { data: memberWorkspaces } = await supabase
+        .from("workspace_members")
+        .select("workspace:workspaces(id, name)")
+        .eq("user_id", user.id)
+
+    // 3. Combine
+    const workspaces = [
+        ...(ownedWorkspaces || []),
+        ...(memberWorkspaces?.map((m: any) => m.workspace).filter(Boolean) || [])
+    ]
+
+    // Deduplicate just in case (though owner shouldn't be member usually, but safe to check)
+    const uniqueWorkspacesMap = new Map()
+    workspaces.forEach(w => uniqueWorkspacesMap.set(w.id, w))
+    const allWorkspaces = Array.from(uniqueWorkspacesMap.values())
 
     // If no workspaceId in cookie, or invalid, pick the first one
     if (!activeWorkspaceId && workspaces && workspaces.length > 0) {
@@ -54,11 +74,14 @@ export default async function DashboardPage() {
     if (activeWorkspaceId) {
         const { data } = await supabase
             .from("projects")
-            .select("*, leads(count)")
+            .select("*, form_submissions(count)")
             .eq("workspace_id", activeWorkspaceId)
             .order("created_at", { ascending: false })
 
-        if (data) projects = data
+        if (data) projects = data.map(p => ({
+            ...p,
+            leads: p.form_submissions // Map for consistency if needed by Overview/ProjectList
+        }))
     }
 
     const projectsCount = projects.length

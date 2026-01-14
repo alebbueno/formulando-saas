@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getLeads } from "@/actions/leads"
+import { getSubmissions } from "@/actions/submissions"
 import { ProjectLeadsClient } from "./client"
 
 export default async function ProjectLeadsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +30,7 @@ export default async function ProjectLeadsPage({ params }: { params: Promise<{ i
     }
 
     // Fetch initial leads using the server action
-    const { leads, total } = await getLeads({
+    const { submissions, total } = await getSubmissions({
         projectId: id,
         page: 1,
         pageSize: 10,
@@ -48,16 +48,16 @@ export default async function ProjectLeadsPage({ params }: { params: Promise<{ i
                         </Link>
                     </Button>
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight">Leads: {project.name}</h2>
+                        <h2 className="text-2xl font-bold tracking-tight">Submissões: {project.name}</h2>
                         <p className="text-muted-foreground">
-                            {total} leads capturados no total
+                            {total} submissões capturadas no total
                         </p>
                     </div>
                 </div>
             </div>
 
             <ProjectLeadsClient
-                initialLeads={leads}
+                initialSubmissions={submissions}
                 projectId={id}
                 initialTotal={total}
             />

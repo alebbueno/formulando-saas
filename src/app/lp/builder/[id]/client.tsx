@@ -11,20 +11,20 @@ import { DndContext, DragEndEvent, useSensor, useSensors, MouseSensor, TouchSens
 import { LPElementType, LPElement } from "@/components/lp-builder/types"
 
 function LPBuilderEditor({ project }: { project: Project | LandingPage }) {
-    const { addElement, elements, moveElement, setProjectId, setElements, setSlug, setIsPublished, setLpName, setCustomDomain } = useLPBuilder()
+    const { addElement, elements, moveElement, setProjectId, setElements, setSlug, setIsPublished, setLpName, setCustomDomain, setSettings } = useLPBuilder()
 
     // Initialize project ID and load existing content
     React.useEffect(() => {
         setProjectId(project.id)
-        setProjectId(project.id)
         setSlug(project.slug)
         setLpName(project.name)
         setIsPublished(project.is_published)
-        setCustomDomain((project as any).custom_domain || null) // Cast to any because Project type might not have custom_domain yet if shared
+        setCustomDomain((project as any).custom_domain || null)
+        setSettings((project as any).settings || {}) // Sync settings
         if (project.content && Array.isArray(project.content)) {
             setElements(project.content as LPElement[])
         }
-    }, [project.id, project.slug, project.is_published, project.content, setProjectId, setSlug, setIsPublished, setElements])
+    }, [project.id, project.slug, project.is_published, project.content, project.name, (project as any).settings, setProjectId, setSlug, setIsPublished, setElements, setSettings, setLpName, setCustomDomain])
 
     const sensors = useSensors(
         useSensor(MouseSensor, {
@@ -188,7 +188,7 @@ function LPBuilderEditor({ project }: { project: Project | LandingPage }) {
 
 export function LPBuilderClient({ project }: { project: Project | LandingPage }) {
     return (
-        <LPBuilderProvider>
+        <LPBuilderProvider initialData={project}>
             <LPBuilderEditor project={project} />
         </LPBuilderProvider>
     )

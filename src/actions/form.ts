@@ -80,16 +80,28 @@ export async function submitForm(formUrl: string, content: string) {
         throw new Error("Formulário não encontrado")
     }
 
-    const { error } = await supabase
-        .from("leads")
+    // Insert into raw submissions table (formerly leads)
+    const { data: submission, error } = await supabase
+        .from("form_submissions")
         .insert({
             project_id: formUrl,
             data: JSON.parse(content),
         })
+        .select("id")
+        .single()
 
     if (error) {
         console.error("Error submitting form:", error)
         throw new Error("Erro ao enviar formulário")
+    }
+
+    // Trigger Lead System Processing (Async - don't block response if possible, but safe to await here for now)
+    try {
+        const { processNewSubmission } = await import("./leads")
+        await processNewSubmission(formUrl, JSON.parse(content), submission?.id)
+    } catch (leadError) {
+        console.error("Error processing lead system:", leadError)
+        // We don't throw here to avoid failing the user submission if just the lead logic fails
     }
 }
 
