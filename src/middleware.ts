@@ -59,28 +59,32 @@ export async function middleware(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     ) as any
 
-    const { data: lp, error } = await supabase
+    const { data: lps, error } = await supabase
         .from("landing_pages")
         .select("slug, custom_domain")
         .eq("custom_domain", hostname)
-        .single()
 
     if (error) {
-        console.error(">>> DB Error or No LP found:", error.message)
+        console.error(">>> DB Error:", error.message)
     }
 
-    if (lp) {
-        console.log(">>> LP Found:", lp.slug)
+    // Handle duplicates or no results gracefully
+    if (lps && lps.length > 0) {
+        console.log(`>>> LP Found: ${lps.length} record(s). Using first one.`)
+        const lp = lps[0]
+        console.log(">>> LP Slug:", lp.slug)
+
         if (path === '/') {
             console.log(">>> Rewriting to:", `/lp/${lp.slug}`)
             return NextResponse.rewrite(new URL(`/lp/${lp.slug}`, request.url))
         }
+    } else {
+        console.log(">>> No LP found in DB for this domain.")
     }
 
-    // If domain not found, 404
-    if (!lp) {
-        console.log(">>> No LP found for custom domain. Returning 404.")
-        // STRICT 404 to avoid showing the home page on unknown domains
+    // If domain not found (empty list), 404
+    if (!lps || lps.length === 0) {
+        console.log(">>> Returning 404 for unknown domain.")
         return NextResponse.rewrite(new URL("/404", request.url))
     }
 
