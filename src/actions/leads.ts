@@ -328,6 +328,42 @@ export async function processNewSubmission(projectId: string, submissionData: an
                     .update({ lead_id: leadId })
                     .eq("id", submissionId)
             }
+
+            // 6. Execute Automations
+            try {
+                // Fetch active automations for this workspace
+                const { data: automations } = await adminSupabase
+                    .from("automations")
+                    .select("*")
+                    .eq("workspace_id", workspaceId) // Use workspaceId from scope
+                    .eq("is_active", true)
+                    .eq("trigger_type", "form_submission")
+
+                if (automations && automations.length > 0) {
+                    const { executeAutomation } = await import("@/lib/automation-engine")
+
+                    for (const auto of automations) {
+                        // Check trigger config
+                        // If config.formId is present, it must match. If missing, maybe run for all forms in workspace?
+                        // For safety, let's require formId match if present.
+                        const config = auto.trigger_config as any
+                        if (config?.formId && config.formId !== projectId) {
+                            continue
+                        }
+
+                        // Execute (awaiting to ensure it runs in serverless environment)
+                        await executeAutomation(auto.id, {
+                            leadId: leadId,
+                            workspaceId: workspaceId,
+                            projectId: projectId,
+                            triggerData: submissionData
+                        })
+                    }
+                }
+            } catch (autoError) {
+                console.error("Error executing automations:", autoError)
+                // Don't fail the submission if automation fails
+            }
         }
     } else {
         // No email? We could create an anonymous lead or skip.
@@ -368,6 +404,7 @@ export async function getLeads(opts: {
     pageSize?: number
     search?: string
     status?: string
+    workspaceId: string
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -384,6 +421,7 @@ export async function getLeads(opts: {
     let query = supabase
         .from("leads")
         .select("*", { count: "exact" })
+        .eq("workspace_id", opts.workspaceId)
         .order("created_at", { ascending: false })
         .range(from, to)
 
@@ -677,7 +715,7 @@ export async function addLeadTags(leadId: string, newTags: string[]) {
     })
 }
 
-export async function getLeadStats() {
+export async function getLeadStats(workspaceId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -687,6 +725,7 @@ export async function getLeadStats() {
     const { data: leads, error } = await supabase
         .from("leads")
         .select("id, status, score, name, company, email, created_at")
+        .eq("workspace_id", workspaceId)
         .order("created_at", { ascending: false })
 
     if (error) {

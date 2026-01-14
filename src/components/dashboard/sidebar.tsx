@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Settings, Plug, Plus, ChevronLeft, ChevronRight, FileText, Layout } from "lucide-react"
+import { LayoutDashboard, Users, Settings, Plug, Plus, ChevronLeft, ChevronRight, FileText, Layout, Workflow } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,11 @@ const sidebarItems = [
         icon: LayoutDashboard,
     },
     {
+        title: "Leads",
+        href: "/dashboard/leads",
+        icon: Users,
+    },
+    {
         title: "Formulários", // Previously Projects
         href: "/dashboard/forms",
         icon: FileText,
@@ -32,19 +37,14 @@ const sidebarItems = [
         icon: Layout,
     },
     {
-        title: "Leads",
-        href: "/dashboard/leads",
-        icon: Users,
+        title: "Automações",
+        href: "/dashboard/automations",
+        icon: Workflow,
     },
     {
         title: "Integrações",
         href: "/dashboard/integrations",
         icon: Plug,
-    },
-    {
-        title: "Configurações",
-        href: "/dashboard/settings",
-        icon: Settings,
     },
 ]
 
@@ -70,14 +70,14 @@ export function Sidebar({ className }: SidebarProps) {
                             {/* Botão de toggle no canto superior direito */}
                             <div className={cn(
                                 "absolute transition-all",
-                                isOpen ? "right-0 top-0" : "right-1 top-1"
+                                "right-0 top-0"
                             )}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-7 w-7 hover:bg-accent"
+                                            className="h-7 w-7 hover:bg-accent -mr-2"
                                             onClick={toggle}
                                         >
                                             {isOpen ? (
@@ -133,27 +133,6 @@ export function Sidebar({ className }: SidebarProps) {
 
                                 return button
                             })}
-                        </div>
-                    </div>
-                    <div className="px-3 py-2">
-                        <div className="space-y-1">
-                            {isOpen ? (
-                                <Button className="w-full justify-start" variant="secondary">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Novo Projeto
-                                </Button>
-                            ) : (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button className="w-full justify-center px-0" variant="secondary" size="icon">
-                                            <Plus className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        <p>Novo Projeto</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            )}
                         </div>
                     </div>
                 </div>

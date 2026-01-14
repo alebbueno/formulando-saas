@@ -13,58 +13,19 @@ export default async function FormsPage() {
         return <div>Usuário não autenticado</div>
     }
 
-    const cookieStore = await cookies()
-    const workspaceId = cookieStore.get("formu-workspace-id")?.value
-
-    let activeWorkspaceId = workspaceId
-
-    // Validate if user has access to this workspace or pick default
-
-    // 1. Fetch Owned Workspaces
-    const { data: ownedWorkspaces } = await supabase
-        .from("workspaces")
-        .select("id, name")
-        .eq("owner_id", user.id)
-
-    // 2. Fetch Member Workspaces
-    const { data: memberWorkspaces } = await supabase
-        .from("workspace_members")
-        .select("workspace:workspaces(id, name)")
-        .eq("user_id", user.id)
-
-    // 3. Combine and Deduplicate
-    const rawWorkspaces = [
-        ...(ownedWorkspaces || []),
-        ...(memberWorkspaces?.map((m: any) => m.workspace).filter(Boolean) || [])
-    ]
-
-    const uniqueWorkspacesMap = new Map()
-    rawWorkspaces.forEach(w => uniqueWorkspacesMap.set(w.id, w))
-    const workspaces = Array.from(uniqueWorkspacesMap.values())
-
-    // If no workspaceId in cookie, or invalid, pick the first one
-    if (!activeWorkspaceId && workspaces && workspaces.length > 0) {
-        activeWorkspaceId = workspaces[0].id
-    }
-
-    // Verify if workspaceId exists in user's workspaces
-    if (activeWorkspaceId && workspaces) {
-        const hasAccess = workspaces.some(w => w.id === activeWorkspaceId)
-        if (!hasAccess && workspaces.length > 0) {
-            activeWorkspaceId = workspaces[0].id
-        }
-    }
+    const { getActiveWorkspace } = await import("@/lib/get-active-workspace")
+    const { activeWorkspace, allWorkspaces } = await getActiveWorkspace() || {}
 
     let projects: any[] = []
 
-    if (activeWorkspaceId) {
-        console.log(">>> [FormsPage] Fetching projects for workspace:", activeWorkspaceId)
-        console.log(">>> [FormsPage] Available workspaces:", workspaces.map(w => w.id))
+    if (activeWorkspace) {
+        console.log(">>> [FormsPage] Fetching projects for workspace:", activeWorkspace.id)
+        console.log(">>> [FormsPage] Available workspaces:", allWorkspaces?.map(w => w.id))
 
         const { data, error } = await supabase
             .from("projects")
             .select("*, form_submissions(count)")
-            .eq("workspace_id", activeWorkspaceId)
+            .eq("workspace_id", activeWorkspace.id)
             .order("created_at", { ascending: false })
 
         if (error) {

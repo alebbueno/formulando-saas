@@ -222,3 +222,62 @@ alter table templates enable row level security;
 create policy "Authenticated users can view active templates"
   on templates for select
   using ( auth.role() = 'authenticated' and is_active = true );
+
+-- AUTOMATIONS (Visual Workflows)
+create table automations (
+  id uuid default uuid_generate_v4() primary key,
+  workspace_id uuid references workspaces(id) on delete cascade not null,
+  name text not null,
+  description text,
+  is_active boolean default false,
+  trigger_type text not null, -- 'form_submission'
+  trigger_config jsonb default '{}'::jsonb, -- e.g. { form_id: "..." }
+  flow_data jsonb default '{}'::jsonb, -- React Flow nodes/edges
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table automations enable row level security;
+
+create policy "Workspace members can view automations"
+  on automations for select
+  using (
+    exists (
+      select 1 from workspace_members
+      where workspace_members.workspace_id = automations.workspace_id
+      and workspace_members.user_id = auth.uid()
+    )
+  );
+
+create policy "Workspace members can manage automations"
+  on automations for all
+  using (
+    exists (
+      select 1 from workspace_members
+      where workspace_members.workspace_id = automations.workspace_id
+      and workspace_members.user_id = auth.uid()
+    )
+  );
+
+-- AUTOMATION EXECUTIONS (Logs)
+create table automation_executions (
+  id uuid default uuid_generate_v4() primary key,
+  automation_id uuid references automations(id) on delete cascade not null,
+  trigger_event_id uuid, -- e.g. lead_id
+  status text not null, -- 'success', 'failure', 'pending'
+  logs jsonb default '[]'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table automation_executions enable row level security;
+
+create policy "Workspace members can view automation executions"
+  on automation_executions for select
+  using (
+    exists (
+      select 1 from workspace_members wm
+      join automations a on a.workspace_id = wm.workspace_id
+      where a.id = automation_executions.automation_id
+      and wm.user_id = auth.uid()
+    )
+  );

@@ -61,6 +61,36 @@ export async function createWorkspace(data: { name: string; slug: string }) {
     return { id: workspace.id }
 }
 
+export async function updateWorkspaceName(id: string, name: string) {
+    const { user, supabase } = await getUserOrRedirect()
+
+    // Verify ownership
+    // Only owner can rename for now
+    const { data: workspace, error: wsError } = await supabase
+        .from("workspaces")
+        .select("id")
+        .eq("id", id)
+        .eq("owner_id", user.id)
+        .single()
+
+    if (wsError || !workspace) {
+        return { error: "Você não tem permissão para alterar esta marca." }
+    }
+
+    const { error } = await supabase
+        .from("workspaces")
+        .update({ name, updated_at: new Date().toISOString() })
+        .eq("id", id)
+
+    if (error) {
+        console.error("Error updating workspace:", error)
+        return { error: "Erro ao atualizar marca." }
+    }
+
+    revalidatePath("/dashboard")
+    return { success: true }
+}
+
 export async function createProject() {
     const { user, supabase } = await getUserOrRedirect()
 

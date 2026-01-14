@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronsUpDown, Plus, Check, Building2 } from "lucide-react"
+import { ChevronsUpDown, Plus, Check, Building2, Edit } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,10 +14,12 @@ import {
 import { useWorkspace } from "@/context/workspace-context"
 import { useState } from "react"
 import { CreateBrandDialog } from "./create-brand-dialog"
+import { RenameBrandDialog } from "./rename-brand-dialog"
 
 export function BrandSwitcher() {
     const { workspaces, activeWorkspace, switchWorkspace } = useWorkspace()
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+    const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false)
 
     return (
         <>
@@ -57,12 +59,24 @@ export function BrandSwitcher() {
                         <Plus className="mr-2 h-4 w-4" />
                         Nova Marca
                     </DropdownMenuItem>
+                    {activeWorkspace && (
+                        <DropdownMenuItem onSelect={() => setIsRenameDialogOpen(true)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Renomear Atual
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
 
             <CreateBrandDialog
                 open={isCreateDialogOpen}
                 onOpenChange={setIsCreateDialogOpen}
+            />
+
+            <RenameBrandDialog
+                open={isRenameDialogOpen}
+                onOpenChange={setIsRenameDialogOpen}
+                workspace={activeWorkspace}
             />
         </>
     )

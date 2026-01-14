@@ -26,52 +26,15 @@ export default async function DashboardPage() {
         return <div>Usuário não autenticado</div>
     }
 
-    const cookieStore = await cookies()
-    const workspaceId = cookieStore.get("formu-workspace-id")?.value
+    const { getActiveWorkspace } = await import("@/lib/get-active-workspace")
+    const { activeWorkspace } = await getActiveWorkspace() || {}
 
-    let activeWorkspaceId = workspaceId
-
-    // Validate if user has access to this workspace or pick default
-    // Validate if user has access to this workspace or pick default
-
-    // 1. Fetch Owned Workspaces
-    const { data: ownedWorkspaces } = await supabase
-        .from("workspaces")
-        .select("id, name")
-        .eq("owner_id", user.id)
-
-    // 2. Fetch Member Workspaces
-    const { data: memberWorkspaces } = await supabase
-        .from("workspace_members")
-        .select("workspace:workspaces(id, name)")
-        .eq("user_id", user.id)
-
-    // 3. Combine
-    const workspaces = [
-        ...(ownedWorkspaces || []),
-        ...(memberWorkspaces?.map((m: any) => m.workspace).filter(Boolean) || [])
-    ]
-
-    // Deduplicate just in case (though owner shouldn't be member usually, but safe to check)
-    const uniqueWorkspacesMap = new Map()
-    workspaces.forEach(w => uniqueWorkspacesMap.set(w.id, w))
-    const allWorkspaces = Array.from(uniqueWorkspacesMap.values())
-
-    // If no workspaceId in cookie, or invalid, pick the first one
-    if (!activeWorkspaceId && workspaces && workspaces.length > 0) {
-        activeWorkspaceId = workspaces[0].id
-    }
-
-    // Verify if workspaceId exists in user's workspaces (if cookie was stale/manipulated)
-    if (activeWorkspaceId && workspaces) {
-        const hasAccess = workspaces.some(w => w.id === activeWorkspaceId)
-        if (!hasAccess && workspaces.length > 0) {
-            activeWorkspaceId = workspaces[0].id
-        }
+    if (!activeWorkspace) {
+        return <div>Selecione um workspace</div>
     }
 
     const { getLeadStats } = await import("@/actions/leads")
-    const leadStats = await getLeadStats()
+    const leadStats = await getLeadStats(activeWorkspace.id)
 
     return (
         <div className="space-y-6">

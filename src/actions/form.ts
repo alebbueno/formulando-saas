@@ -4,6 +4,61 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { FormElementInstance } from "@/context/builder-context"
 
+export async function getForms() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const { data, error } = await supabase
+        .from("projects")
+        .select("id, name")
+        .order("created_at", { ascending: false })
+
+    if (error) {
+        console.error("Error fetching forms:", error)
+        return []
+    }
+
+    return data
+}
+
+export async function getFormFields(formId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const { data, error } = await supabase
+        .from("projects")
+        .select("content")
+        .eq("id", formId)
+        .single()
+
+    if (error || !data) {
+        return []
+    }
+
+    try {
+        const elements = data.content as FormElementInstance[]
+        const fields = elements
+            .filter(el => {
+                // Return fields that actually hold data (not layout elements)
+                const type = el.type
+                return !['TitleField', 'ParagraphField', 'SeparatorField', 'SpacerField'].includes(type)
+            })
+            .map(el => {
+                return {
+                    id: el.id,
+                    label: el.extraAttributes?.label || el.type,
+                    type: el.type
+                }
+            })
+        return fields
+    } catch (e) {
+        console.error("Error parsing fields", e)
+        return []
+    }
+}
+
 export async function updateProjectContent(id: string, jsonContent: string, name?: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

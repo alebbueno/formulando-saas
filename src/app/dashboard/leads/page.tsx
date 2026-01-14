@@ -18,6 +18,13 @@ export default async function LeadsPage({
     const search = typeof resolvedSearchParams.search === 'string' ? resolvedSearchParams.search : undefined
     const status = typeof resolvedSearchParams.status === 'string' ? resolvedSearchParams.status : undefined
 
+    const { getActiveWorkspace } = await import("@/lib/get-active-workspace")
+    const { activeWorkspace } = await getActiveWorkspace() || {}
+
+    if (!activeWorkspace) {
+        return <div>Selecione um workspace</div>
+    }
+
     // Determine limit based on view? 
     // For Kanban we might want more leads.
     // simpler: fetch 50 for now to populate board well enough.
@@ -25,7 +32,8 @@ export default async function LeadsPage({
         page,
         pageSize: 50,
         search,
-        status
+        status,
+        workspaceId: activeWorkspace.id
     })
 
     return (
