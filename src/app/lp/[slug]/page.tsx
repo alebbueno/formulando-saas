@@ -28,9 +28,14 @@ export async function generateMetadata(props: LPPublicPageProps): Promise<Metada
         }
     }
 
+    const settings = landingPage.settings || {}
+
     return {
-        title: landingPage.name,
-        description: landingPage.settings?.description || `Landing Page: ${landingPage.name}`,
+        title: settings.seoTitle || landingPage.name,
+        description: settings.seoDescription || `Landing Page: ${landingPage.name}`,
+        icons: settings.favicon ? {
+            icon: settings.favicon
+        } : undefined
     }
 }
 
@@ -52,9 +57,52 @@ export default async function LPPublicPage(props: LPPublicPageProps) {
     }
 
     const elements = (landingPage.content || []) as LPElement[]
+    const settings = landingPage.settings || {}
 
     return (
         <div className="min-h-screen bg-white">
+            {/* Google Analytics */}
+            {settings.googleAnalyticsId && (
+                <>
+                    <script async src={`https://www.googletagmanager.com/gtag/js?id=${settings.googleAnalyticsId}`} />
+                    <script
+                        dangerouslySetInnerHTML={{
+                            __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${settings.googleAnalyticsId}');
+              `,
+                        }}
+                    />
+                </>
+            )}
+
+            {/* Facebook Pixel */}
+            {settings.facebookPixelId && (
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${settings.facebookPixelId}');
+              fbq('track', 'PageView');
+            `,
+                    }}
+                />
+            )}
+
+            {/* Custom Scripts */}
+            {settings.customHeadScripts && (
+                <div dangerouslySetInnerHTML={{ __html: settings.customHeadScripts }} />
+            )}
+
             <LPRenderer elements={elements} />
         </div>
     )

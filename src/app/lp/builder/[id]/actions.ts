@@ -5,7 +5,7 @@ import { LPElement } from "@/components/lp-builder/types"
 import { revalidatePath } from "next/cache"
 import { addDomainToVercel, removeDomainFromVercel, validDomainRegex } from "@/lib/domains"
 
-export async function saveLandingPage(id: string, content: LPElement[], name?: string, slug?: string) {
+export async function saveLandingPage(id: string, content: LPElement[], name?: string, slug?: string, settings?: any) {
     try {
         const supabase = await createClient()
 
@@ -55,6 +55,7 @@ export async function saveLandingPage(id: string, content: LPElement[], name?: s
                 content: content,
                 ...(name && { name }), // Only update name if provided
                 ...(slug && { slug }), // Only update slug if provided
+                ...(settings && { settings }), // Only update settings if provided
                 updated_at: new Date().toISOString()
             })
             .eq("id", id)

@@ -17,6 +17,7 @@ import {
     TabsTrigger,
 } from "@/components/ui/tabs"
 import { DialogDescription } from "@/components/ui/dialog"
+import { GeneralSettings } from "./settings/general-settings"
 import { DomainSettings } from "./settings/domain-settings"
 import { Settings } from "lucide-react"
 
@@ -55,10 +56,17 @@ function generateHTML(elements: LPElement[]): string {
 }
 
 export function BuilderToolbar() {
-    const { elements, setMode, mode, saveLP, isSaving, lastSaved, isPublished, setIsPublished, slug, setSlug, projectId, previewDevice, setPreviewDevice, lpName, setLpName, customDomain } = useLPBuilder()
+    const { elements, setMode, mode, saveLP, isSaving, lastSaved, isPublished, setIsPublished, slug, setSlug, projectId, previewDevice, setPreviewDevice, lpName, setLpName, customDomain, settings, setSettings } = useLPBuilder()
     const [showSaved, setShowSaved] = useState(false)
     const [isPublishing, setIsPublishing] = useState(false)
     const [showCopied, setShowCopied] = useState(false)
+
+    const handleSettingsChange = (key: string, value: any) => {
+        setSettings((prev: any) => ({
+            ...prev,
+            [key]: value
+        }))
+    }
 
     const htmlCode = generateHTML(elements)
 
@@ -132,15 +140,13 @@ export function BuilderToolbar() {
                                 Gerencie as configurações da sua Landing Page.
                             </DialogDescription>
                         </DialogHeader>
-                        <Tabs defaultValue="domain" className="w-full">
+                        <Tabs defaultValue="general" className="w-full">
                             <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="general" disabled>Geral</TabsTrigger>
+                                <TabsTrigger value="general">Geral</TabsTrigger>
                                 <TabsTrigger value="domain">Domínio</TabsTrigger>
                             </TabsList>
                             <TabsContent value="general">
-                                <div className="py-4 text-center text-muted-foreground text-sm">
-                                    Configurações gerais podem ser editadas diretamento na barra superior (Nome e Slug).
-                                </div>
+                                <GeneralSettings settings={settings} onSettingsChange={handleSettingsChange} />
                             </TabsContent>
                             <TabsContent value="domain">
                                 <DomainSettings initialDomain={customDomain} projectId={projectId || ''} />

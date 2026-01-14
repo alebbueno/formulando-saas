@@ -28,6 +28,8 @@ type LPBuilderContextType = {
     setLpName: (name: string) => void
     customDomain: string | null
     setCustomDomain: (domain: string | null) => void
+    settings: any
+    setSettings: Dispatch<SetStateAction<any>>
 
     addElement: (index: number, element: LPElement, parentId?: string) => void
     removeElement: (id: string) => void
@@ -46,18 +48,19 @@ export function useLPBuilder() {
     return context
 }
 
-export function LPBuilderProvider({ children }: { children: React.ReactNode }) {
-    const [elements, setElements] = useState<LPElement[]>([])
+export function LPBuilderProvider({ children, initialData }: { children: React.ReactNode, initialData?: any }) {
+    const [elements, setElements] = useState<LPElement[]>(initialData?.content || [])
     const [selectedElement, setSelectedElement] = useState<LPElement | null>(null)
     const [mode, setMode] = useState<LPDesignerMode>('builder')
     const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop')
-    const [projectId, setProjectId] = useState<string | null>(null)
+    const [projectId, setProjectId] = useState<string | null>(initialData?.id || null)
     const [isSaving, setIsSaving] = useState(false)
-    const [lastSaved, setLastSaved] = useState<Date | null>(null)
-    const [isPublished, setIsPublished] = useState(false)
-    const [slug, setSlug] = useState<string | null>(null)
-    const [lpName, setLpName] = useState<string>("Landing Page")
-    const [customDomain, setCustomDomain] = useState<string | null>(null)
+    const [lastSaved, setLastSaved] = useState<Date | null>(initialData?.updated_at ? new Date(initialData.updated_at) : null)
+    const [isPublished, setIsPublished] = useState(initialData?.is_published || false)
+    const [slug, setSlug] = useState<string | null>(initialData?.slug || null)
+    const [lpName, setLpName] = useState<string>(initialData?.name || "Landing Page")
+    const [customDomain, setCustomDomain] = useState<string | null>(initialData?.custom_domain || null)
+    const [settings, setSettings] = useState<any>(initialData?.settings || {})
 
     const addElement = (index: number, element: LPElement, parentId?: string) => {
         setElements((prev) => {
@@ -292,7 +295,7 @@ export function LPBuilderProvider({ children }: { children: React.ReactNode }) {
         try {
             console.log('💾 Saving LP - Total elements:', elements.length)
 
-            const result = await saveLandingPage(projectId, elements, lpName, slug || undefined)
+            const result = await saveLandingPage(projectId, elements, lpName, slug || undefined, settings)
 
             if (result.success) {
                 setLastSaved(new Date())
@@ -330,6 +333,8 @@ export function LPBuilderProvider({ children }: { children: React.ReactNode }) {
                 setLpName,
                 customDomain,
                 setCustomDomain,
+                settings,
+                setSettings,
                 addElement,
                 removeElement,
                 updateElement,
