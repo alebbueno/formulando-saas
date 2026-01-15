@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { stripe } from "@/lib/stripe"
 
 export type KanbanColumn = {
     id: string
@@ -51,4 +52,57 @@ export async function updateWorkspaceKanbanColumns(workspaceId: string, columns:
     }
 
     revalidatePath("/dashboard/leads")
+}
+
+export async function deleteWorkspace(workspaceId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error("Usuário não autenticado")
+    }
+
+    // 1. Verify ownership
+    console.log(`[deleteWorkspace] Attempting delete. User: ${user.id}, Workspace: ${workspaceId}`)
+
+    const { data: workspace } = await supabase
+        .from("workspaces")
+        .select("id, subscription_id, owner_id")
+        .eq("id", workspaceId)
+        .eq("owner_id", user.id)
+        .single()
+
+    if (!workspace) {
+        console.error(`[deleteWorkspace] Failed to find workspace or verify ownership.`)
+        // Debug: Check if workspace exists at all
+        const admin = createAdminClient()
+        const { data: dbWs } = await admin.from('workspaces').select('id, owner_id').eq('id', workspaceId).single()
+        console.log('[deleteWorkspace] Debug (Admin):', dbWs)
+
+        throw new Error("Workspace não encontrado ou permissão negada")
+    }
+
+    // 2. Cancel Stripe Subscription if exists
+    if (workspace.subscription_id) {
+        try {
+            await stripe.subscriptions.cancel(workspace.subscription_id)
+        } catch (error) {
+            console.error("Error cancelling subscription:", error)
+        }
+    }
+
+    // 3. Delete Workspace (Cascading should handle children)
+    const adminSupabase = createAdminClient()
+    const { error } = await adminSupabase
+        .from("workspaces")
+        .delete()
+        .eq("id", workspaceId)
+
+    if (error) {
+        console.error("Error deleting workspace:", error)
+        throw new Error("Erro ao excluir workspace")
+    }
+
+    revalidatePath("/dashboard")
+    return { success: true }
 }

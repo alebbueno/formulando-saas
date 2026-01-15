@@ -36,7 +36,8 @@ const MOCK_INTEGRATIONS: Integration[] = [
         description: "Adicione novas linhas automaticamente em sua planilha a cada envio.",
         icon: TableProperties,
         status: "beta",
-        category: "storage"
+        category: "storage",
+        comingSoon: true
     },
     {
         id: "zapier",
@@ -44,7 +45,8 @@ const MOCK_INTEGRATIONS: Integration[] = [
         description: "Conecte o Formulando a mais de 5.000 apps via Zapier.",
         icon: Zap,
         status: "disconnected",
-        category: "productivity"
+        category: "productivity",
+        comingSoon: true
     },
     {
         id: "slack",
@@ -52,7 +54,8 @@ const MOCK_INTEGRATIONS: Integration[] = [
         description: "Receba notificações em canais do Slack quando um form for preenchido.",
         icon: Slack,
         status: "connected",
-        category: "communication"
+        category: "communication",
+        comingSoon: true
     },
     {
         id: "email",
@@ -60,7 +63,8 @@ const MOCK_INTEGRATIONS: Integration[] = [
         description: "Receba um email com os dados completos a cada nova resposta.",
         icon: Mail,
         status: "connected",
-        category: "communication"
+        category: "communication",
+        comingSoon: true
     },
     {
         id: "discord",
@@ -68,7 +72,8 @@ const MOCK_INTEGRATIONS: Integration[] = [
         description: "Envie mensagens para servidores do Discord via Webhooks.",
         icon: MessageSquare,
         status: "disconnected",
-        category: "communication"
+        category: "communication",
+        comingSoon: true
     }
 ]
 
