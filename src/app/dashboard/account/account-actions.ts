@@ -1,6 +1,10 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { resend } from "@/lib/resend"
+import { getInvitationEmailHtml } from "@/lib/email-templates"
+import { revalidatePath } from "next/cache"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // Helper function to get month name
 function getMonthName(date: Date) {
@@ -128,12 +132,12 @@ export type AccountUser = {
     userId: string
     email: string | null
     name: string | null
-    role: "owner" | "admin" | "member" | "client"
+    role: "owner" | "admin" | "member" | "viewer" | "billing" | "client" // client legacy fallback
     status: "active" | "pending"
     workspaces: {
         id: string
         name: string
-        role: "owner" | "admin" | "member" | "client"
+        role: "owner" | "admin" | "member" | "viewer" | "billing" | "client"
     }[]
 }
 
@@ -198,8 +202,27 @@ export async function getAccountUsers() {
         console.warn("Could not fetch profiles", e)
     }
 
+    // 0. Add Owner (Current User) explicit entry
+    const { data: ownerProfile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', user.id)
+        .single()
+
+    userMap.set(user.id, {
+        userId: user.id,
+        email: ownerProfile?.email || user.email || "",
+        name: ownerProfile?.name || user.user_metadata?.full_name || "Eu (Owner)",
+        role: "owner",
+        status: "active",
+        workspaces: ownedWorkspaces.map(w => ({ id: w.id, name: w.name, role: 'owner' }))
+    })
+
     // Process Members
     members.forEach((m: any) => {
+        // Skip owner if they are in members table (we already added them with full access)
+        if (m.user_id === user.id) return
+
         if (!userMap.has(m.user_id)) {
             const profile = profilesMap.get(m.user_id)
             userMap.set(m.user_id, {
@@ -215,11 +238,14 @@ export async function getAccountUsers() {
         const u = userMap.get(m.user_id)!
         const wsName = ownedWorkspaces.find(w => w.id === m.workspace_id)?.name || "Unknown"
 
-        u.workspaces.push({
-            id: m.workspace_id,
-            name: wsName,
-            role: m.role
-        })
+        // Avoid duplicate workspaces if data is messy
+        if (!u.workspaces.some(w => w.id === m.workspace_id)) {
+            u.workspaces.push({
+                id: m.workspace_id,
+                name: wsName,
+                role: m.role
+            })
+        }
     })
 
     // Process Invitations
@@ -246,7 +272,29 @@ export async function getAccountUsers() {
         })
     }
 
-    return Array.from(userMap.values())
+    // Recalculate roles based on workspace roles
+    const finalUsers = Array.from(userMap.values()).map(u => {
+        if (u.role === 'owner') return u;
+
+        // If user has ANY admin or member role, they are a "Team Member" (Colaborador)
+        const isTeamMember = u.workspaces.some(w => ['owner', 'admin', 'member'].includes(w.role))
+
+        if (isTeamMember) {
+            return { ...u, role: 'member' } as AccountUser
+        }
+
+        // Otherwise they are a client (Viewer or Billing)
+        // We can just take the first role or define a hierarchy. 
+        // For the main list, 'client' covers both. Detailed roles are in badges.
+        // Or we can return the specific role if they are uniform.
+        const firstRole = u.workspaces[0]?.role
+        return {
+            ...u,
+            role: (firstRole === 'billing' ? 'billing' : 'viewer') // default to viewer/client bucket
+        } as AccountUser
+    })
+
+    return finalUsers
 }
 
 export async function inviteAccountUser(email: string, role: string, workspaceIds: string[]) {
@@ -291,25 +339,51 @@ export async function inviteAccountUser(email: string, role: string, workspaceId
     // We will just insert new one, assuming user might invite to different workspaces.
     // Ideally we merge, but for now simple insert.
 
-    const { error: inviteError } = await supabase
+    // We need to fetch the inserted ID. The previous insert call didn't chain .select().
+    // Let's refactor the insert to return data.
+
+    const { data: inviteData, error: inviteError } = await supabase
         .from('workspace_invitations')
         .insert({
             email,
             role,
-            workspace_ids: workspaceIds, // Stored as array
+            workspace_ids: workspaceIds,
             inviter_id: user.id,
             status: 'pending'
         })
+        .select('id')
+        .single()
 
     if (inviteError) {
         console.error("Error creating invitation:", inviteError)
         return { success: false, message: "Erro ao criar convite." }
     }
 
-    // Here you would trigger an email sending service
-    // await sendInvitationEmail(email, ...)
+    // Send Email
+    try {
+        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${inviteData.id}`
+        const inviterName = user.user_metadata?.full_name || user.email || "Alguém"
 
-    return { success: true, message: "Convite enviado! O usuário terá acesso assim que se cadastrar com este e-mail." }
+        const emailResult = await resend.emails.send({
+            from: 'Formulando <noreply@formulando.app>',
+            to: email,
+            subject: `Você foi convidado para colaborar no Formulando`,
+            html: getInvitationEmailHtml({
+                inviterName,
+                inviteLink
+            })
+        })
+
+        if (emailResult.error) {
+            console.error(`[inviteAccountUser] Resend Error:`, emailResult.error)
+        }
+
+    } catch (emailError) {
+        console.error("Error sending email:", emailError)
+    }
+
+    revalidatePath('/dashboard/account')
+    return { success: true, message: "Convite enviado com sucesso!" }
 }
 
 export async function updateAccountUser(userId: string, role: string, workspaceIds: string[]) {
@@ -362,8 +436,11 @@ export async function updateAccountUser(userId: string, role: string, workspaceI
         }
     }
 
+    revalidatePath('/dashboard/account')
     return { success: true, message: "Usuário atualizado com sucesso!" }
 }
+
+
 
 export async function deleteAccountUser(userId: string) {
     const supabase = await createClient()
@@ -379,16 +456,60 @@ export async function deleteAccountUser(userId: string) {
     if (!ownedWorkspaces || ownedWorkspaces.length === 0) return { success: false, message: "No permissions" }
     const ownedIds = ownedWorkspaces.map(w => w.id)
 
-    const { error } = await supabase
+    // Check if it's a pending invitation
+    if (userId.startsWith('invitation-')) {
+        const invitationId = userId.replace('invitation-', '')
+
+        console.log(`[deleteAccountUser] Removing invitation ${invitationId} for inviter ${user.id}`)
+
+        // Use Admin Client to bypass RLS since we validated ownership via logic
+        const supabaseAdmin = createAdminClient()
+
+        const { error, count } = await supabaseAdmin
+            .from('workspace_invitations')
+            .delete({ count: 'exact' })
+            .eq('id', invitationId)
+            .eq('inviter_id', user.id)
+
+        console.log(`[deleteAccountUser] Invitation remove result:`, { error, count })
+
+        if (error) {
+            console.error("Error removing invitation:", error)
+            return { success: false, message: "Erro ao remover convite: " + error.message }
+        }
+
+        if (count === 0) {
+            console.warn("[deleteAccountUser] Invitation count was 0.")
+            return { success: false, message: "Convite não encontrado ou permissão negada." }
+        }
+
+        revalidatePath('/dashboard/account')
+        return { success: true, message: "Convite removido." }
+    }
+
+    console.log(`[deleteAccountUser] Attempting to delete user ${userId} from workspaces:`, ownedIds)
+
+    // Use Admin Client for member deletion too
+    const supabaseAdmin = createAdminClient()
+
+    const { error, count } = await supabaseAdmin
         .from('workspace_members')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('user_id', userId)
         .in('workspace_id', ownedIds)
 
+    console.log(`[deleteAccountUser] Result:`, { error, count })
+
     if (error) {
         console.error("Error removing user:", error)
-        return { success: false, message: "Erro ao remover usuário." }
+        return { success: false, message: "Erro ao remover usuário: " + error.message }
     }
 
+    if (count === 0) {
+        console.warn("[deleteAccountUser] Count was 0. RLS might be blocking or user not in workspace.")
+        return { success: false, message: "Usuário não encontrado nos seus workspaces ou permissão negada." }
+    }
+
+    revalidatePath('/dashboard/account')
     return { success: true, message: "Usuário removido da equipe." }
 }

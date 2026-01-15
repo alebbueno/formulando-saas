@@ -10,8 +10,15 @@ export type Workspace = {
     id: string
     name: string
     slug: string
-    role: "owner" | "member"
+    role: "owner" | "member" | "client" | "finance_client"
     kanban_columns?: any[]
+    subscription_status?: string
+    plan?: {
+        slug: string
+        name: string
+        max_leads_per_month: number
+        max_emails_per_month: number
+    }
 }
 
 type WorkspaceContextType = {
@@ -48,7 +55,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                         id,
                         name,
                         slug,
-                        kanban_columns
+                        kanban_columns,
+                        subscription_status,
+                        plan:plans(slug, name, max_leads_per_month, max_emails_per_month)
                     )
                 `)
                 .eq("user_id", user.id)
@@ -64,6 +73,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                 slug: member.workspace.slug,
                 role: member.role,
                 kanban_columns: member.workspace.kanban_columns,
+                subscription_status: member.workspace.subscription_status,
+                plan: member.workspace.plan,
             }))
 
             setWorkspaces(formattedWorkspaces)
@@ -99,8 +110,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             setActiveWorkspace(workspace)
             localStorage.setItem("activeWorkspaceId", workspace.id)
             await setActiveWorkspaceCookie(workspace.id)
-            // Force a hard reload to ensure all server components and state are fresh
-            window.location.reload()
+            // Force a hard reload and navigation to root dashboard
+            window.location.href = "/dashboard"
         }
     }
 

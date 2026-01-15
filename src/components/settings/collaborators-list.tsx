@@ -1,122 +1,99 @@
 "use client"
-
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Trash, UserCog } from "lucide-react"
-import { CreateUserDialog } from "./create-user-dialog"
-
-
-interface Collaborator {
-    id: string
-    name: string
-    email: string
-    role: 'admin' | 'editor' | 'viewer'
-    status: 'active' | 'pending'
-    avatarUrl?: string
-}
-
-const MOCK_COLLABORATORS: Collaborator[] = [
-    {
-        id: "1",
-        name: "Alessandro",
-        email: "alessandro@example.com",
-        role: "admin",
-        status: "active",
-        avatarUrl: "https://github.com/shadcn.png"
-    },
-    {
-        id: "2",
-        name: "Maria Silva",
-        email: "maria@example.com",
-        role: "editor",
-        status: "active"
-    },
-    {
-        id: "3",
-        name: "João Pending",
-        email: "joao@example.com",
-        role: "viewer",
-        status: "pending"
-    }
-]
+import { Loader2 } from "lucide-react" // Removed unused icons
+import { CreateUserDialog } from "./create-user-dialog" // Keep this or reuse AccountUsers logic?
+// Reusing logic from AccountUsers seems better to avoid duplication, but AccountUsers is a big component.
+// Let's implement a lighter view here specific for this tab: "Usuarios clientes vinculados a esse workspace"
+import { useWorkspace } from "@/context/workspace-context"
+import { getAccountUsers, AccountUser } from "@/app/dashboard/account/account-actions"
 
 export function CollaboratorsList() {
+    const { activeWorkspace } = useWorkspace()
+    const [users, setUsers] = useState<AccountUser[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (!activeWorkspace) return
+        loadUsers()
+    }, [activeWorkspace])
+
+    const loadUsers = async () => {
+        try {
+            setLoading(true)
+            const allUsers = await getAccountUsers()
+            // Filter: Users attached to THIS workspace AND role is 'client' (or 'finance_client'?)
+            // User request: "lista somente os usuarios clientes vinculados a esse workspace"
+
+            const workspaceUsers = allUsers.filter(u =>
+                u.workspaces.some(w => w.id === activeWorkspace?.id) &&
+                (u.role === 'client' || u.workspaces.find(w => w.id === activeWorkspace?.id)?.role === 'client')
+                // Logic: Check global role or specific workspace role? 
+                // AccountUser type has global role + per workspace role.
+                // Let's check the specific workspace role.
+            )
+            setUsers(workspaceUsers)
+        } catch (error) {
+            console.error("Failed to load users", error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (!activeWorkspace) return null
+
     return (
         <div className="space-y-6 max-w-4xl">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-xl font-semibold">Membros do Workspace</h3>
+                    <h3 className="text-xl font-semibold">Clientes do Workspace</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Gerencie quem tem acesso e suas permissões.
+                        Usuários com acesso restrito a este ambiente.
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    <CreateUserDialog />
-                </div>
+                {/* Remove CreateUserDialog if this is just a view or add relevant "Invite Client" action */}
             </div>
 
             <div className="rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm divide-y divide-border/40 overflow-hidden shadow-sm">
-                {MOCK_COLLABORATORS.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-4">
-                            <Avatar>
-                                <AvatarImage src={user.avatarUrl} />
-                                <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <div className="font-medium flex items-center gap-2">
-                                    {user.name}
-                                    {user.id === "1" && <Badge variant="secondary" className="text-xs">Você</Badge>}
-                                </div>
-                                <div className="text-sm text-muted-foreground">{user.email}</div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-end gap-1">
-                                <Badge variant={user.role === 'admin' ? 'default' : 'outline'} className="capitalize">
-                                    {user.role}
-                                </Badge>
-                                {user.status === 'pending' && (
-                                    <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full">
-                                        Pendente
-                                    </span>
-                                )}
-                            </div>
-
-                            {user.id !== "1" && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                            <span className="sr-only">Ações</span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                        <DropdownMenuItem>
-                                            <UserCog className="mr-2 h-4 w-4" />
-                                            Alterar função
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                            <Trash className="mr-2 h-4 w-4" />
-                                            Remover
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
+                {loading ? (
+                    <div className="p-8 flex justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                ))}
+                ) : users.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                        Nenhum cliente vinculado a este workspace.
+                    </div>
+                ) : (
+                    users.map((user) => (
+                        <div key={user.userId} className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <Avatar>
+                                    <AvatarFallback className="bg-primary/10 text-primary">
+                                        {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <div className="font-medium flex items-center gap-2">
+                                        {user.name || "Sem nome"}
+                                        {user.status === 'pending' && (
+                                            <Badge variant="outline" className="text-[10px] h-4 text-orange-600 bg-orange-50 border-orange-200">
+                                                Pendente
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 capitalize">
+                                    Cliente
+                                </Badge>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     )
