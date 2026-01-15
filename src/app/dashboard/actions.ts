@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
@@ -77,7 +78,9 @@ export async function updateWorkspaceName(id: string, name: string) {
         return { error: "Você não tem permissão para alterar esta marca." }
     }
 
-    const { error } = await supabase
+    // Use Admin Client to bypass RLS for the update
+    const adminSupabase = createAdminClient()
+    const { error } = await adminSupabase
         .from("workspaces")
         .update({ name, updated_at: new Date().toISOString() })
         .eq("id", id)

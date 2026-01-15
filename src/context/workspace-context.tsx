@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { setActiveWorkspaceCookie } from "@/app/dashboard/actions"
+import { Loader2 } from "lucide-react"
 
 export type Workspace = {
     id: string
@@ -27,6 +28,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const [workspaces, setWorkspaces] = useState<Workspace[]>([])
     const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [isSwitching, setIsSwitching] = useState(false)
     const router = useRouter()
     const supabase = createClient()
 
@@ -93,10 +95,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const switchWorkspace = async (workspaceId: string) => {
         const workspace = workspaces.find((w) => w.id === workspaceId)
         if (workspace) {
+            setIsSwitching(true)
             setActiveWorkspace(workspace)
             localStorage.setItem("activeWorkspaceId", workspace.id)
             await setActiveWorkspaceCookie(workspace.id)
-            router.refresh()
+            // Force a hard reload to ensure all server components and state are fresh
+            window.location.reload()
         }
     }
 
@@ -110,6 +114,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                 refreshWorkspaces: fetchWorkspaces,
             }}
         >
+            {isSwitching && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm font-medium text-muted-foreground">Trocando workspace...</p>
+                    </div>
+                </div>
+            )}
             {children}
         </WorkspaceContext.Provider>
     )
