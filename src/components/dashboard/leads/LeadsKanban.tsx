@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
     DndContext,
     DragOverlay,
@@ -38,7 +38,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { Building2, MoreHorizontal, Calendar, TrendingUp, Plus, Trash2, GripVertical, Pencil } from "lucide-react"
+import { Building2, MoreHorizontal, Calendar, TrendingUp, Plus, Trash2, GripVertical, Pencil, Palette } from "lucide-react"
 import { LeadDetailsSheet } from "@/components/leads/lead-details-sheet"
 import { useWorkspace } from "@/context/workspace-context"
 import type { KanbanColumn } from "@/actions/workspaces"
@@ -57,6 +57,17 @@ interface LeadsKanbanProps {
     initialLeads: Lead[]
 }
 
+const COLOR_OPTIONS = [
+    { label: 'Azul', color: 'bg-blue-500', bg: 'bg-blue-50/50 dark:bg-blue-900/10' },
+    { label: 'Verde', color: 'bg-emerald-500', bg: 'bg-emerald-50/50 dark:bg-emerald-900/10' },
+    { label: 'Amarelo', color: 'bg-amber-500', bg: 'bg-amber-50/50 dark:bg-amber-900/10' },
+    { label: 'Roxo', color: 'bg-purple-500', bg: 'bg-purple-50/50 dark:bg-purple-900/10' },
+    { label: 'Vermelho', color: 'bg-red-500', bg: 'bg-red-50/50 dark:bg-red-900/10' },
+    { label: 'Rosa', color: 'bg-pink-500', bg: 'bg-pink-50/50 dark:bg-pink-900/10' },
+    { label: 'Laranja', color: 'bg-orange-500', bg: 'bg-orange-50/50 dark:bg-orange-900/10' },
+    { label: 'Cinza', color: 'bg-slate-500', bg: 'bg-slate-50/50 dark:bg-slate-900/10' },
+]
+
 export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
     const [leads, setLeads] = useState<Lead[]>(initialLeads)
     const [activeId, setActiveId] = useState<string | null>(null)
@@ -67,14 +78,14 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
     // Use workspace columns or defaults
     const [localColumns, setLocalColumns] = useState<KanbanColumn[]>([])
 
-    // Sync with workspace columns
-    useState(() => {
+    // Sync with workspace columns when they load
+    useEffect(() => {
         if (activeWorkspace?.kanban_columns) {
             setLocalColumns(activeWorkspace.kanban_columns as KanbanColumn[])
-        } else {
+        } else if (activeWorkspace) {
             setLocalColumns(DEFAULT_COLUMNS)
         }
-    })
+    }, [activeWorkspace?.kanban_columns, activeWorkspace])
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -85,11 +96,14 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
     )
 
     const saveColumns = async (newColumns: KanbanColumn[]) => {
+        // Optimistic update
         setLocalColumns(newColumns)
+
         if (activeWorkspace) {
             try {
                 await updateWorkspaceKanbanColumns(activeWorkspace.id, newColumns)
                 await refreshWorkspaces()
+                toast.success("Salvo com sucesso")
             } catch (error) {
                 console.error("Failed to save columns", error)
                 toast.error("Erro ao salvar colunas")
@@ -118,6 +132,10 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
 
     const handleRenameColumn = (id: string, newLabel: string) => {
         saveColumns(localColumns.map(c => c.id === id ? { ...c, label: newLabel } : c))
+    }
+
+    const handleColorChange = (id: string, color: string, bg: string) => {
+        saveColumns(localColumns.map(c => c.id === id ? { ...c, color, bg } : c))
     }
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -180,14 +198,13 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
 
         // Column Reorder
         if (active.data.current?.type === "Column") {
-            setLocalColumns((items) => {
-                const oldIndex = items.findIndex((i) => i.id === activeId)
-                const newIndex = items.findIndex((i) => i.id === overId)
-                const newCols = arrayMove(items, oldIndex, newIndex)
-                // Save async
-                if (activeWorkspace) updateWorkspaceKanbanColumns(activeWorkspace.id, newCols)
-                return newCols
-            })
+            const oldIndex = localColumns.findIndex((i) => i.id === activeId)
+            const newIndex = localColumns.findIndex((i) => i.id === overId)
+
+            if (oldIndex !== newIndex) {
+                const newCols = arrayMove(localColumns, oldIndex, newIndex)
+                saveColumns(newCols)
+            }
             return
         }
 
@@ -270,6 +287,7 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
                                 onLeadClick={setSelectedLead}
                                 onDelete={() => handleDeleteColumn(col.id)}
                                 onRename={(val) => handleRenameColumn(col.id, val)}
+                                onColorChange={(color, bg) => handleColorChange(col.id, color, bg)}
                             />
                         ))}
                     </SortableContext>
@@ -314,16 +332,18 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
 }
 
 
+
 interface KanbanColumnProps {
     status: KanbanColumn
     leads: Lead[]
     onLeadClick: (lead: Lead) => void
     onDelete?: () => void
     onRename?: (newLabel: string) => void
+    onColorChange?: (color: string, bg: string) => void
     isOverlay?: boolean
 }
 
-function KanbanColumn({ status, leads, onLeadClick, onDelete, onRename, isOverlay }: KanbanColumnProps) {
+function KanbanColumn({ status, leads, onLeadClick, onDelete, onRename, onColorChange, isOverlay }: KanbanColumnProps) {
     const {
         setNodeRef,
         attributes,
@@ -408,10 +428,30 @@ function KanbanColumn({ status, leads, onLeadClick, onDelete, onRename, isOverla
                                 <MoreHorizontal className="w-4 h-4" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem onClick={() => setIsEditing(true)}>
                                 <Pencil className="w-4 h-4 mr-2" /> Renomear
                             </DropdownMenuItem>
+
+                            {/* Color Picker Submenu - For simplicity using a grid inside */}
+                            <div className="p-2">
+                                <span className="text-xs font-medium text-muted-foreground ml-2 mb-2 block">Cor da Coluna</span>
+                                <div className="grid grid-cols-4 gap-1 px-1">
+                                    {COLOR_OPTIONS.map((c) => (
+                                        <button
+                                            key={c.color}
+                                            className={cn(
+                                                "w-6 h-6 rounded-md border shadow-sm transition-transform hover:scale-110",
+                                                c.color,
+                                                status.color === c.color && "ring-2 ring-primary ring-offset-1"
+                                            )}
+                                            onClick={() => onColorChange?.(c.color, c.bg)}
+                                            title={c.label}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
                             <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:text-red-700 focus:bg-red-50">
                                 <Trash2 className="w-4 h-4 mr-2" /> Excluir
                             </DropdownMenuItem>
