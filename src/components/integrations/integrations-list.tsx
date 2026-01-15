@@ -3,9 +3,17 @@
 import { useState } from "react"
 import { Integration, IntegrationCard } from "./integration-card"
 import { IntegrationSetupSheet } from "./integration-setup-sheet"
-import { Webhook, TableProperties, Zap, Slack, Mail, MessageSquare } from "lucide-react"
+import { Webhook, TableProperties, Zap, Slack, Mail, MessageSquare, Code } from "lucide-react"
 
 const MOCK_INTEGRATIONS: Integration[] = [
+    {
+        id: "legacy-forms",
+        title: "Formulários Existentes", // Legacy Forms
+        description: "Capture leads de qualquer site ou formulário HTML existente apenas adicionando um script.",
+        icon: Code,
+        status: "connected",
+        category: "communication"
+    },
     {
         id: "webhook",
         title: "Webhook",

@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Integration } from "./integration-card"
-import { Check, Clipboard, ExternalLink, HelpCircle } from "lucide-react"
+import { Check, Clipboard, ExternalLink, HelpCircle, Code } from "lucide-react"
+import { useWorkspace } from "@/context/workspace-context"
+import { toast } from "sonner"
 
 interface IntegrationSetupSheetProps {
     integration: Integration | null
@@ -19,6 +21,12 @@ interface IntegrationSetupSheetProps {
 
 export function IntegrationSetupSheet({ integration, open, onOpenChange }: IntegrationSetupSheetProps) {
     const [activeTab, setActiveTab] = useState("overview")
+    const { activeWorkspace } = useWorkspace()
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text)
+        toast.success("Copiado para a área de transferência!")
+    }
 
     if (!integration) return null
 
@@ -132,8 +140,53 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                             </div>
                         )}
 
+                        {/* CONFIG FOR LEGACY FORMS */}
+                        {integration.id === 'legacy-forms' && (
+                            <div className="space-y-6">
+                                <div className="rounded-lg border p-4 bg-muted/30">
+                                    <h4 className="font-medium mb-2 text-sm">Passo 1: Copie o Script</h4>
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        Adicione este código antes do fechamento da tag <code>&lt;/body&gt;</code> do seu site.
+                                    </p>
+                                    <div className="relative group">
+                                        <pre className="bg-slate-950 text-slate-50 p-4 rounded-lg text-xs overflow-x-auto font-mono">
+                                            {`<script 
+  src="${typeof window !== 'undefined' ? window.location.origin : ''}/lead-capture.js"
+  data-workspace="${activeWorkspace?.id || 'SEU_WORKSPACE_ID'}"
+  data-form-selector="form"
+></script>`}
+                                        </pre>
+                                        <Button
+                                            size="icon"
+                                            variant="secondary"
+                                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => copyToClipboard(`<script 
+  src="${window.location.origin}/lead-capture.js"
+  data-workspace="${activeWorkspace?.id || 'SEU_WORKSPACE_ID'}"
+  data-form-selector="form"
+></script>`)}
+                                        >
+                                            <Clipboard className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="font-medium text-sm">Passo 2: Configuração Opcional</h4>
+                                    <div className="space-y-2">
+                                        <Label>Seletor do Formulário (CSS)</Label>
+                                        <Input placeholder="form" defaultValue="form" />
+                                        <p className="text-xs text-muted-foreground">
+                                            Caso seu site tenha múltiplos formulários, especifique qual deve ser capturado (ex: #contact-form).
+                                            Atualize o atributo <code>data-form-selector</code> no script acima.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* GENERIC MOCK FOR OTHERS */}
-                        {!['webhook', 'google-sheets'].includes(integration.id) && (
+                        {!['webhook', 'google-sheets', 'legacy-forms'].includes(integration.id) && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>API Key</Label>
@@ -150,39 +203,81 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                         )}
 
                         <Separator />
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                            <Button>Salvar Integração</Button>
-                        </div>
+                        {integration.id !== 'legacy-forms' && (
+                            <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                                <Button>Salvar Integração</Button>
+                            </div>
+                        )}
+                        {integration.id === 'legacy-forms' && (
+                            <div className="flex justify-end gap-2">
+                                <Button onClick={() => onOpenChange(false)}>Concluído</Button>
+                            </div>
+                        )}
                     </TabsContent>
 
                     <TabsContent value="tutorial" className="space-y-4 mt-4">
                         <div className="prose prose-sm dark:prose-invert">
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <h4 className="font-medium text-primary">Passo 1: Preparação</h4>
-                                    <p className="text-muted-foreground">
-                                        Acesse o painel do <strong>{integration.title}</strong> e navegue até as configurações de API/Integração.
-                                    </p>
-                                </div>
-                                <div className="space-y-2">
-                                    <h4 className="font-medium text-primary">Passo 2: Credenciais</h4>
-                                    <p className="text-muted-foreground">
-                                        Copie a chave de API ou URL do Webhook fornecida.
-                                    </p>
-                                    <div className="bg-muted p-3 rounded-md flex items-center justify-between text-xs font-mono">
-                                        <span>xyz_123_abc_token_exemplo</span>
-                                        <Button size="icon" variant="ghost" className="h-6 w-6">
-                                            <Clipboard className="h-3 w-3" />
-                                        </Button>
+                            <div className="prose prose-sm dark:prose-invert">
+                                {/* LEGACY FORMS TUTORIAL */}
+                                {integration.id === 'legacy-forms' && (
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Como instalar</h4>
+                                            <p className="text-muted-foreground">
+                                                A instalação é simples e não requer conhecimentos avançados de programação.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 1: Copiar o Script</h4>
+                                            <p className="text-muted-foreground">
+                                                Vá até a aba <strong>Configuração</strong> e copie o código do script gerado para você.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 2: Inserir no Site</h4>
+                                            <p className="text-muted-foreground">
+                                                Abra o código HTML do seu site (ou configurações do CMS como WordPress/Shopify) e cole o script antes do fechamento da tag <code>&lt;/body&gt;</code>.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 3: Testar</h4>
+                                            <p className="text-muted-foreground">
+                                                Preencha e envie um formulário no seu site. O lead deverá aparecer automaticamente aqui no dashboard em instantes.
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <h4 className="font-medium text-primary">Passo 3: Ativação</h4>
-                                    <p className="text-muted-foreground">
-                                        Cole os dados na aba "Configuração" e clique em Salvar. Faça um envio de teste do seu formulário para validar.
-                                    </p>
-                                </div>
+                                )}
+
+                                {/* GENERIC TUTORIAL */}
+                                {integration.id !== 'legacy-forms' && (
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 1: Preparação</h4>
+                                            <p className="text-muted-foreground">
+                                                Acesse o painel do <strong>{integration.title}</strong> e navegue até as configurações de API/Integração.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 2: Credenciais</h4>
+                                            <p className="text-muted-foreground">
+                                                Copie a chave de API ou URL do Webhook fornecida.
+                                            </p>
+                                            <div className="bg-muted p-3 rounded-md flex items-center justify-between text-xs font-mono">
+                                                <span>xyz_123_abc_token_exemplo</span>
+                                                <Button size="icon" variant="ghost" className="h-6 w-6">
+                                                    <Clipboard className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 3: Ativação</h4>
+                                            <p className="text-muted-foreground">
+                                                Cole os dados na aba "Configuração" e clique em Salvar. Faça um envio de teste do seu formulário para validar.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </TabsContent>
