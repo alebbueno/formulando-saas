@@ -29,7 +29,12 @@ export async function checkLimit(workspaceId: string, resource: LimitResource) {
         return { allowed: false, error: "Plano não encontrado" }
     }
 
-    const limits = workspace.plan
+    const planData = workspace.plan
+    const limits = Array.isArray(planData) ? planData[0] : planData
+
+    if (!limits) {
+        return { allowed: false, error: "Plano não encontrado" }
+    }
 
     // 2. Check Usage
     if (resource === "leads") {

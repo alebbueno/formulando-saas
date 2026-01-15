@@ -10,10 +10,10 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useWorkspace } from "@/context/workspace-context"
 import { createCheckoutSession } from "@/actions/checkout" // Verify path
 import { toast } from "sonner"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { PLANS } from "@/config/plans"
 
-export default function PlansPage() {
+function PlansPageContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const { activeWorkspace } = useWorkspace()
@@ -348,5 +348,14 @@ export default function PlansPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function PlansPage() {
+    // Wrap to avoid searchParams error during build
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <PlansPageContent />
+        </Suspense>
     )
 }

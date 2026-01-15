@@ -20,7 +20,7 @@ export function UsageSidebar() {
         async function fetchUsage() {
             setLoading(true)
             try {
-                const data = await getWorkspaceUsage(activeWorkspace.id)
+                const data = await getWorkspaceUsage(activeWorkspace!.id)
                 setUsageData(data)
             } catch (error) {
                 console.error("Failed to fetch usage", error)
