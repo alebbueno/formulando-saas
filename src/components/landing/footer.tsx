@@ -14,10 +14,16 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4 group">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-700 to-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/25 group-hover:shadow-purple-500/40 group-hover:scale-110 transition-all">
-                <span className="text-white font-bold text-xl">F</span>
+              <div className="w-8 h-8 flex items-center justify-center transition-all group-hover:scale-110">
+                <img 
+                  src="/icon-formulando.svg" 
+                  alt="Formulando" 
+                  className="w-full h-full"
+                />
               </div>
-              <span className="text-xl font-bold text-gray-900">Formulando</span>
+              <span className="text-lg font-bold font-brand" style={{ color: '#8831d2' }}>
+                formulando.
+              </span>
             </Link>
             <p className="text-gray-600 text-sm mb-6 max-w-md leading-relaxed">
               Plataforma poderosa que ajuda você a criar formulários profissionais,

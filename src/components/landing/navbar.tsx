@@ -39,10 +39,16 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16 lg:h-18">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-700 to-purple-500 flex items-center justify-center shadow-md shadow-purple-500/25 group-hover:shadow-purple-500/40 transition-all group-hover:scale-110">
-                <span className="text-white font-bold text-lg">F</span>
+              <div className="w-8 h-8 flex items-center justify-center transition-all group-hover:scale-110">
+                <img 
+                  src="/icon-formulando.svg" 
+                  alt="Formulando" 
+                  className="w-full h-full"
+                />
               </div>
-              <span className="text-lg font-bold text-gray-900 hidden sm:block">Formulando</span>
+              <span className="text-lg font-bold hidden sm:block font-brand" style={{ color: '#8831d2' }}>
+                formulando.
+              </span>
             </Link>
 
             {/* Desktop Navigation - Centered */}

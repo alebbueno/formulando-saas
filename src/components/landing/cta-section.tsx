@@ -11,12 +11,11 @@ export function CTASection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-6">
-            Pronto para começar a criar seus formulários dos sonhos?
+            Pronto para escalar seu marketing digital?
           </h2>
           <p className="text-lg sm:text-xl text-purple-100 mb-10 max-w-2xl mx-auto">
-            Junte-se a milhares de empresas e indivíduos que confiam no Formulando
-            para criar sua presença online. Comece hoje e transforme suas ideias em
-            realidade!
+            Junte-se a centenas de empresas que já estão capturando e convertendo 
+            mais leads com o Formulando. Comece gratuitamente hoje mesmo!
           </p>
           <Button
             asChild

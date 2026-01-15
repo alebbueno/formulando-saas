@@ -2,10 +2,11 @@ import { Navbar } from "@/components/landing/navbar"
 import { Hero } from "@/components/landing/hero"
 import { PartnersSection } from "@/components/landing/partners-section"
 import { StatsSection } from "@/components/landing/stats-section"
-import { FeaturesSection } from "@/components/landing/features-section"
-import { ToolsSection } from "@/components/landing/tools-section"
-import { TeamworkSection } from "@/components/landing/teamwork-section"
-import { ContentManagementSection } from "@/components/landing/content-management-section"
+import { PlatformFeaturesSection } from "@/components/landing/platform-features-section"
+import { AutomationsSection } from "@/components/landing/automations-section"
+import { DashboardSection } from "@/components/landing/dashboard-section"
+import { WhatsAppWidgetSection } from "@/components/landing/whatsapp-widget-section"
+import { IntegrationsShowcaseSection } from "@/components/landing/integrations-showcase-section"
 import { TemplatesSection } from "@/components/landing/templates-section"
 import { TestimonialsSection } from "@/components/landing/testimonials-section"
 import { FAQSection } from "@/components/landing/faq-section"
@@ -19,10 +20,11 @@ export default function Home() {
       <Hero />
       <PartnersSection />
       <StatsSection />
-      <FeaturesSection />
-      <ToolsSection />
-      <TeamworkSection />
-      <ContentManagementSection />
+      <PlatformFeaturesSection />
+      <AutomationsSection />
+      <DashboardSection />
+      <WhatsAppWidgetSection />
+      <IntegrationsShowcaseSection />
       <TemplatesSection />
       <TestimonialsSection />
       <FAQSection />

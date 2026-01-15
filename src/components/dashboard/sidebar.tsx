@@ -65,13 +65,17 @@ export function Sidebar({ className }: SidebarProps) {
                 <div className="space-y-4 py-4 flex-1">
                     <div className="px-3 py-2">
                         <div className={cn(
-                            "mb-2 flex items-center gap-2 font-bold text-xl text-primary transition-all relative",
+                            "mb-2 flex items-center gap-2 font-bold text-xl transition-all relative",
                             isOpen ? "px-4" : "px-2 justify-center"
                         )}>
-                            <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                                F
+                            <div className="h-8 w-8 flex items-center justify-center shrink-0">
+                                <img 
+                                    src="/icon-formulando.svg" 
+                                    alt="Formulando" 
+                                    className="w-full h-full"
+                                />
                             </div>
-                            {isOpen && <span className="flex-1">Formu</span>}
+                            {isOpen && <span className="flex-1 font-brand" style={{ color: '#8831d2' }}>formulando.</span>}
                             {/* Botão de toggle no canto superior direito */}
                             <div className={cn(
                                 "absolute transition-all",

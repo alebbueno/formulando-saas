@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import NextTopLoader from "nextjs-toploader";
-import { DM_Sans } from "next/font/google";
+import { DM_Sans, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-dm-sans",
+  display: "swap",
+});
+
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-be-vietnam-pro",
   display: "swap",
 });
 
@@ -25,10 +32,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${dmSans.variable} font-sans antialiased`}
+        className={`${dmSans.variable} ${beVietnamPro.variable} font-sans antialiased`}
       >
         <NextTopLoader
-          color="#A665E6"
+          color="#8831d2"
           initialPosition={0.08}
           crawlSpeed={200}
           height={3}
@@ -36,7 +43,7 @@ export default function RootLayout({
           showSpinner={true}
           easing="ease"
           speed={200}
-          shadow="0 0 10px #A665E6,0 0 5px #A665E6"
+          shadow="0 0 10px #8831d2,0 0 5px #8831d2"
         />
         {children}
         <Toaster />

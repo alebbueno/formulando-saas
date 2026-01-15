@@ -10,6 +10,7 @@ module.exports = {
   	extend: {
   		fontFamily: {
   			sans: ['var(--font-dm-sans)', 'sans-serif'],
+  			brand: ['var(--font-be-vietnam-pro)', 'sans-serif'],
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -60,6 +61,19 @@ module.exports = {
   				300: '#D1AEF2',
   				200: '#E8D6F8',
   				50: '#F5EDFC',
+  			},
+  			brand: {
+  				DEFAULT: '#8831d2',
+  				50: '#f5f0fc',
+  				100: '#ede3fa',
+  				200: '#dcc7f5',
+  				300: '#c49fed',
+  				400: '#a76fe3',
+  				500: '#8831d2',
+  				600: '#7625b8',
+  				700: '#631d9a',
+  				800: '#52197f',
+  				900: '#451869',
   			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { ArrowRight, Sparkles, Zap, Shield } from "lucide-react"
+import { ArrowRight, Sparkles, Users, Workflow, BarChart3 } from "lucide-react"
 
 export function Hero() {
   const [mounted, setMounted] = useState(false)
@@ -38,7 +38,7 @@ export function Hero() {
           >
             <Sparkles className="w-4 h-4 text-purple-700" />
             <span className="text-sm font-medium text-purple-700">
-              Novidade: IA integrada para criar formulários em segundos
+              Plataforma completa de marketing e automação
             </span>
           </div>
 
@@ -50,23 +50,23 @@ export function Hero() {
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             )}
           >
-            Transforme suas ideias em{" "}
+            Sua máquina de{" "}
             <span className="bg-gradient-to-r from-purple-700 via-purple-600 to-purple-500 bg-clip-text text-transparent animate-gradient">
-              experiências digitais
-            </span>
+              captação e conversão
+            </span>{" "}
+            completa
           </h1>
 
           {/* Sub-headline */}
           <p
             className={cn(
-              "text-lg sm:text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed",
+              "text-lg sm:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed",
               "transition-all duration-700 delay-300",
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             )}
           >
-            Plataforma poderosa para criar formulários profissionais, páginas de captura
-            e pesquisas interativas. Interface intuitiva de arrastar e soltar que torna
-            simples para qualquer pessoa construir com qualidade profissional.
+            Crie formulários, landing pages, capture leads, automatize processos e gerencie
+            tudo em um único lugar. A plataforma all-in-one para escalar seu marketing digital.
           </p>
 
           {/* CTA Buttons */}
@@ -114,16 +114,16 @@ export function Hero() {
           {/* Quick Features */}
           <div className="flex flex-wrap items-center justify-center gap-6 mb-12 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-purple-600" />
-              <span>Sem código necessário</span>
+              <Users className="w-4 h-4 text-purple-600" />
+              <span>Gestão de Leads</span>
             </div>
             <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-purple-600" />
-              <span>LGPD compliant</span>
+              <Workflow className="w-4 h-4 text-purple-600" />
+              <span>Automações</span>
             </div>
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <span>IA integrada</span>
+              <BarChart3 className="w-4 h-4 text-purple-600" />
+              <span>Analytics em tempo real</span>
             </div>
           </div>
 

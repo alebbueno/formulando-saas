@@ -13,24 +13,34 @@ import Link from "next/link"
 export function FAQSection() {
   const faqs = [
     {
-      question: "Preciso de conhecimento em programação para usar o Formulando?",
+      question: "O Formulando é só um criador de formulários?",
       answer:
-        "Não, o Formulando é projetado para usuários de todos os níveis de habilidade. Nossa interface intuitiva de arrastar e soltar e templates pré-projetados permitem que você crie formulários incríveis sem escrever uma única linha de código. Se você é um desenvolvedor experiente, também pode acessar e personalizar o código para funcionalidades avançadas.",
+        "Não! O Formulando é uma plataforma completa de marketing digital. Além de criar formulários, você pode construir landing pages, gerenciar leads com CRM integrado, criar automações, integrar com WhatsApp e conectar com milhares de ferramentas através de integrações.",
     },
     {
-      question: "Posso usar meu próprio domínio com o Formulando?",
+      question: "Preciso de conhecimento técnico para usar?",
       answer:
-        "Sim! O Formulando permite que você conecte seu próprio domínio personalizado aos seus formulários. Isso ajuda a manter a consistência da marca e criar uma experiência profissional para seus visitantes.",
+        "Não! Todas as ferramentas são no-code com interface visual de arrastar e soltar. Qualquer pessoa pode criar formulários, landing pages e automações sem escrever código. Para desenvolvedores, oferecemos API REST completa e webhooks.",
     },
     {
-      question: "Que tipo de suporte está disponível para usuários do Formulando?",
+      question: "Como funciona o sistema de leads e CRM?",
       answer:
-        "Oferecemos suporte abrangente através de nossa Central de Ajuda, documentação detalhada, e-mail de suporte e comunidade ativa. Usuários premium também têm acesso a suporte prioritário por chat.",
+        "Todo lead capturado através dos formulários é automaticamente adicionado ao CRM integrado. Você pode organizar leads em pipelines (Kanban), adicionar tags, fazer anotações e acompanhar todo histórico de interações em um único lugar.",
     },
     {
-      question: "Meus dados estão seguros com o Formulando?",
+      question: "Posso integrar com minhas ferramentas atuais?",
       answer:
-        "Absolutamente. Levamos a segurança dos dados muito a sério. Usamos criptografia SSL, seguimos as melhores práticas de segurança e estamos em conformidade com LGPD e GDPR. Seus dados e os dados dos seus formulários são protegidos com o mais alto nível de segurança.",
+        "Sim! Oferecemos integrações nativas com as principais ferramentas, além de conectores com Zapier e Make que permitem integrar com mais de 5000 aplicativos. Também temos webhooks e API REST para integrações customizadas.",
+    },
+    {
+      question: "Como funciona o widget do WhatsApp?",
+      answer:
+        "É um botão flutuante que você adiciona ao seu site. Quando o visitante clica, abre direto no WhatsApp com uma mensagem pré-configurada. Você pode personalizar mensagens diferentes para cada página e todos os leads são capturados automaticamente.",
+    },
+    {
+      question: "Meus dados estão seguros?",
+      answer:
+        "Absolutamente. Usamos criptografia SSL, estamos em conformidade com LGPD e GDPR, e seus dados são armazenados em servidores seguros. Você tem controle total sobre seus dados e pode exportá-los a qualquer momento.",
     },
   ]
 
@@ -40,12 +50,14 @@ export function FAQSection() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6">
-              Vamos responder todas as suas perguntas
+              Perguntas{" "}
+              <span className="bg-gradient-to-r from-purple-700 to-purple-500 bg-clip-text text-transparent">
+                frequentes
+              </span>
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              Tem perguntas sobre o Formulando? Temos respostas! Confira nossas
-              perguntas frequentes para saber mais sobre nossa plataforma e como
-              ela pode ajudá-lo.
+              Tudo o que você precisa saber sobre a plataforma Formulando e como ela 
+              pode transformar seu marketing digital.
             </p>
             <Button
               asChild
