@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Building2, Calendar, Tag, TrendingUp, Hash, Mail, ExternalLink } from "lucide-react"
+import { Building2, Calendar, Tag, TrendingUp, Hash, Mail, ExternalLink, Phone } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatDistanceToNow } from "date-fns"
@@ -53,9 +53,17 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
                 <div className="pt-12 px-6 pb-4">
                     <SheetHeader className="space-y-1 text-left">
                         <SheetTitle className="text-2xl font-bold">{lead.name}</SheetTitle>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-3.5 w-3.5" />
-                            <a href={`mailto:${lead.email}`} className="hover:text-primary transition-colors">{lead.email}</a>
+                        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <Mail className="h-3.5 w-3.5" />
+                                <a href={`mailto:${lead.email}`} className="hover:text-primary transition-colors">{lead.email}</a>
+                            </div>
+                            {lead.phone && (
+                                <div className="flex items-center gap-2">
+                                    <Hash className="h-3.5 w-3.5" /> {/* Using Hash for phone for now or Phone icon if available */}
+                                    <span>{lead.phone}</span>
+                                </div>
+                            )}
                         </div>
                     </SheetHeader>
 
@@ -112,12 +120,14 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
                                     Detalhes
                                 </h4>
                                 <div className="space-y-2">
-                                    {Object.entries(lead.custom_fields).map(([key, value]) => (
-                                        <div key={key} className="flex flex-col p-3 rounded-lg border bg-background/50">
-                                            <span className="text-xs text-muted-foreground font-medium uppercase mb-1">{key.replace(/_/g, ' ')}</span>
-                                            <span className="text-sm font-medium break-words">{String(value)}</span>
-                                        </div>
-                                    ))}
+                                    {Object.entries(lead.custom_fields)
+                                        .filter(([key]) => !key.startsWith('_') && !key.startsWith('wpcf7') && key !== 'metadata')
+                                        .map(([key, value]) => (
+                                            <div key={key} className="flex flex-col p-3 rounded-lg border bg-background/50">
+                                                <span className="text-xs text-muted-foreground font-medium uppercase mb-1">{key.replace(/_/g, ' ')}</span>
+                                                <span className="text-sm font-medium break-words">{String(value)}</span>
+                                            </div>
+                                        ))}
                                 </div>
                             </div>
                         )}

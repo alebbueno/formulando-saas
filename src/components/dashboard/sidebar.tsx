@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, Settings, Plug, Plus, ChevronLeft, ChevronRight, FileText, Layout, Workflow } from "lucide-react"
+import { LayoutDashboard, Users, Settings, Plug, Plus, ChevronLeft, ChevronRight, FileText, Layout, Workflow, MessageCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -40,6 +40,11 @@ const sidebarItems = [
         title: "Automações",
         href: "/dashboard/automations",
         icon: Workflow,
+    },
+    {
+        title: "Botão Flutuante",
+        href: "/dashboard/whatsapp",
+        icon: MessageCircle,
     },
     {
         title: "Integrações",

@@ -37,9 +37,17 @@ export function LeadProfile({ lead }: LeadProfileProps) {
                 {/* Header */}
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold tracking-tight">{lead.name || "Sem nome"}</h2>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="h-3.5 w-3.5" />
-                        <a href={`mailto:${lead.email}`} className="hover:text-primary transition-colors">{lead.email}</a>
+                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <Mail className="h-3.5 w-3.5" />
+                            <a href={`mailto:${lead.email}`} className="hover:text-primary transition-colors">{lead.email}</a>
+                        </div>
+                        {lead.phone && (
+                            <div className="flex items-center gap-2">
+                                <Hash className="h-3.5 w-3.5" />
+                                <span>{lead.phone}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -95,12 +103,14 @@ export function LeadProfile({ lead }: LeadProfileProps) {
                                 Detalhes Extras
                             </h3>
                             <div className="space-y-2">
-                                {Object.entries(lead.custom_fields).map(([key, value]) => (
-                                    <div key={key} className="flex flex-col p-3 rounded-lg border bg-background/50 hover:bg-background transition-colors">
-                                        <span className="text-xs text-muted-foreground font-medium uppercase mb-1">{key.replace(/_/g, ' ')}</span>
-                                        <span className="text-sm font-medium break-words leading-relaxed">{String(value)}</span>
-                                    </div>
-                                ))}
+                                {Object.entries(lead.custom_fields)
+                                    .filter(([key]) => !key.startsWith('_') && !key.startsWith('wpcf7') && key !== 'metadata')
+                                    .map(([key, value]) => (
+                                        <div key={key} className="flex flex-col p-3 rounded-lg border bg-background/50 hover:bg-background transition-colors">
+                                            <span className="text-xs text-muted-foreground font-medium uppercase mb-1">{key.replace(/_/g, ' ')}</span>
+                                            <span className="text-sm font-medium break-words leading-relaxed">{String(value)}</span>
+                                        </div>
+                                    ))}
                             </div>
                         </div>
                     </>

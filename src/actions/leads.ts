@@ -377,6 +377,7 @@ export type Lead = {
     id: string
     name: string
     email: string
+    phone?: string | null
     company: string | null
     job_title: string | null
     score: number

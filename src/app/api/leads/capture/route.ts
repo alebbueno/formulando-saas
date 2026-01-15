@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
-// We use the anon key because the 'leads' table has RLS policies that allow public inserts.
-// If we needed to bypass RLS, we'd use the service role key, but strict RLS is better.
+// We use the SERVICE ROLE key to bypass RLS, allowing us to insert leads from public sources
+// while maintaining strict validation in this API route.
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: NextRequest) {
