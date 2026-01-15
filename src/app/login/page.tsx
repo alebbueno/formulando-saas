@@ -44,7 +44,7 @@ export default function LoginPage() {
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Senha</Label>
                                 <Link
-                                    href="#"
+                                    href="/forgot-password"
                                     className="text-xs text-primary underline-offset-4 hover:underline"
                                 >
                                     Esqueceu a senha?
