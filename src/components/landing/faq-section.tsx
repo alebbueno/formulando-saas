@@ -18,6 +18,16 @@ export function FAQSection() {
         "Não! O Formulando é uma plataforma completa de marketing digital. Além de criar formulários, você pode construir landing pages, gerenciar leads com CRM integrado, criar automações, integrar com WhatsApp e conectar com milhares de ferramentas através de integrações.",
     },
     {
+      question: "Como funciona o teste grátis?",
+      answer:
+        "Oferecemos 7 dias de teste grátis em todos os planos, sem necessidade de cartão de crédito. Durante o teste, você tem acesso completo a todas as funcionalidades do plano escolhido. Após o período, basta adicionar seu cartão para continuar usando.",
+    },
+    {
+      question: "Posso trocar de plano depois?",
+      answer:
+        "Sim! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento. Ao fazer upgrade, você tem acesso imediato aos novos recursos. Ao fazer downgrade, as mudanças entram em vigor no próximo ciclo de cobrança.",
+    },
+    {
       question: "Preciso de conhecimento técnico para usar?",
       answer:
         "Não! Todas as ferramentas são no-code com interface visual de arrastar e soltar. Qualquer pessoa pode criar formulários, landing pages e automações sem escrever código. Para desenvolvedores, oferecemos API REST completa e webhooks.",
@@ -36,6 +46,11 @@ export function FAQSection() {
       question: "Como funciona o widget do WhatsApp?",
       answer:
         "É um botão flutuante que você adiciona ao seu site. Quando o visitante clica, abre direto no WhatsApp com uma mensagem pré-configurada. Você pode personalizar mensagens diferentes para cada página e todos os leads são capturados automaticamente.",
+    },
+    {
+      question: "O que acontece se eu exceder os limites do meu plano?",
+      answer:
+        "Se você atingir o limite de leads ou workspaces do seu plano, notificaremos você e ofereceremos a opção de fazer upgrade. Seus dados nunca são perdidos e você sempre pode escolher o melhor momento para crescer.",
     },
     {
       question: "Meus dados estão seguros?",

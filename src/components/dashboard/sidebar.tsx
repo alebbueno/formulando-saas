@@ -131,84 +131,76 @@ export function Sidebar({ className }: SidebarProps) {
               )}
             >
               <div className="h-8 w-8 flex items-center justify-center shrink-0">
-                <Image
+                <img
                   src="/icon-formulando.svg"
-                  alt="Formulando Logo"
-                  width={32}
-                  height={32}
-                  className="object-contain"
+                  alt="Formulando"
+                  className="w-full h-full"
                 />
-                <div className="h-8 w-8 flex items-center justify-center shrink-0">
-                  <img
-                    src="/icon-formulando.svg"
-                    alt="Formulando"
-                    className="w-full h-full"
-                  />
-                </div>
-                {isOpen && (
-                  <span
-                    className="flex-1 font-brand"
-                    style={{ color: "#8831d2" }}
-                  >
-                    formulando.
-                  </span>
-                )}
-                {/* Botão de toggle no canto superior direito */}
-                <div className={cn("absolute transition-all", "right-0 top-0")}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 hover:bg-accent -mr-2"
-                        onClick={toggle}
-                      >
-                        {isOpen ? (
-                          <ChevronLeft className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p>{isOpen ? "Fechar sidebar" : "Abrir sidebar"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
               </div>
-
               {isOpen && (
-                <div className="px-2 mb-4">
-                  <BrandSwitcher />
-                </div>
+                <span
+                  className="flex-1 font-brand"
+                  style={{ color: "#8831d2" }}
+                >
+                  formulando.
+                </span>
               )}
+              {/* Botão de toggle no canto superior direito */}
+              <div className={cn("absolute transition-all", "right-0 top-0")}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-accent -mr-2"
+                      onClick={toggle}
+                    >
+                      {isOpen ? (
+                        <ChevronLeft className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{isOpen ? "Fechar sidebar" : "Abrir sidebar"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
 
-              {/* Subscription Alert for Restricted Workspaces */}
-              {isOpen && !isActive && activeWorkspace && (
-                <div className="mx-2 mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-xs text-destructive flex flex-col gap-2">
-                  <div className="flex items-center gap-2 font-medium">
-                    <BadgeAlert className="h-4 w-4" />
-                    <span>Assinatura Inativa</span>
-                  </div>
-                  <p className="opacity-90 leading-tight">
-                    Seu plano não está ativo. Acesso limitado.
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="h-7 text-xs w-full"
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/plans?workspace=${activeWorkspace.id}`
-                      )
-                    }
-                  >
-                    Regularizar Agora
-                  </Button>
+            {isOpen && (
+              <div className="px-2 mb-4">
+                <BrandSwitcher />
+              </div>
+            )}
+
+            {/* Subscription Alert for Restricted Workspaces */}
+            {isOpen && !isActive && activeWorkspace && (
+              <div className="mx-2 mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-xs text-destructive flex flex-col gap-2">
+                <div className="flex items-center gap-2 font-medium">
+                  <BadgeAlert className="h-4 w-4" />
+                  <span>Assinatura Inativa</span>
                 </div>
-              )}
+                <p className="opacity-90 leading-tight">
+                  Seu plano não está ativo. Acesso limitado.
+                </p>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-7 text-xs w-full"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/plans?workspace=${activeWorkspace.id}`
+                    )
+                  }
+                >
+                  Regularizar Agora
+                </Button>
+              </div>
+            )}
 
-              <div className="space-y-1">
+            <div className="space-y-1">
                 {sidebarItems.map((item) => {
                   const isItemActive = pathname === item.href;
                   const isLocked = !isActive && item.locked;
@@ -276,7 +268,6 @@ export function Sidebar({ className }: SidebarProps) {
 
                   return button;
                 })}
-              </div>
             </div>
             {/* Usage Box - Hide usage if locked? Or keep showing to shame them? */}
             {isOpen && <UsageSidebar />}

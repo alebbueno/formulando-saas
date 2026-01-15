@@ -17,22 +17,39 @@ export function CTASection() {
             Junte-se a centenas de empresas que já estão capturando e convertendo 
             mais leads com o Formulando. Comece gratuitamente hoje mesmo!
           </p>
-          <Button
-            asChild
-            size="lg"
-            className={cn(
-              "bg-white text-purple-700",
-              "hover:bg-gray-50",
-              "border-0 shadow-lg shadow-purple-900/25",
-              "text-base px-8 py-6 h-auto",
-              "group"
-            )}
-          >
-            <Link href="/signup">
-              Começar Agora
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button
+              asChild
+              size="lg"
+              className={cn(
+                "bg-white text-purple-700",
+                "hover:bg-gray-50",
+                "border-0 shadow-lg shadow-purple-900/25",
+                "text-base px-8 py-6 h-auto",
+                "group"
+              )}
+            >
+              <Link href="/signup">
+                Começar Teste Grátis
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className={cn(
+                "bg-transparent text-white border-2 border-white",
+                "hover:bg-white hover:text-purple-700",
+                "text-base px-8 py-6 h-auto",
+                "transition-all"
+              )}
+            >
+              <Link href="#precos">
+                Ver Planos
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </section>

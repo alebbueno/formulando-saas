@@ -9,6 +9,7 @@ import { WhatsAppWidgetSection } from "@/components/landing/whatsapp-widget-sect
 import { IntegrationsShowcaseSection } from "@/components/landing/integrations-showcase-section"
 import { TemplatesSection } from "@/components/landing/templates-section"
 import { TestimonialsSection } from "@/components/landing/testimonials-section"
+import { PricingSection } from "@/components/landing/pricing-section"
 import { FAQSection } from "@/components/landing/faq-section"
 import { CTASection } from "@/components/landing/cta-section"
 import { Footer } from "@/components/landing/footer"
@@ -27,6 +28,7 @@ export default function Home() {
       <IntegrationsShowcaseSection />
       <TemplatesSection />
       <TestimonialsSection />
+      <PricingSection />
       <FAQSection />
       <CTASection />
       <Footer />
