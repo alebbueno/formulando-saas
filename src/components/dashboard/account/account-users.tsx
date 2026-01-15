@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getAccountUsers, AccountUser, inviteAccountUser } from "@/app/dashboard/account/account-actions"
+import { cn } from "@/lib/utils"
+import { getAccountUsers, AccountUser, inviteAccountUser, updateAccountUser, deleteAccountUser } from "@/app/dashboard/account/account-actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Users as UsersIcon, Mail, Shield, Building2 } from "lucide-react"
+import { Plus, Users as UsersIcon, Mail, Shield, Building2, Pencil, Trash2, Loader2 } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -33,10 +34,12 @@ import { toast } from "sonner" // Assuming sonner is installed or will use basic
 export function AccountUsers() {
     const [users, setUsers] = useState<AccountUser[]>([])
     const [loading, setLoading] = useState(true)
-    const [inviteOpen, setInviteOpen] = useState(false)
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [actionLoading, setActionLoading] = useState(false)
     const { workspaces } = useWorkspace()
 
     // Form State
+    const [editingId, setEditingId] = useState<string | null>(null)
     const [email, setEmail] = useState("")
     const [role, setRole] = useState("member")
     const [selectedWorkspaces, setSelectedWorkspaces] = useState<string[]>([])
@@ -57,28 +60,86 @@ export function AccountUsers() {
         }
     }
 
-    const handleInvite = async () => {
+    const handleSave = async () => {
         if (!email) return
 
         // Validation: Client must have exactly 1 workspace
         if (role === 'client' && selectedWorkspaces.length !== 1) {
-            alert("Para clientes, selecione exatamente 1 workspace.")
+            toast.error("Para clientes, selecione exatamente 1 workspace.")
             return
         }
 
         if (role === 'member' && selectedWorkspaces.length === 0) {
-            alert("Selecione ao menos 1 workspace.")
+            toast.error("Selecione ao menos 1 workspace.")
             return
         }
 
-        // Mock invitation
-        await inviteAccountUser(email, role, selectedWorkspaces)
-        setInviteOpen(false)
+        setActionLoading(true)
+
+        try {
+            let result;
+            if (editingId) {
+                result = await updateAccountUser(editingId, role, selectedWorkspaces)
+            } else {
+                result = await inviteAccountUser(email, role, selectedWorkspaces)
+            }
+
+            if (result.success) {
+                toast.success(result.message)
+                setDialogOpen(false)
+                resetForm()
+                fetchUsers()
+            } else {
+                toast.error(result.message)
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error("Ocorreu um erro ao processar sua solicitação.")
+        } finally {
+            setActionLoading(false)
+        }
+    }
+
+    const handleDelete = async (userId: string) => {
+        if (!confirm("Tem certeza que deseja remover este usuário? Ele perderá acesso a todos os workspaces.")) return
+
+        try {
+            const result = await deleteAccountUser(userId)
+            if (result.success) {
+                toast.success(result.message)
+                fetchUsers()
+            } else {
+                toast.error(result.message)
+            }
+        } catch (error) {
+            toast.error("Erro ao remover usuário.")
+        }
+    }
+
+    const openForEdit = (user: AccountUser) => {
+        setEditingId(user.userId)
+        setEmail(user.email || "")
+        // Infer simplified role from first workspace (assuming uniform role assignment for UI simplicity or taking 'member' if mixed)
+        // In this simple UI, we assume user has same role across assigned workspaces or we just pick one.
+        // The AccountUser type has workspaces[].role.
+        // Let's verify if user is 'client' in any workspace, or 'member'.
+        // Simplified logic: if user works as client in any workspace, treat as client in UI? Or check logic.
+        const userRole = user.workspaces[0]?.role === 'client' ? 'client' : 'member'
+        setRole(userRole)
+        setSelectedWorkspaces(user.workspaces.map(w => w.id))
+        setDialogOpen(true)
+    }
+
+    const openForInvite = () => {
+        resetForm()
+        setDialogOpen(true)
+    }
+
+    const resetForm = () => {
+        setEditingId(null)
         setEmail("")
+        setRole("member")
         setSelectedWorkspaces([])
-        // In real app, we would refresh list if user was auto-added or show success toast
-        alert("Convite enviado com sucesso! (Simulação)")
-        fetchUsers() // Refresh to simulate if logic added them
     }
 
     const toggleWorkspace = (wsId: string) => {
@@ -109,16 +170,19 @@ export function AccountUsers() {
                         Gerencie o acesso aos seus workspaces. Convide membros ou dê acesso restrito a clientes.
                     </CardDescription>
                 </div>
-                <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+                <Dialog open={dialogOpen} onOpenChange={(open) => {
+                    setDialogOpen(open)
+                    if (!open) resetForm()
+                }}>
                     <DialogTrigger asChild>
-                        <Button className="gap-2">
+                        <Button className="gap-2" onClick={openForInvite}>
                             <Plus className="w-4 h-4" />
                             Convidar Usuário
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
-                            <DialogTitle>Convidar Usuário</DialogTitle>
+                            <DialogTitle>{editingId ? "Editar Usuário" : "Convidar Usuário"}</DialogTitle>
                             <DialogDescription>
                                 Envie um convite por e-mail para dar acesso à plataforma.
                             </DialogDescription>
@@ -134,6 +198,7 @@ export function AccountUsers() {
                                         placeholder="exemplo@empresa.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
+                                        disabled={!!editingId} // Disable email edit
                                     />
                                 </div>
                             </div>
@@ -144,7 +209,7 @@ export function AccountUsers() {
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecione o nível de acesso..." />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="z-[9999]">
                                         <SelectItem value="member">Membro / Colaborador</SelectItem>
                                         <SelectItem value="client">Cliente Final</SelectItem>
                                     </SelectContent>
@@ -193,9 +258,10 @@ export function AccountUsers() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="ghost" onClick={() => setInviteOpen(false)}>Cancelar</Button>
-                            <Button onClick={handleInvite} disabled={!email || selectedWorkspaces.length === 0}>
-                                Enviar Convite
+                            <Button variant="ghost" onClick={() => setDialogOpen(false)} disabled={actionLoading}>Cancelar</Button>
+                            <Button onClick={handleSave} disabled={!email || selectedWorkspaces.length === 0 || actionLoading}>
+                                {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {editingId ? "Salvar Alterações" : "Enviar Convite"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -237,10 +303,19 @@ export function AccountUsers() {
                                         <TableCell>
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-9 w-9 border">
-                                                    <AvatarFallback className="bg-primary/10 text-primary">{user.name?.[0] || user.email?.[0] || "U"}</AvatarFallback>
+                                                    <AvatarFallback className={cn("text-primary", user.status === 'pending' && "bg-orange-100 text-orange-600 border-orange-200")}>
+                                                        {user.name?.[0] || user.email?.[0] || "U"}
+                                                    </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-sm">{user.name}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-sm">{user.name}</span>
+                                                        {user.status === 'pending' && (
+                                                            <Badge variant="outline" className="h-4 text-[10px] px-1 bg-orange-50 text-orange-600 border-orange-200">
+                                                                Pendente
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <span className="text-xs text-muted-foreground">{user.email}</span>
                                                 </div>
                                             </div>
@@ -261,7 +336,28 @@ export function AccountUsers() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">Editar</Button>
+                                            <div className="flex justify-end gap-2">
+                                                {user.role !== 'owner' && (
+                                                    <>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            onClick={() => openForEdit(user)}
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                                                            onClick={() => handleDelete(user.userId)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))

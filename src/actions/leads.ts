@@ -104,6 +104,82 @@ function calculateLeadScore(data: {
     }
 }
 
+export async function createLead(data: {
+    name: string
+    email: string
+    phone?: string
+    company?: string
+    jobTitle?: string
+    status?: string
+    workspaceId: string
+}) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error("Usuário não autenticado")
+    }
+
+    // Verify workspace access
+    const { data: member } = await supabase
+        .from("workspace_members")
+        .select("role")
+        .eq("workspace_id", data.workspaceId)
+        .eq("user_id", user.id)
+        .single()
+
+    if (!member) {
+        throw new Error("Acesso negado ao workspace")
+    }
+
+    // Calculate initial score for consistency (though manual leads might be treated differently)
+    const { score, reason, tags } = calculateLeadScore({
+        email: data.email,
+        company: data.company,
+        jobTitle: data.jobTitle,
+        submissionData: {} // No submission data for manual entry
+    })
+
+    const { data: newLead, error } = await supabase
+        .from("leads")
+        .insert({
+            workspace_id: data.workspaceId,
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            company: data.company,
+            job_title: data.jobTitle,
+            source_type: 'manual',
+            score: score,
+            score_reason: reason,
+            status: data.status || 'Novo Lead',
+            tags: [...tags, 'manual'],
+            custom_fields: {}
+        })
+        .select("id")
+        .single()
+
+    if (error) {
+        console.error("Error creating manual lead:", error)
+        throw new Error("Erro ao criar lead")
+    }
+
+    // Log Event
+    await supabase.from("lead_events").insert({
+        lead_id: newLead.id,
+        type: 'lead_created_manually',
+        payload: {
+            created_by: user.id,
+            initial_data: data
+        }
+    })
+
+    const { revalidatePath } = await import("next/cache")
+    revalidatePath("/dashboard/leads")
+
+    return { success: true, leadId: newLead.id }
+}
+
 export async function processNewSubmission(projectId: string, submissionData: any, submissionId?: string) {
     console.log(`>>> processNewSubmission: START for Project ${projectId}, Submission ${submissionId}`)
 

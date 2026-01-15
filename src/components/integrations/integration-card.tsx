@@ -9,7 +9,7 @@ export interface Integration {
     description: string
     icon: LucideIcon
     status: 'connected' | 'disconnected' | 'beta'
-    category: 'crm' | 'communication' | 'storage' | 'productivity'
+    category: 'crm' | 'communication' | 'storage' | 'productivity' | 'cms'
 }
 
 interface IntegrationCardProps {

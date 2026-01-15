@@ -10,6 +10,7 @@ export type Workspace = {
     name: string
     slug: string
     role: "owner" | "member"
+    kanban_columns?: any[]
 }
 
 type WorkspaceContextType = {
@@ -44,7 +45,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                     workspace:workspaces (
                         id,
                         name,
-                        slug
+                        slug,
+                        kanban_columns
                     )
                 `)
                 .eq("user_id", user.id)
@@ -59,6 +61,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                 name: member.workspace.name,
                 slug: member.workspace.slug,
                 role: member.role,
+                kanban_columns: member.workspace.kanban_columns,
             }))
 
             setWorkspaces(formattedWorkspaces)

@@ -129,6 +129,7 @@ export type AccountUser = {
     email: string | null
     name: string | null
     role: "owner" | "admin" | "member" | "client"
+    status: "active" | "pending"
     workspaces: {
         id: string
         name: string
@@ -167,6 +168,16 @@ export async function getAccountUsers() {
         return []
     }
 
+    // 3. Get pending invitations for these workspaces (using explicit select on workspace_ids column logic, or simpler: Created by me)
+    // The previous migration set column `workspace_ids` as uuid[]. 
+    // Supabase query for array contains? .cs('workspace_ids', `{${workspaceIds.join(',')}}`) - wait, intersection check.
+    // Simpler: fetch all invitations where I am the inviter.
+    const { data: invitations } = await supabase
+        .from('workspace_invitations')
+        .select('*')
+        .eq('inviter_id', user.id)
+        .eq('status', 'pending')
+
     // Unify by User ID
     const userMap = new Map<string, AccountUser>()
 
@@ -187,14 +198,16 @@ export async function getAccountUsers() {
         console.warn("Could not fetch profiles", e)
     }
 
+    // Process Members
     members.forEach((m: any) => {
         if (!userMap.has(m.user_id)) {
             const profile = profilesMap.get(m.user_id)
             userMap.set(m.user_id, {
                 userId: m.user_id,
-                email: profile?.email || "usuario@exemplo.com",
-                name: profile?.name || "Usuário",
+                email: profile?.email || "Email não encontrado",
+                name: profile?.name || "Sem nome",
                 role: "member",
+                status: "active",
                 workspaces: []
             })
         }
@@ -209,11 +222,173 @@ export async function getAccountUsers() {
         })
     })
 
+    // Process Invitations
+    if (invitations) {
+        invitations.forEach((inv: any) => {
+            // Using invitation ID as temporary userId key
+            const tempId = `invitation-${inv.id}`
+
+            // Map the invite's workspace IDs to names
+            const inviteWorkspaces = (inv.workspace_ids || []).map((id: string) => ({
+                id,
+                name: ownedWorkspaces.find(w => w.id === id)?.name || "Unknown",
+                role: inv.role
+            }))
+
+            userMap.set(tempId, {
+                userId: tempId,
+                email: inv.email,
+                name: "Convidado (Pendente)",
+                role: inv.role as any,
+                status: "pending",
+                workspaces: inviteWorkspaces
+            })
+        })
+    }
+
     return Array.from(userMap.values())
 }
 
 export async function inviteAccountUser(email: string, role: string, workspaceIds: string[]) {
-    // Mock implementation for "Inviting"
-    // In a real app, this would create a pending_invites record or add to workspace_members directly if user exists
-    return { success: true, message: "Convite enviado com sucesso! (Simulação)" }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { success: false, message: "Unauthorized" }
+
+    // 1. Find user by email
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+    // 2. If user exists, add normally
+    if (profile) {
+        const inserts = workspaceIds.map(wsId => ({
+            workspace_id: wsId,
+            user_id: profile.id,
+            role: role
+        }))
+
+        const { error: insertError } = await supabase
+            .from('workspace_members')
+            .insert(inserts)
+            .select()
+
+        if (insertError) {
+            if (insertError.code === '23505') {
+                return { success: false, message: "Este usuário já é membro de um dos workspaces selecionados." }
+            }
+            console.error("Error adding member:", insertError)
+            return { success: false, message: "Erro ao adicionar membro." }
+        }
+
+        return { success: true, message: "Usuário adicionado com sucesso!" }
+    }
+
+    // 3. If user does NOT exist, create invitation
+    // Check for existing pending invitation to avoid duplicates (optional, or just update)
+    // We will just insert new one, assuming user might invite to different workspaces.
+    // Ideally we merge, but for now simple insert.
+
+    const { error: inviteError } = await supabase
+        .from('workspace_invitations')
+        .insert({
+            email,
+            role,
+            workspace_ids: workspaceIds, // Stored as array
+            inviter_id: user.id,
+            status: 'pending'
+        })
+
+    if (inviteError) {
+        console.error("Error creating invitation:", inviteError)
+        return { success: false, message: "Erro ao criar convite." }
+    }
+
+    // Here you would trigger an email sending service
+    // await sendInvitationEmail(email, ...)
+
+    return { success: true, message: "Convite enviado! O usuário terá acesso assim que se cadastrar com este e-mail." }
+}
+
+export async function updateAccountUser(userId: string, role: string, workspaceIds: string[]) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, message: "Unauthorized" }
+
+    // 1. Get all workspaces owned by current user (to prevent unauthorized modifications)
+    const { data: ownedWorkspaces } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('owner_id', user.id)
+
+    if (!ownedWorkspaces) return { success: false, message: "No workspaces found" }
+    const ownedIds = ownedWorkspaces.map(w => w.id)
+
+    // Filter requested workspaceIds to ensure they are owned by current user
+    const validWorkspaceIds = workspaceIds.filter(id => ownedIds.includes(id))
+
+    // 2. Remove from all owned workspaces first (simplest way to sync, though slightly inefficient)
+    // Or we can diff. Let's delete from owned workspaces and re-insert.
+    // Note: Be careful not to delete the user himself if he mistakenly tries to edit himself? 
+    // The UI should prevent editing 'owner' role.
+
+    const { error: deleteError } = await supabase
+        .from('workspace_members')
+        .delete()
+        .eq('user_id', userId)
+        .in('workspace_id', ownedIds)
+
+    if (deleteError) {
+        console.error("Error updating user (delete phase):", deleteError)
+        return { success: false, message: "Erro ao atualizar permissões." }
+    }
+
+    if (validWorkspaceIds.length > 0) {
+        const inserts = validWorkspaceIds.map(wsId => ({
+            workspace_id: wsId,
+            user_id: userId,
+            role: role
+        }))
+
+        const { error: insertError } = await supabase
+            .from('workspace_members')
+            .insert(inserts)
+
+        if (insertError) {
+            console.error("Error updating user (insert phase):", insertError)
+            return { success: false, message: "Erro ao re-adicionar permissões." }
+        }
+    }
+
+    return { success: true, message: "Usuário atualizado com sucesso!" }
+}
+
+export async function deleteAccountUser(userId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, message: "Unauthorized" }
+
+    // Get owned workspaces to restrain deletion scope
+    const { data: ownedWorkspaces } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('owner_id', user.id)
+
+    if (!ownedWorkspaces || ownedWorkspaces.length === 0) return { success: false, message: "No permissions" }
+    const ownedIds = ownedWorkspaces.map(w => w.id)
+
+    const { error } = await supabase
+        .from('workspace_members')
+        .delete()
+        .eq('user_id', userId)
+        .in('workspace_id', ownedIds)
+
+    if (error) {
+        console.error("Error removing user:", error)
+        return { success: false, message: "Erro ao remover usuário." }
+    }
+
+    return { success: true, message: "Usuário removido da equipe." }
 }

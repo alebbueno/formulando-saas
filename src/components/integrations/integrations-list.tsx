@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Integration, IntegrationCard } from "./integration-card"
 import { IntegrationSetupSheet } from "./integration-setup-sheet"
-import { Webhook, TableProperties, Zap, Slack, Mail, MessageSquare, Code } from "lucide-react"
+import { Webhook, TableProperties, Zap, Slack, Mail, MessageSquare, Code, Globe } from "lucide-react"
 
 const MOCK_INTEGRATIONS: Integration[] = [
     {
@@ -13,6 +13,14 @@ const MOCK_INTEGRATIONS: Integration[] = [
         icon: Code,
         status: "connected",
         category: "communication"
+    },
+    {
+        id: "wordpress",
+        title: "WordPress",
+        description: "Plugin oficial para integrar seus formulários diretamente no admin do WP.",
+        icon: Globe, // Using Globe as placeholder, ideally custom SVG
+        status: "disconnected",
+        category: "cms"
     },
     {
         id: "webhook",

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CreateLeadDialog } from "@/components/leads/create-lead-dialog"
 
 export default async function LeadsPage({
     searchParams,
@@ -40,6 +41,9 @@ export default async function LeadsPage({
         <div className="flex-1 space-y-4 p-8 pt-6 h-full flex flex-col">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Leads</h2>
+                <div className="flex items-center space-x-2">
+                    <CreateLeadDialog />
+                </div>
             </div>
 
             <Tabs defaultValue="kanban" className="flex-1 flex flex-col">

@@ -15,13 +15,13 @@ export async function getActiveWorkspace() {
     // 1. Fetch Owned Workspaces
     const { data: ownedWorkspaces } = await supabase
         .from("workspaces")
-        .select("id, name")
+        .select("id, name, kanban_columns")
         .eq("owner_id", user.id)
 
     // 2. Fetch Member Workspaces
     const { data: memberWorkspaces } = await supabase
         .from("workspace_members")
-        .select("workspace:workspaces(id, name)")
+        .select("workspace:workspaces(id, name, kanban_columns)")
         .eq("user_id", user.id)
 
     // 3. Combine

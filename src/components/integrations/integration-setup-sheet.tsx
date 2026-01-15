@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Integration } from "./integration-card"
-import { Check, Clipboard, ExternalLink, HelpCircle, Code } from "lucide-react"
+import { Check, Clipboard, ExternalLink, HelpCircle, Code, Download, BookOpen, Key } from "lucide-react"
 import { useWorkspace } from "@/context/workspace-context"
 import { toast } from "sonner"
 
@@ -140,6 +140,49 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                             </div>
                         )}
 
+                        {/* WORDPRESS SETUP */}
+                        {integration.id === 'wordpress' && (
+                            <div className="space-y-6">
+                                <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-blue-50 text-[#21759b] rounded-lg">
+                                            <Download className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-medium text-base">Download do Plugin</h3>
+                                            <p className="text-sm text-muted-foreground">Versão 1.2.0 (Mais recente)</p>
+                                        </div>
+                                        <Button className="ml-auto" size="sm">
+                                            Baixar .zip
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="font-medium text-sm flex items-center gap-2">
+                                        <Key className="h-4 w-4" />
+                                        Chave de API
+                                    </h4>
+                                    <div className="space-y-2">
+                                        <Label>Sua API Key</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value="sk_live_51M..."
+                                                readOnly
+                                                className="bg-muted font-mono text-xs"
+                                            />
+                                            <Button size="icon" variant="outline" onClick={() => copyToClipboard("sk_live_51M...")}>
+                                                <Clipboard className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Copie esta chave para colar nas configurações do plugin no seu WordPress.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* CONFIG FOR LEGACY FORMS */}
                         {integration.id === 'legacy-forms' && (
                             <div className="space-y-6">
@@ -249,8 +292,44 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                                     </div>
                                 )}
 
+                                {integration.id === 'wordpress' && (
+                                    <div className="space-y-6">
+                                        <div className="space-y-4 rounded-lg bg-orange-50 border border-orange-100 p-4">
+                                            <div className="flex gap-3">
+                                                <BookOpen className="h-5 w-5 text-orange-600 flex-shrink-0" />
+                                                <div className="space-y-1">
+                                                    <h4 className="font-medium text-orange-900 text-sm">Documentação Oficial</h4>
+                                                    <p className="text-sm text-orange-700">Acesse o guia completo de instalação e configuração do plugin.</p>
+                                                </div>
+                                            </div>
+                                            <Button variant="outline" size="sm" className="w-full bg-white border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-900">
+                                                Ler Documentação <ExternalLink className="ml-2 h-3 w-3" />
+                                            </Button>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 1: Instalação</h4>
+                                            <p className="text-muted-foreground">
+                                                No painel do seu WordPress, vá em <strong>Plugins &gt; Adicionar Novo</strong>. Clique em "Enviar Plugin" e selecione o arquivo .zip baixado.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 2: Ativação</h4>
+                                            <p className="text-muted-foreground">
+                                                Após o upload, clique em "Ativar Plugin". Você verá um novo menu chamado "Formulando" na barra lateral.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 3: Conexão</h4>
+                                            <p className="text-muted-foreground">
+                                                Acesse as configurações do plugin e cole sua <strong>API Key</strong> (disponível na aba de Configuração). Clique em Salvar e pronto! Seus formulários já podem ser selecionados.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* GENERIC TUTORIAL */}
-                                {integration.id !== 'legacy-forms' && (
+                                {integration.id !== 'legacy-forms' && integration.id !== 'wordpress' && (
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <h4 className="font-medium text-primary">Passo 1: Preparação</h4>
