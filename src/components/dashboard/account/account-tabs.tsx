@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AccountOverview } from "@/components/dashboard/account/account-overview"
 import { AccountFinancial } from "./account-financial"
+import { AccountUsers } from "./account-users"
 import { Button } from "@/components/ui/button"
 import { User } from "@supabase/supabase-js"
 import { Users, CreditCard, Settings, LayoutGrid } from "lucide-react"
@@ -33,17 +34,8 @@ export function AccountTabs({ user }: AccountTabsProps) {
                 <AccountOverview />
             </TabsContent>
 
-            <TabsContent value="users" className="space-y-4">
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                        <Users className="h-10 w-10 text-muted-foreground" />
-                    </div>
-                    <h3 className="mt-4 text-lg font-semibold">Gestão de Usuários</h3>
-                    <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm">
-                        Em breve você poderá convidar membros para sua equipe e gerenciar permissões de acesso.
-                    </p>
-                    <Button variant="outline" disabled>Em desenvolvimento</Button>
-                </div>
+            <TabsContent value="users" className="space-y-4 pt-4">
+                <AccountUsers />
             </TabsContent>
 
             <TabsContent value="financial" className="space-y-4">

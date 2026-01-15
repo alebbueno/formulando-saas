@@ -121,3 +121,99 @@ export async function getAccountStats() {
         workspaceDistributionData
     }
 }
+
+// --- User Management Actions ---
+
+export type AccountUser = {
+    userId: string
+    email: string | null
+    name: string | null
+    role: "owner" | "admin" | "member" | "client"
+    workspaces: {
+        id: string
+        name: string
+        role: "owner" | "admin" | "member" | "client"
+    }[]
+}
+
+export async function getAccountUsers() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return []
+
+    // 1. Get all workspaces owned by current user
+    const { data: ownedWorkspaces } = await supabase
+        .from('workspaces')
+        .select('id, name')
+        .eq('owner_id', user.id)
+
+    if (!ownedWorkspaces || ownedWorkspaces.length === 0) return []
+
+    const workspaceIds = ownedWorkspaces.map(w => w.id)
+
+    // 2. Get all members of these workspaces
+    const { data: members, error } = await supabase
+        .from('workspace_members')
+        .select(`
+            user_id,
+            role,
+            workspace_id
+        `)
+        .in('workspace_id', workspaceIds)
+
+    if (error) {
+        console.error("Error fetching members:", error)
+        return []
+    }
+
+    // Unify by User ID
+    const userMap = new Map<string, AccountUser>()
+
+    // Attempt to fetch profiles (best effort)
+    const memberIds = Array.from(new Set(members.map(m => m.user_id)))
+    let profilesMap = new Map<string, { email: string, name: string }>()
+
+    try {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, email, name')
+            .in('id', memberIds)
+
+        if (profiles) {
+            profiles.forEach((p: any) => profilesMap.set(p.id, { email: p.email, name: p.name }))
+        }
+    } catch (e) {
+        console.warn("Could not fetch profiles", e)
+    }
+
+    members.forEach((m: any) => {
+        if (!userMap.has(m.user_id)) {
+            const profile = profilesMap.get(m.user_id)
+            userMap.set(m.user_id, {
+                userId: m.user_id,
+                email: profile?.email || "usuario@exemplo.com",
+                name: profile?.name || "Usuário",
+                role: "member",
+                workspaces: []
+            })
+        }
+
+        const u = userMap.get(m.user_id)!
+        const wsName = ownedWorkspaces.find(w => w.id === m.workspace_id)?.name || "Unknown"
+
+        u.workspaces.push({
+            id: m.workspace_id,
+            name: wsName,
+            role: m.role
+        })
+    })
+
+    return Array.from(userMap.values())
+}
+
+export async function inviteAccountUser(email: string, role: string, workspaceIds: string[]) {
+    // Mock implementation for "Inviting"
+    // In a real app, this would create a pending_invites record or add to workspace_members directly if user exists
+    return { success: true, message: "Convite enviado com sucesso! (Simulação)" }
+}
