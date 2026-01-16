@@ -183,10 +183,31 @@ async function performAction(node: FlowNode, context: ExecutionContext, supabase
             break;
 
         case 'action_email':
-            // Placeholder: Call email service
-            // const templateId = data.config?.templateId
-            // await sendEmail(context.lead.email, templateId, ...)
-            console.log(`[AutomationEngine] Would send email to lead ${context.leadId} with config`, data.config)
+            const templateId = data.config?.templateId
+            if (templateId) {
+                // Fetch lead data
+                const { data: lead } = await supabase
+                    .from('leads')
+                    .select('*')
+                    .eq('id', context.leadId)
+                    .single()
+
+                if (!lead) {
+                    throw new Error(`Lead not found: ${context.leadId}`)
+                }
+
+                // Send email via Resend with merge tags
+                const { sendAutomationEmail } = await import('@/actions/send-automation-email')
+                const result = await sendAutomationEmail(templateId, lead, context.workspaceId)
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to send email')
+                }
+
+                console.log(`[AutomationEngine] Email sent to ${lead.email} using template ${templateId}`)
+            } else {
+                console.warn(`[AutomationEngine] Email node has no template configured`)
+            }
             break;
 
         case 'action_webhook':

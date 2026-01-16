@@ -17,6 +17,7 @@ import {
   MessageCircle,
   Lock,
   BadgeAlert,
+  Mail,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -44,6 +45,12 @@ const sidebarItems = [
     title: "Leads",
     href: "/dashboard/leads",
     icon: Users,
+    locked: false,
+  },
+  {
+    title: "Emails",
+    href: "/dashboard/emails",
+    icon: Mail,
     locked: false,
   },
   {
@@ -78,7 +85,7 @@ const sidebarItems = [
   },
 ];
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 export function Sidebar({ className }: SidebarProps) {
   const { isOpen, toggle } = useSidebar();
@@ -201,73 +208,73 @@ export function Sidebar({ className }: SidebarProps) {
             )}
 
             <div className="space-y-1">
-                {sidebarItems.map((item) => {
-                  const isItemActive = pathname === item.href;
-                  const isLocked = !isActive && item.locked;
+              {sidebarItems.map((item) => {
+                const isItemActive = pathname === item.href;
+                const isLocked = !isActive && item.locked;
 
-                  const content = (
-                    <>
-                      <item.icon className={cn("h-4 w-4", isOpen && "mr-2")} />
-                      {isOpen && (
-                        <span className="flex-1 text-left">{item.title}</span>
-                      )}
-                      {isOpen && isLocked && (
-                        <Lock className="h-3 w-3 text-muted-foreground ml-2" />
-                      )}
-                    </>
+                const content = (
+                  <>
+                    <item.icon className={cn("h-4 w-4", isOpen && "mr-2")} />
+                    {isOpen && (
+                      <span className="flex-1 text-left">{item.title}</span>
+                    )}
+                    {isOpen && isLocked && (
+                      <Lock className="h-3 w-3 text-muted-foreground ml-2" />
+                    )}
+                  </>
+                );
+
+                const button = (
+                  <Button
+                    key={item.href}
+                    variant={isItemActive ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full transition-all group relative",
+                      isOpen ? "justify-start" : "justify-center px-0",
+                      isLocked &&
+                      "opacity-70 hover:bg-destructive/10 hover:text-destructive"
+                    )}
+                    onClick={(e) =>
+                      handleItemClick(e, !!item.locked, item.href)
+                    }
+                    asChild={!isLocked} // Only pass asChild if not locked, to control click better or keep link behaviour?
+                  // Actually if locked, we want to handle click manually.
+                  >
+                    {isLocked ? (
+                      // Render div/button instead of Link if locked
+                      <div className="cursor-pointer flex items-center w-full">
+                        {content}
+                      </div>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        className="flex items-center w-full"
+                      >
+                        {content}
+                      </Link>
+                    )}
+                  </Button>
+                );
+
+                if (!isOpen) {
+                  return (
+                    <Tooltip key={item.href}>
+                      <TooltipTrigger asChild>{button}</TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        className="flex items-center gap-2"
+                      >
+                        <p>{item.title}</p>
+                        {isLocked && (
+                          <Lock className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
                   );
+                }
 
-                  const button = (
-                    <Button
-                      key={item.href}
-                      variant={isItemActive ? "secondary" : "ghost"}
-                      className={cn(
-                        "w-full transition-all group relative",
-                        isOpen ? "justify-start" : "justify-center px-0",
-                        isLocked &&
-                          "opacity-70 hover:bg-destructive/10 hover:text-destructive"
-                      )}
-                      onClick={(e) =>
-                        handleItemClick(e, !!item.locked, item.href)
-                      }
-                      asChild={!isLocked} // Only pass asChild if not locked, to control click better or keep link behaviour?
-                      // Actually if locked, we want to handle click manually.
-                    >
-                      {isLocked ? (
-                        // Render div/button instead of Link if locked
-                        <div className="cursor-pointer flex items-center w-full">
-                          {content}
-                        </div>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          className="flex items-center w-full"
-                        >
-                          {content}
-                        </Link>
-                      )}
-                    </Button>
-                  );
-
-                  if (!isOpen) {
-                    return (
-                      <Tooltip key={item.href}>
-                        <TooltipTrigger asChild>{button}</TooltipTrigger>
-                        <TooltipContent
-                          side="right"
-                          className="flex items-center gap-2"
-                        >
-                          <p>{item.title}</p>
-                          {isLocked && (
-                            <Lock className="h-3 w-3 text-muted-foreground" />
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  }
-
-                  return button;
-                })}
+                return button;
+              })}
             </div>
             {/* Usage Box - Hide usage if locked? Or keep showing to shame them? */}
             {isOpen && <UsageSidebar />}

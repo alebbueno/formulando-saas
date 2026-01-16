@@ -63,9 +63,10 @@ export function FlowEditor({ initialData }: FlowEditorProps) {
     const [isSaving, setIsSaving] = useState(false)
     const [selectedNode, setSelectedNode] = useState<Node | null>(null)
     const [forms, setForms] = useState<{ id: string, name: string }[]>([])
+    const [emailTemplates, setEmailTemplates] = useState<{ id: string, name: string, subject: string }[]>([])
     const [availableFields, setAvailableFields] = useState<{ id: string, label: string, type: string }[]>([])
 
-    // Fetch available forms on mount
+    // Fetch available forms and email templates on mount
     useEffect(() => {
         import("@/actions/form").then(({ getForms }) => {
             getForms().then((data) => {
@@ -85,7 +86,16 @@ export function FlowEditor({ initialData }: FlowEditorProps) {
                 }))
             })
         })
-    }, [setNodes])
+
+        // Fetch email templates for the workspace
+        import("@/actions/emails").then(({ getEmailTemplates }) => {
+            getEmailTemplates(initialData.workspace_id).then((data) => {
+                setEmailTemplates(data || [])
+            }).catch((error) => {
+                console.error("Error fetching email templates:", error)
+            })
+        })
+    }, [setNodes, initialData.workspace_id])
 
     const onConnect = useCallback(
         (params: Connection) => {
@@ -326,8 +336,52 @@ export function FlowEditor({ initialData }: FlowEditorProps) {
                             )}
 
                             {(selectedNode.data.nodeType === 'action_email') && (
-                                <div className="grid gap-2">
-                                    <p className="text-sm text-muted-foreground">Configuração de email em breve.</p>
+                                <div className="space-y-3">
+                                    <div className="grid gap-2">
+                                        <Label>Template de Email</Label>
+                                        <Select
+                                            value={(selectedNode.data.config as any)?.templateId || ''}
+                                            onValueChange={(val) => {
+                                                const template = emailTemplates.find(t => t.id === val)
+                                                updateNodeData('templateId', val)
+                                                if (template) {
+                                                    updateNodeData('templateName', template.name)
+                                                    updateNodeData('templateSubject', template.subject)
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione um template..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {emailTemplates.length === 0 ? (
+                                                    <div className="p-2 text-xs text-muted-foreground text-center">
+                                                        Nenhum template criado
+                                                    </div>
+                                                ) : (
+                                                    emailTemplates.map(template => (
+                                                        <SelectItem key={template.id} value={template.id}>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium">{template.name}</span>
+                                                                <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                                                                    {template.subject}
+                                                                </span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            O email será enviado para o lead com dados personalizados.
+                                        </p>
+                                    </div>
+                                    {(selectedNode.data.config as any)?.templateSubject && (
+                                        <div className="p-3 bg-muted/50 rounded-lg border">
+                                            <div className="text-xs font-medium text-muted-foreground mb-1">Assunto:</div>
+                                            <div className="text-sm">{(selectedNode.data.config as any).templateSubject}</div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

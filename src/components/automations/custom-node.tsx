@@ -74,6 +74,9 @@ export function CustomNode({ data, selected }: NodeProps) {
                     {(data.config as any).url && (
                         <code className="text-[9px] bg-slate-100 px-1 rounded truncate max-w-full">{(data.config as any).url}</code>
                     )}
+                    {(data.config as any).templateName && (
+                        <Badge variant="secondary" className="text-[10px] px-1 h-5">📧 {(data.config as any).templateName}</Badge>
+                    )}
                     {type === 'condition' && (data.config as any).field && (
                         <Badge variant="secondary" className="text-[10px] px-1 h-5 flex gap-1">
                             {String((data.config as any).fieldLabel || (data.config as any).field)} {(data.config as any).operator === 'equals' ? '=' : '!='} {String((data.config as any).value)}
