@@ -85,7 +85,7 @@ export async function sendAutomationEmail(
         // Get workspace info for "from" email and merge tags
         const { data: workspace } = await supabase
             .from("workspaces")
-            .select("name, created_by")
+            .select("name, created_by, sender_email, sender_name")
             .eq("id", workspaceId)
             .single()
 
@@ -111,8 +111,9 @@ export async function sendAutomationEmail(
         const personalizedSubject = replaceMergeTags(template.subject, mergeData)
         const personalizedBody = replaceMergeTags(template.body_html, mergeData)
 
-        const fromName = workspace?.name || "Formulando"
-        const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
+        // Use workspace custom sender email/name if configured, otherwise use defaults
+        const fromName = workspace?.sender_name || workspace?.name || "Formulando"
+        const fromEmail = workspace?.sender_email || process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
 
         console.log('[sendAutomationEmail] Sending via Resend to:', leadData.email)
 
