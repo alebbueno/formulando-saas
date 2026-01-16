@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, ChevronRight, Home, LayoutDashboard, Users } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { DeleteLeadButton } from "@/components/leads/delete-lead-button"
 
 export default async function LeadDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -49,6 +50,12 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
                             Visão Geral do Lead
                         </h1>
                     </div>
+
+                    <DeleteLeadButton
+                        leadId={lead.id}
+                        leadName={lead.name}
+                        className="h-9 w-9 data-[state=open]:bg-muted"
+                    />
                 </div>
             </div>
 

@@ -868,3 +868,94 @@ export async function getLeadStats(workspaceId: string) {
         hotLeads
     }
 }
+
+export async function deleteLead(leadId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error("Usuário não autenticado")
+    }
+
+    const { error } = await supabase
+        .from("leads")
+        .delete()
+        .eq("id", leadId)
+
+    if (error) {
+        console.error("Error deleting lead:", error)
+        throw new Error("Erro ao excluir lead")
+    }
+
+    const { revalidatePath } = await import("next/cache")
+    revalidatePath("/dashboard/leads")
+}
+
+export async function updateLead(leadId: string, data: Partial<Lead>) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) throw new Error("Usuário não autenticado")
+
+    // Filter allowed fields to prevent arbitrary updates
+    const allowedFields = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        company: data.company,
+        job_title: data.job_title,
+        notes: data.notes
+    }
+
+    // Remove undefined keys
+    Object.keys(allowedFields).forEach(key => (allowedFields as any)[key] === undefined && delete (allowedFields as any)[key])
+
+    const { error } = await supabase
+        .from("leads")
+        .update(allowedFields)
+        .eq("id", leadId)
+
+    if (error) {
+        console.error("Error updating lead:", error)
+        throw new Error("Erro ao atualizar lead")
+    }
+
+    const { revalidatePath } = await import("next/cache")
+    revalidatePath(`/dashboard/leads/${leadId}`)
+    revalidatePath("/dashboard/leads")
+}
+
+export async function removeLeadTag(leadId: string, tagToRemove: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) throw new Error("Usuário não autenticado")
+
+    // Get current tags
+    const { data: lead } = await supabase
+        .from("leads")
+        .select("tags")
+        .eq("id", leadId)
+        .single()
+
+    if (!lead) throw new Error("Lead não encontrado")
+
+    const currentTags = (lead.tags as string[]) || []
+    const updatedTags = currentTags.filter(t => t !== tagToRemove)
+
+    const { error } = await supabase
+        .from("leads")
+        .update({ tags: updatedTags })
+        .eq("id", leadId)
+
+    if (error) throw new Error("Erro ao remover tag")
+
+    await supabase.from("lead_events").insert({
+        lead_id: leadId,
+        type: 'tag_removed',
+        payload: { tag: tagToRemove, updated_by: user.id }
+    })
+
+    const { revalidatePath } = await import("next/cache")
+    revalidatePath(`/dashboard/leads/${leadId}`)
+}

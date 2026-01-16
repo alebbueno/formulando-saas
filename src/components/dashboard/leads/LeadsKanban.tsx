@@ -38,7 +38,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { Building2, MoreHorizontal, Calendar, TrendingUp, Plus, Trash2, GripVertical, Pencil, Palette } from "lucide-react"
+import { Building2, MoreHorizontal, Calendar, TrendingUp, Plus, Trash2, GripVertical, Pencil, Palette, LayoutGrid, Rows } from "lucide-react"
 import { LeadDetailsSheet } from "@/components/leads/lead-details-sheet"
 import { useWorkspace } from "@/context/workspace-context"
 import type { KanbanColumn } from "@/actions/workspaces"
@@ -70,6 +70,11 @@ const COLOR_OPTIONS = [
 
 export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
     const [leads, setLeads] = useState<Lead[]>(initialLeads)
+    const [viewMode, setViewMode] = useState<"expanded" | "compact">("expanded")
+
+    useEffect(() => {
+        setLeads(initialLeads)
+    }, [initialLeads])
     const [activeId, setActiveId] = useState<string | null>(null)
     const [activeColumn, setActiveColumn] = useState<KanbanColumn | null>(null)
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
@@ -260,6 +265,29 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
 
     return (
         <div className="flex flex-col h-full gap-4">
+            <div className="flex justify-end px-2">
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border">
+                    <Button
+                        variant={viewMode === "expanded" ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-7 w-7 px-0"
+                        onClick={() => setViewMode("expanded")}
+                        title="Visualização Expandida"
+                    >
+                        <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant={viewMode === "compact" ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-7 w-7 px-0"
+                        onClick={() => setViewMode("compact")}
+                        title="Visualização Compacta"
+                    >
+                        <Rows className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -288,6 +316,7 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
                                 onDelete={() => handleDeleteColumn(col.id)}
                                 onRename={(val) => handleRenameColumn(col.id, val)}
                                 onColorChange={(color, bg) => handleColorChange(col.id, color, bg)}
+                                viewMode={viewMode}
                             />
                         ))}
                     </SortableContext>
@@ -316,7 +345,7 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
                         />
                     ) : activeLead ? (
                         <div className="rotate-3 scale-105 cursor-grabbing shadow-2xl w-[320px]">
-                            <LeadCard lead={activeLead} isOverlay />
+                            <LeadCard lead={activeLead} isOverlay viewMode={viewMode} />
                         </div>
                     ) : null}
                 </DragOverlay>
@@ -326,6 +355,10 @@ export function LeadsKanban({ initialLeads }: LeadsKanbanProps) {
                 lead={selectedLead}
                 open={!!selectedLead}
                 onOpenChange={(open) => !open && setSelectedLead(null)}
+                onDelete={(deletedLeadId) => {
+                    setLeads(current => current.filter(l => l.id !== deletedLeadId))
+                    setSelectedLead(null)
+                }}
             />
         </div>
     )
@@ -340,10 +373,12 @@ interface KanbanColumnProps {
     onDelete?: () => void
     onRename?: (newLabel: string) => void
     onColorChange?: (color: string, bg: string) => void
+    onColorChange?: (color: string, bg: string) => void
     isOverlay?: boolean
+    viewMode?: "expanded" | "compact"
 }
 
-function KanbanColumn({ status, leads, onLeadClick, onDelete, onRename, onColorChange, isOverlay }: KanbanColumnProps) {
+function KanbanColumn({ status, leads, onLeadClick, onDelete, onRename, onColorChange, isOverlay, viewMode = "expanded" }: KanbanColumnProps) {
     const {
         setNodeRef,
         attributes,
@@ -465,7 +500,7 @@ function KanbanColumn({ status, leads, onLeadClick, onDelete, onRename, onColorC
                 <ScrollArea className="h-full -mr-3 pr-3">
                     <div className="flex flex-col gap-3 pb-4 min-h-[100px]">
                         {leads.map(lead => (
-                            <DraggableLeadCard key={lead.id} lead={lead} onClick={() => onLeadClick(lead)} />
+                            <DraggableLeadCard key={lead.id} lead={lead} onClick={() => onLeadClick(lead)} viewMode={viewMode} />
                         ))}
                     </div>
                 </ScrollArea>
@@ -474,7 +509,7 @@ function KanbanColumn({ status, leads, onLeadClick, onDelete, onRename, onColorC
     )
 }
 
-function DraggableLeadCard({ lead, onClick }: { lead: Lead, onClick?: () => void }) {
+function DraggableLeadCard({ lead, onClick, viewMode }: { lead: Lead, onClick?: () => void, viewMode: "expanded" | "compact" }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id })
 
     const style = transform ? {
@@ -484,7 +519,7 @@ function DraggableLeadCard({ lead, onClick }: { lead: Lead, onClick?: () => void
     if (isDragging) {
         return (
             <div ref={setNodeRef} style={style} className="opacity-0">
-                <LeadCard lead={lead} />
+                <LeadCard lead={lead} viewMode={viewMode} />
             </div>
         )
     }
@@ -498,18 +533,42 @@ function DraggableLeadCard({ lead, onClick }: { lead: Lead, onClick?: () => void
             className="group outline-none"
             onClick={onClick}
         >
-            <LeadCard lead={lead} />
+            <LeadCard lead={lead} viewMode={viewMode} />
         </div>
     )
 }
 
-function LeadCard({ lead, isOverlay }: { lead: Lead, isOverlay?: boolean }) {
+function LeadCard({ lead, isOverlay, viewMode = "expanded" }: { lead: Lead, isOverlay?: boolean, viewMode?: "expanded" | "compact" }) {
     let scoreColor = "text-muted-foreground bg-muted"
     if (lead.score >= 70) scoreColor = "text-emerald-700 bg-emerald-50 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
     else if (lead.score >= 30) scoreColor = "text-amber-700 bg-amber-50 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
     else scoreColor = "text-red-700 bg-red-50 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
 
     const initials = lead.name?.substring(0, 2).toUpperCase() || "??"
+
+    if (viewMode === "compact") {
+        return (
+            <Card className={cn(
+                "relative overflow-hidden border-0 shadow-sm transition-all duration-200 group-hover:shadow-md group-hover:-translate-y-0.5 ring-1 ring-border/50",
+                isOverlay && "shadow-xl ring-2 ring-primary/20 scale-105"
+            )}>
+                {/* Score Strip */}
+                <div className={cn("absolute left-0 top-0 bottom-0 w-1",
+                    lead.score >= 70 ? "bg-emerald-500" :
+                        lead.score >= 30 ? "bg-amber-500" : "bg-red-400"
+                )} />
+
+                <CardContent className="p-2 pl-4 flex items-center justify-between gap-2">
+                    <span className="font-medium text-sm truncate leading-tight text-foreground/90">
+                        {lead.name || "Lead sem nome"}
+                    </span>
+                    <div className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full border shadow-sm flex items-center gap-1 shrink-0", scoreColor)}>
+                        {lead.score}
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card className={cn(

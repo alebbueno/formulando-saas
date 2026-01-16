@@ -18,15 +18,50 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useState } from "react"
+import { deleteLead } from "@/actions/leads"
+import { toast } from "sonner"
+import { Trash2 } from "lucide-react"
 
 interface LeadDetailsSheetProps {
     lead: Lead | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    onDelete?: (leadId: string) => void
 }
 
-export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetProps) {
+export function LeadDetailsSheet({ lead, open, onOpenChange, onDelete }: LeadDetailsSheetProps) {
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
     if (!lead) return null
+
+    const handleDelete = async () => {
+        setIsDeleting(true)
+        try {
+            await deleteLead(lead.id)
+            toast.success("Lead excluído com sucesso")
+            onOpenChange(false)
+            if (onDelete) {
+                onDelete(lead.id)
+            }
+        } catch (error) {
+            toast.error("Erro ao excluir lead")
+        } finally {
+            setIsDeleting(false)
+            setShowDeleteDialog(false)
+        }
+    }
 
     const initials = lead.name?.substring(0, 2).toUpperCase() || "??"
 
@@ -41,6 +76,9 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
 
                 {/* Visual Header */}
                 <div className="relative h-32 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40 shrink-0">
+                    <div className="absolute top-4 right-4">
+
+                    </div>
                     <div className="absolute -bottom-10 left-6">
                         <Avatar className="h-20 w-20 border-4 border-background shadow-xl">
                             <AvatarFallback className="text-xl font-bold bg-muted text-muted-foreground">
@@ -156,16 +194,48 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
                     </div>
                 </ScrollArea>
 
-                <div className="p-4 border-t bg-muted/10 shrink-0">
+                <div className="p-4 border-t bg-muted/10 shrink-0 flex flex-col gap-2">
                     <Button className="w-full gap-2 shadow-sm font-semibold" size="lg" asChild>
                         <Link href={`/dashboard/leads/${lead.id}`}>
                             Ver Perfil Completo
                             <ExternalLink className="w-4 h-4 ml-1 opacity-70" />
                         </Link>
                     </Button>
+
+                    <button
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="text-xs text-muted-foreground hover:text-destructive underline-offset-4 hover:underline transition-colors py-1 self-center"
+                    >
+                        Excluir lead
+                    </button>
                 </div>
 
             </SheetContent>
+
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir Lead permanentemente?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o lead
+                            <strong> {lead.name}</strong> e todos os dados associados.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault()
+                                handleDelete()
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? "Excluindo..." : "Excluir Lead"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Sheet>
     )
 }
