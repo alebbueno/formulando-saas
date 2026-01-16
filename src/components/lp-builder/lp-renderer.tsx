@@ -312,6 +312,18 @@ function RenderElement({ element }: { element: LPElement }) {
                 </>
             )
 
+        case 'rich-text':
+            return (
+                <>
+                    {generateResponsiveCSS()}
+                    <div
+                        className={`prose prose-sm sm:prose-base max-w-none ${uniqueClass}`}
+                        style={baseStyle}
+                        dangerouslySetInnerHTML={{ __html: element.content || '' }}
+                    />
+                </>
+            )
+
         default:
             return null
     }

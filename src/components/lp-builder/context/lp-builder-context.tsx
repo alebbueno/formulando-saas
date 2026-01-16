@@ -35,7 +35,10 @@ type LPBuilderContextType = {
     removeElement: (id: string) => void
     updateElement: (id: string, element: Partial<LPElement>) => void
     moveElement: (activeId: string, overId: string, inside?: boolean) => void
+    moveElementDirection?: (id: string, direction: 'up' | 'down') => void
+    duplicateElement?: (id: string) => void
     saveLP: () => Promise<{ success: boolean; error?: string }>
+    workspaceId: string | null
 }
 
 const LPBuilderContext = createContext<LPBuilderContextType | null>(null)
@@ -54,6 +57,7 @@ export function LPBuilderProvider({ children, initialData }: { children: React.R
     const [mode, setMode] = useState<LPDesignerMode>('builder')
     const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop')
     const [projectId, setProjectId] = useState<string | null>(initialData?.id || null)
+    const [workspaceId, setWorkspaceId] = useState<string | null>(initialData?.workspace_id || null)
     const [isSaving, setIsSaving] = useState(false)
     const [lastSaved, setLastSaved] = useState<Date | null>(initialData?.updated_at ? new Date(initialData.updated_at) : null)
     const [isPublished, setIsPublished] = useState(initialData?.is_published || false)
@@ -285,6 +289,115 @@ export function LPBuilderProvider({ children, initialData }: { children: React.R
         })
     }
 
+    const moveElementDirection = (id: string, direction: 'up' | 'down') => {
+        setElements((prev) => {
+            const moveRecursive = (els: LPElement[]): LPElement[] => {
+                // Check if element is in this array
+                const index = els.findIndex(el => el.id === id);
+                if (index !== -1) {
+                    // Use arrayMove to swap
+                    const newIndex = direction === 'up' ? index - 1 : index + 1;
+                    if (newIndex >= 0 && newIndex < els.length) {
+                        return arrayMove(els, index, newIndex);
+                    }
+                    return els; // Cannot move (boundary)
+                }
+
+                // If not found, look in children
+                return els.map(el => {
+                    if (el.children) {
+                        return { ...el, children: moveRecursive(el.children) }
+                    }
+                    return el
+                });
+            }
+            return moveRecursive(prev);
+        })
+    }
+
+    const duplicateElement = (id: string) => {
+        setElements((prev) => {
+            const duplicateRecursive = (els: LPElement[]): { elements: LPElement[], found: boolean } => {
+                let foundInThisLevel = false
+                const newEls = [] as LPElement[]
+
+                for (const el of els) {
+                    newEls.push(el)
+
+                    if (el.id === id) {
+                        foundInThisLevel = true
+                        // Create deep copy with new IDs
+                        const createDeepCopy = (original: LPElement): LPElement => {
+                            const newId = crypto.randomUUID()
+                            return {
+                                ...original,
+                                id: newId,
+                                children: original.children ? original.children.map(createDeepCopy) : undefined
+                            }
+                        }
+                        const copy = createDeepCopy(el)
+                        newEls.push(copy)
+                    }
+
+                    if (!foundInThisLevel && el.children) {
+                        const result = duplicateRecursive(el.children)
+                        if (result.found) {
+                            // Update this element with new children
+                            newEls[newEls.length - 1] = { ...el, children: result.elements }
+                            // If found deeper, we don't set foundInThisLevel, but we updated the tree
+                            // We can return now? No, we need to finish checking interactions? 
+                            // Actually, if found deeper, we just return the new structure.
+                            // But we need to propagate 'found' signal up if we care, 
+                            // here we just rely on immutable updates.
+                            // Wait, if found in children, we just updated the `newEls` last item. 
+                            // But we need to ensure we return the modified list.
+                        }
+                    }
+                }
+
+                // If we found it in children, `newEls` contains the updated parent. 
+                // We just return `newEls`.
+
+                // Logic refinement:
+                // We map over elements. If we find the target, we insert copy after it.
+                // If not, we try to map children.
+
+                // Let's rewrite slightly simpler:
+                return { elements: newEls, found: foundInThisLevel || newEls.some(e => e.children !== els.find(old => old.id === e.id)?.children) }
+                // The 'found' check above is a bit hacky. 
+                // Let's use a standard recursion that returns { modified: boolean, elements: [] }
+            }
+
+            // Simpler Implementation
+            const cloneRecursive = (list: LPElement[]): LPElement[] => {
+                const res: LPElement[] = []
+                for (const el of list) {
+                    res.push(el)
+                    if (el.id === id) {
+                        // Clone it
+                        const createDeepCopy = (original: LPElement): LPElement => {
+                            const newId = crypto.randomUUID()
+                            return {
+                                ...original,
+                                id: newId,
+                                children: original.children ? original.children.map(createDeepCopy) : undefined
+                            }
+                        }
+                        res.push(createDeepCopy(el))
+                    } else if (el.children) {
+                        const newChildren = cloneRecursive(el.children)
+                        if (newChildren !== el.children) {
+                            res[res.length - 1] = { ...el, children: newChildren }
+                        }
+                    }
+                }
+                return res
+            }
+
+            return cloneRecursive(prev)
+        })
+    }
+
     const saveLP = async (): Promise<{ success: boolean; error?: string }> => {
         if (!projectId) {
             return { success: false, error: "ID do projeto não definido" }
@@ -339,7 +452,11 @@ export function LPBuilderProvider({ children, initialData }: { children: React.R
                 removeElement,
                 updateElement,
                 moveElement,
-                saveLP
+                moveElementDirection,
+                moveElementDirection,
+                duplicateElement,
+                saveLP,
+                workspaceId
             }}
         >
             {children}

@@ -8,21 +8,24 @@ import { Label } from "@/components/ui/label"
 import { Project } from "@/types"
 
 export function SidebarFormProperties() {
-    const { selectedElement, updateElement } = useLPBuilder()
+    const { selectedElement, updateElement, workspaceId } = useLPBuilder()
     const [forms, setForms] = useState<Project[]>([])
     const [loading, setLoading] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
         const fetchForms = async () => {
+            if (!workspaceId) return
+
             setLoading(true)
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
-                // Fetch ONLY forms
+                // Fetch ONLY forms for THIS workspace
                 const { data } = await supabase
                     .from("projects")
                     .select("*")
                     .eq("type", 'FORM')
+                    .eq("workspace_id", workspaceId)
                     .order("created_at", { ascending: false })
 
                 if (data) setForms(data as Project[])
@@ -33,7 +36,7 @@ export function SidebarFormProperties() {
         if (selectedElement?.type === 'form') {
             fetchForms()
         }
-    }, [selectedElement?.type])
+    }, [selectedElement?.type, workspaceId])
 
     if (selectedElement?.type !== 'form') return null
 

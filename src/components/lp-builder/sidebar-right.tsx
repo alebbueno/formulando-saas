@@ -17,14 +17,14 @@ import { ButtonControl } from "./properties/button-control"
 import { SocialControl } from "./properties/social-control"
 import { VideoControl } from "./properties/video-control"
 import { CustomHtmlControl } from "./properties/custom-html-control"
-import { Monitor, Tablet, Smartphone } from "lucide-react"
+import { Monitor, Tablet, Smartphone, ChevronUp, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ResponsiveStyleProvider } from "./context/responsive-style-context"
 
 type EditingDevice = 'desktop' | 'tablet' | 'mobile'
 
 export function SidebarRight() {
-    const { selectedElement, updateElement, removeElement } = useLPBuilder()
+    const { selectedElement, updateElement, removeElement, moveElementDirection } = useLPBuilder()
     const [editingDevice, setEditingDevice] = useState<EditingDevice>('desktop')
 
     if (!selectedElement) {
@@ -90,14 +90,17 @@ export function SidebarRight() {
                 <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">Editando</div>
                 <div className="font-medium capitalize flex items-center justify-between">
                     {selectedElement.type}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-red-500 hover:bg-red-50"
-                        onClick={() => removeElement(selectedElement.id)}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-red-500 hover:bg-red-50"
+                            onClick={() => removeElement(selectedElement.id)}
+                            title="Remover elemento"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -145,6 +148,117 @@ export function SidebarRight() {
 
             <ResponsiveStyleProvider editingDevice={editingDevice}>
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    {/* Typography Section (Moved to Top) */}
+                    {(selectedElement.type === 'heading' || selectedElement.type === 'text') && (
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-semibold uppercase text-muted-foreground">Tipografia</h3>
+                            <div className="grid gap-3">
+                                {/* Tag Selector (Semantic HTML) */}
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Tag HTML (SEO)</Label>
+                                    <select
+                                        className="w-full h-9 px-3 py-1 text-sm rounded-md border border-input bg-background"
+                                        value={selectedElement.properties?.tag || (selectedElement.type === 'heading' ? 'h2' : 'p')}
+                                        onChange={(e) => {
+                                            updateElement(selectedElement.id, {
+                                                properties: { ...selectedElement.properties, tag: e.target.value }
+                                            })
+                                        }}
+                                    >
+                                        <option value="h1">H1 (Título Principal)</option>
+                                        <option value="h2">H2 (Título Secundário)</option>
+                                        <option value="h3">H3 (Subtítulo)</option>
+                                        <option value="h4">H4</option>
+                                        <option value="h5">H5</option>
+                                        <option value="h6">H6</option>
+                                        <option value="p">P (Parágrafo)</option>
+                                        <option value="span">Span</option>
+                                        <option value="div">Div</option>
+                                    </select>
+                                </div>
+
+                                {/* Font Family */}
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Fonte</Label>
+                                    <select
+                                        className="w-full h-9 px-3 py-1 text-sm rounded-md border border-input bg-background"
+                                        value={getCurrentStyleValue('fontFamily') || ''}
+                                        onChange={(e) => handleStyleChange('fontFamily', e.target.value)}
+                                    >
+                                        <option value="">Padrão</option>
+                                        <option value="'Inter', sans-serif">Inter</option>
+                                        <option value="'Roboto', sans-serif">Roboto</option>
+                                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                                        <option value="'Lato', sans-serif">Lato</option>
+                                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                                        <option value="'Poppins', sans-serif">Poppins</option>
+                                        <option value="'Playfair Display', serif">Playfair Display</option>
+                                        <option value="'Merriweather', serif">Merriweather</option>
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Font Weight */}
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Peso</Label>
+                                        <select
+                                            className="w-full h-9 px-3 py-1 text-sm rounded-md border border-input bg-background"
+                                            value={getCurrentStyleValue('fontWeight') || 'normal'}
+                                            onChange={(e) => handleStyleChange('fontWeight', e.target.value)}
+                                        >
+                                            <option value="100">Thin (100)</option>
+                                            <option value="300">Light (300)</option>
+                                            <option value="400">Normal (400)</option>
+                                            <option value="500">Medium (500)</option>
+                                            <option value="600">Semi Bold (600)</option>
+                                            <option value="700">Bold (700)</option>
+                                            <option value="800">Extra Bold (800)</option>
+                                            <option value="900">Black (900)</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Font Size */}
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Tamanho</Label>
+                                        <Input
+                                            className="h-9"
+                                            value={getCurrentStyleValue('fontSize')}
+                                            onChange={(e) => handleStyleChange('fontSize', e.target.value)}
+                                            placeholder="16px"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Text Align */}
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Alinhamento</Label>
+                                    <div className="flex bg-slate-100 rounded p-1 gap-1">
+                                        {[
+                                            { value: 'left', label: 'Esq' },
+                                            { value: 'center', label: 'Cen' },
+                                            { value: 'right', label: 'Dir' },
+                                            { value: 'justify', label: 'Just' }
+                                        ].map(align => (
+                                            <button
+                                                key={align.value}
+                                                className={cn(
+                                                    "flex-1 py-1 text-xs rounded transition-colors",
+                                                    (getCurrentStyleValue('textAlign') || 'left') === align.value
+                                                        ? "bg-white shadow text-primary font-medium border"
+                                                        : "text-muted-foreground hover:bg-slate-200"
+                                                )}
+                                                onClick={() => handleStyleChange('textAlign', align.value)}
+                                            >
+                                                {align.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <Separator />
+                        </div>
+                    )}
+
                     {/* Content Section */}
                     {['heading', 'text', 'button'].includes(selectedElement.type) && (
                         <div className="space-y-3">
@@ -160,7 +274,41 @@ export function SidebarRight() {
                     )}
 
                     {selectedElement.type === 'image' && (
-                        <ImageUploadProperty />
+                        <>
+                            <ImageUploadProperty />
+                            <div className="grid grid-cols-2 gap-3 mt-4">
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Largura</Label>
+                                    <Input
+                                        className="h-9"
+                                        value={getCurrentStyleValue('width') || ''}
+                                        onChange={(e) => handleStyleChange('width', e.target.value)}
+                                        placeholder="100% ou 500px"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Altura</Label>
+                                    <Input
+                                        className="h-9"
+                                        value={getCurrentStyleValue('height') || ''}
+                                        onChange={(e) => handleStyleChange('height', e.target.value)}
+                                        placeholder="Auto ou 300px"
+                                    />
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-3 h-8 text-xs"
+                                onClick={() => {
+                                    handleStyleChange('width', '')
+                                    handleStyleChange('height', '')
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" /></svg>
+                                Resetar Tamanho
+                            </Button>
+                        </>
                     )}
 
                     {selectedElement.type === 'form' && (
@@ -284,30 +432,7 @@ export function SidebarRight() {
                                 </div>
                             </div>
 
-                            {/* Typography */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Font Size</Label>
-                                    <Input
-                                        value={getCurrentStyleValue('fontSize')}
-                                        onChange={(e) => handleStyleChange('fontSize', e.target.value)}
-                                        placeholder="16px"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Text Align</Label>
-                                    <select
-                                        className="w-full h-10 px-3 py-2 text-sm rounded-md border border-input bg-background"
-                                        value={getCurrentStyleValue('textAlign') || 'left'}
-                                        onChange={(e) => handleStyleChange('textAlign', e.target.value)}
-                                    >
-                                        <option value="left">Left</option>
-                                        <option value="center">Center</option>
-                                        <option value="right">Right</option>
-                                        <option value="justify">Justify</option>
-                                    </select>
-                                </div>
-                            </div>
+
                         </>
                     )}
                 </div>

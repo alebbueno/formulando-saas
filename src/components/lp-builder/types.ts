@@ -11,7 +11,8 @@ export type LPElementType =
     | 'form'
     | 'video'
     | 'social'
-    | 'custom-html';
+    | 'custom-html'
+    | 'rich-text';
 
 export interface LPElement {
     id: string;

@@ -98,6 +98,34 @@ export async function acceptInvitation(data: {
         userId = authData.user.id
     }
 
+    // 1.5 Ensure Profile Exists (Fix for Race Condition/Missing Trigger)
+    const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single()
+
+    if (!profile) {
+        console.log("Profile not found (trigger delay?), creating manually for:", userId)
+        const { error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .insert({
+                id: userId,
+                email: invite.email,
+                full_name: data.name || data.isExistingUser ? undefined : emailToName(invite.email), // Fallback name
+                updated_at: new Date().toISOString()
+            })
+
+        if (profileError) {
+            console.error("Error creating profile manually:", profileError)
+            // Continue anyway? If it fails, the next step might fail too, but maybe it exists now?
+            // If error is duplicate, it matches race condition, so we are good.
+            if (profileError.code !== '23505') {
+                return { success: false, error: "Erro ao criar perfil de usuário." }
+            }
+        }
+    }
+
     // 2. Add to Workspace Members (Using Admin to bypass "only admin can add members" rules)
     const inserts = (invite.workspace_ids as string[]).map(wsId => ({
         workspace_id: wsId,
@@ -124,4 +152,8 @@ export async function acceptInvitation(data: {
         .eq('id', invite.id)
 
     return { success: true }
+}
+
+function emailToName(email: string) {
+    return email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 }

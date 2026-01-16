@@ -117,7 +117,8 @@ export function SidebarLeft() {
             </div>
             <div className="grid grid-cols-2 gap-2">
                 <SidebarDraggableItem type="heading" label="Título" icon={Type} />
-                <SidebarDraggableItem type="text" label="Texto" icon={Type} />
+                <SidebarDraggableItem type="text" label="Texto Simples" icon={Type} />
+                <SidebarDraggableItem type="rich-text" label="Texto Rico" icon={CodeXml} />
                 <SidebarDraggableItem type="image" label="Imagem" icon={ImageIcon} />
                 <SidebarDraggableItem type="button" label="Botão" icon={MousePointer2} />
                 <SidebarDraggableItem type="social" label="Redes Sociais" icon={Share2} />

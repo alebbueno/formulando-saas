@@ -10,7 +10,7 @@ import { Upload, Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function BackgroundControl() {
-    const { selectedElement, updateElement } = useLPBuilder()
+    const { selectedElement, updateElement, workspaceId } = useLPBuilder()
     const [uploading, setUploading] = useState(false)
     const supabase = createClient()
 
@@ -36,7 +36,8 @@ export function BackgroundControl() {
         try {
             const fileExt = file.name.split('.').pop()
             const fileName = `bg-${Math.random()}.${fileExt}`
-            const filePath = `${fileName}`
+            // Use workspaceId folder if available, else root
+            const filePath = workspaceId ? `${workspaceId}/${fileName}` : `${fileName}`
 
             const { error: uploadError } = await supabase.storage
                 .from('lp-images')

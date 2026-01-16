@@ -104,7 +104,7 @@ function LPBuilderEditor({ project }: { project: Project | LandingPage }) {
                         ...((type === 'container' || type === 'section') && { display: 'flex', flexDirection: 'column', padding: '20px' })
                     },
                     children: [],
-                    content: type === "text" ? "Texto de exemplo" : type === "heading" ? "Título" : type === "button" ? "Clique aqui" : undefined
+                    content: type === "text" ? "Texto de exemplo" : type === "button" ? "Clique aqui" : undefined
                 }
             }
 

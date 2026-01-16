@@ -9,8 +9,75 @@ import { Input } from "@/components/ui/input"
 import { useDroppable } from "@dnd-kit/core"
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Facebook, Instagram, Linkedin, Twitter, Youtube, Github, Globe, Mail } from "lucide-react"
+import { Facebook, Instagram, Linkedin, Twitter, Youtube, Github, Globe, Mail, ChevronUp, ChevronDown, Copy, Trash2, GripVertical } from "lucide-react"
 import { EmbeddedForm } from "./embedded-form"
+import { RichTextEditor } from "./rich-text-editor"
+
+// Element Toolbar Component
+const ElementToolbar = ({ element }: { element: LPElement }) => {
+    const { removeElement, moveElementDirection, duplicateElement, setSelectedElement } = useLPBuilder()
+
+    return (
+        <div
+            className="absolute -top-10 right-0 h-9 bg-white border shadow-md rounded-md flex items-center gap-0.5 px-1 z-50 animate-in fade-in zoom-in-95 duration-100"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="flex items-center px-1 text-[10px] font-mono text-muted-foreground border-r mr-1 select-none">
+                {element.type}
+            </div>
+
+            {moveElementDirection && (
+                <>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={() => moveElementDirection(element.id, 'up')}
+                        title="Mover para cima"
+                    >
+                        <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={() => moveElementDirection(element.id, 'down')}
+                        title="Mover para baixo"
+                    >
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <div className="w-px h-4 bg-border mx-1" />
+                </>
+            )}
+
+            {duplicateElement && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => duplicateElement(element.id)}
+                    title="Clonar elemento"
+                >
+                    <Copy className="h-3.5 w-3.5" />
+                </Button>
+            )}
+
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-600"
+                onClick={() => {
+                    removeElement(element.id)
+                    setSelectedElement(null)
+                }}
+                title="Deletar elemento"
+            >
+                <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+        </div>
+    )
+}
 
 const getSocialIcon = (platform: string) => {
     switch (platform) {
@@ -42,7 +109,7 @@ function useMergeRefs<T = any>(...refs: (React.MutableRefObject<T> | React.Legac
 }
 
 export function CanvasElement({ element }: { element: LPElement }) {
-    const { addElement, selectedElement, setSelectedElement, previewDevice, mode } = useLPBuilder()
+    const { addElement, selectedElement, setSelectedElement, previewDevice, mode, updateElement } = useLPBuilder()
 
     // 1. Sortable Logic (Being dragged / Layout position)
     const {
@@ -156,23 +223,25 @@ export function CanvasElement({ element }: { element: LPElement }) {
     const childrenRenderer = (
         <React.Fragment>
             {/* Selection Handle */}
-            <div
-                className={cn(
-                    "absolute -top-6 left-0 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-t-md cursor-pointer z-[60]",
-                    isSelected && mode === 'builder' ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity",
-                    mode === 'preview' && "hidden" // Hide handle in preview
-                )}
-                onMouseDown={(e) => {
-                    e.stopPropagation() // Prevent drag start when clicking handle?
-                    // Actually we want click.
-                }}
-                onClick={(e) => {
-                    e.stopPropagation()
-                    setSelectedElement(element)
-                }}
-            >
-                {element.type}
-            </div>
+            {/* Selection Handle / Toolbar */}
+            {isSelected && mode === 'builder' ? (
+                <ElementToolbar element={element} />
+            ) : (
+                <div
+                    className={cn(
+                        "absolute -top-6 left-0 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-t-md cursor-pointer z-[60]",
+                        "opacity-0 group-hover:opacity-100 transition-opacity",
+                        mode === 'preview' && "hidden"
+                    )}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedElement(element)
+                    }}
+                >
+                    {element.type}
+                </div>
+            )}
 
             <SortableContext items={element.children?.map(c => c.id) || []} strategy={verticalListSortingStrategy}>
                 {element.children?.map(child => (
@@ -231,18 +300,75 @@ export function CanvasElement({ element }: { element: LPElement }) {
 
     // For text-based elements, we can keep using commonProps. ref will be setSortableRef (from check above)
     if (element.type === 'heading') {
+        const Tag = (element.properties?.tag || 'h2') as any
+        const { updateElement } = useLPBuilder()
+
         return (
-            <h2 {...commonProps} className={cn(commonProps.className, "text-2xl font-bold p-2 cursor-text")}>
-                {element.content}
-            </h2>
+            <div
+                {...commonProps}
+                className={cn(commonProps.className, "relative")}
+            >
+                <Tag
+                    contentEditable={isSelected && mode === 'builder'}
+                    suppressContentEditableWarning={true}
+                    onBlur={(e: React.FocusEvent<HTMLElement>) => {
+                        if (element.content !== e.currentTarget.innerText) {
+                            updateElement(element.id, { content: e.currentTarget.innerText })
+                        }
+                    }}
+                    className={cn(
+                        "p-2 cursor-text outline-none focus:ring-1 focus:ring-blue-500 rounded transition-colors w-full m-0", // Added m-0 to reset default margins
+                        !element.content && "min-w-[50px] min-h-[1em] bg-slate-50/50" // Placeholder visibility
+                    )}
+                    style={{
+                        fontWeight: element.styles?.fontWeight || 'bold',
+                        fontFamily: element.styles?.fontFamily, // Ensure font family is applied
+                        color: 'inherit', // Inherit color from wrapper (commonProps)
+                        textAlign: 'inherit', // Inherit alignment
+                        whiteSpace: 'pre-wrap', // Allow line breaks
+                        wordBreak: 'break-word' // Prevent overflow
+                    }}
+                >
+                    {element.content}
+                </Tag>
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
+            </div>
         )
     }
 
     if (element.type === 'text') {
+        const Tag = (element.properties?.tag || 'p') as any
+        const { updateElement } = useLPBuilder()
+
         return (
-            <p {...commonProps} className={cn(commonProps.className, "p-2 cursor-text")}>
-                {element.content}
-            </p>
+            <div
+                {...commonProps}
+                className={cn(commonProps.className, "relative")}
+            >
+                <Tag
+                    contentEditable={isSelected && mode === 'builder'}
+                    suppressContentEditableWarning={true}
+                    onBlur={(e: React.FocusEvent<HTMLElement>) => {
+                        if (element.content !== e.currentTarget.innerText) {
+                            updateElement(element.id, { content: e.currentTarget.innerText })
+                        }
+                    }}
+                    className={cn(
+                        "p-2 cursor-text outline-none focus:ring-1 focus:ring-blue-500 rounded transition-colors w-full m-0" // Added m-0
+                    )}
+                    style={{
+                        fontWeight: element.styles?.fontWeight || 'normal',
+                        fontFamily: element.styles?.fontFamily,
+                        color: 'inherit',
+                        textAlign: 'inherit',
+                        whiteSpace: 'pre-wrap', // Allow line breaks
+                        wordBreak: 'break-word' // Prevent overflow
+                    }}
+                >
+                    {element.content}
+                </Tag>
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
+            </div>
         )
     }
 
@@ -292,6 +418,7 @@ export function CanvasElement({ element }: { element: LPElement }) {
                 style={finalStyles}
             >
                 {element.content || "Clique aqui"}
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
             </a>
         )
     }
@@ -353,6 +480,7 @@ export function CanvasElement({ element }: { element: LPElement }) {
                         </a>
                     )
                 })}
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
             </div>
         )
     }
@@ -379,6 +507,7 @@ export function CanvasElement({ element }: { element: LPElement }) {
                 </div>
                 {/* Overlay to ensure draggable/selectable even if huge content */}
                 <div className="absolute inset-0 z-10" />
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
             </div>
         )
     }
@@ -433,18 +562,102 @@ export function CanvasElement({ element }: { element: LPElement }) {
                 )}
                 {/* Overlay to capture selection clicks */}
                 <div className="absolute inset-0 z-10" />
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
             </div>
         )
     }
 
     if (element.type === 'image') {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const [isResizing, setIsResizing] = React.useState(false)
+        const { updateElement } = useLPBuilder()
+
+        const handleResizeStart = (e: React.MouseEvent, direction: 'width' | 'height' | 'both') => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsResizing(true)
+
+            const startX = e.clientX
+            const startY = e.clientY
+            const startWidth = (e.target as HTMLElement).closest('.group')?.getBoundingClientRect().width || 0
+            const startHeight = (e.target as HTMLElement).closest('.group')?.getBoundingClientRect().height || 0
+
+            const handleMouseMove = (moveEvent: MouseEvent) => {
+                const deltaX = moveEvent.clientX - startX
+                const deltaY = moveEvent.clientY - startY
+
+                const newStyles: any = {}
+
+                if (direction === 'width' || direction === 'both') {
+                    newStyles.width = `${Math.max(50, startWidth + deltaX)}px`
+                }
+                if (direction === 'height' || direction === 'both') {
+                    newStyles.height = `${Math.max(50, startHeight + deltaY)}px`
+                }
+
+                if (Object.keys(newStyles).length > 0) {
+                    updateElement(element.id, {
+                        styles: {
+                            ...element.styles,
+                            ...newStyles
+                        }
+                    })
+                }
+            }
+
+            const handleMouseUp = () => {
+                setIsResizing(false)
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+            }
+
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+        }
+
         return (
-            <div {...commonProps} className={cn(commonProps.className, "overflow-hidden")}>
-                <img
-                    src={element.url || "https://placehold.co/600x400?text=Imagem"}
-                    alt="LP Image"
-                    className="w-full h-full object-cover pointer-events-none"
-                />
+            <div
+                {...commonProps}
+                className={cn(commonProps.className, isResizing && "ring-2 ring-blue-500 z-50 pointer-events-none-children")}
+            >
+                <div className="w-full h-full overflow-hidden" style={{ borderRadius: 'inherit' }}>
+                    <img
+                        src={element.url || "https://placehold.co/600x400?text=Imagem"}
+                        alt="LP Image"
+                        className="w-full h-full object-cover pointer-events-none"
+                    />
+                </div>
+                {isSelected && mode === 'builder' && (
+                    <>
+                        <ElementToolbar element={element} />
+
+                        {/* Resize Handles */}
+                        {/* Right - Width */}
+                        <div
+                            className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white border border-slate-300 rounded cursor-ew-resize flex items-center justify-center z-50 hover:bg-slate-50 transition-colors shadow-sm"
+                            style={{ right: '-8px' }}
+                            onMouseDown={(e) => handleResizeStart(e, 'width')}
+                        >
+                            <div className="w-0.5 h-4 bg-slate-300" />
+                        </div>
+
+                        {/* Bottom - Height */}
+                        <div
+                            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-4 bg-white border border-slate-300 rounded cursor-ns-resize flex items-center justify-center z-50 hover:bg-slate-50 transition-colors shadow-sm"
+                            style={{ bottom: '-8px' }}
+                            onMouseDown={(e) => handleResizeStart(e, 'height')}
+                        >
+                            <div className="w-4 h-0.5 bg-slate-300" />
+                        </div>
+
+                        {/* Bottom Right - Both */}
+                        <div
+                            className="absolute bottom-0 right-0 w-4 h-4 bg-white border border-primary rounded-full cursor-nwse-resize z-50 hover:scale-110 transition-transform shadow-md"
+                            style={{ bottom: '-6px', right: '-6px' }}
+                            onMouseDown={(e) => handleResizeStart(e, 'both')}
+                        />
+                    </>
+                )}
             </div>
         )
     }
@@ -462,6 +675,35 @@ export function CanvasElement({ element }: { element: LPElement }) {
                         <p className="text-xs text-slate-500 mt-1">Selecione um formulário nas propriedades</p>
                     </div>
                 )}
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
+            </div>
+        )
+    }
+
+    if (element.type === 'rich-text') {
+        const { updateElement } = useLPBuilder()
+        return (
+            <div {...commonProps} className={cn(commonProps.className, "min-h-[100px] p-2 cursor-text")}>
+                <div onPointerDown={(e) => e.stopPropagation()} className="cursor-text w-full">
+                    <RichTextEditor
+                        content={element.content || '<p>Comece a escrever...</p>'}
+                        onChange={(content) => {
+                            updateElement(element.id, { ...element, content })
+                        }}
+                        editable={mode === 'builder'}
+                    />
+                </div>
+                {/* Overlay for dragging if not editing? 
+                    Actually, we want to be able to click into it to edit. 
+                    If we have a drag handle or selection, that might interfere. 
+                    Usually, in builder mode, we might want to click to select, then double click to edit, 
+                    or just click to edit if selected.
+                    For now, passing editable={true} allows immediate editing.
+                    Existing elements use `commonProps` which includes listeners for DnD.
+                    If we put listeners on the wrapping div, it might capture events.
+                    Let's see how it behaves. The DnD kit useSortable might require a handle or specific activation constraints for text inputs.
+                 */}
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
             </div>
         )
     }
