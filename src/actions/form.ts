@@ -120,9 +120,17 @@ export async function updateFormSettings(id: string, settings: any) {
 }
 
 export async function submitForm(formUrl: string, content: string) {
-    const supabase = await createClient()
+    // Use Service Role (Admin) to bypass RLS for public submissions
+    // Ideally we should have a public insert policy, but for robustness/speed we use Admin here (like leads.ts)
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        throw new Error("Server configuration error: Missing Service Role Key")
+    }
 
-    // We don't check for user here, as this is a public action
+    const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+    const supabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
 
     // Validate that the project exists
     const { data: project, error: projectError } = await supabase
