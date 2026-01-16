@@ -4,7 +4,7 @@ import React from "react"
 import { useDraggable } from "@dnd-kit/core"
 import { useLPBuilder } from "./context/lp-builder-context"
 import { LPElementType, LPElement } from "./types"
-import { Type, Square, Layout, Image as ImageIcon, FormInput, Columns, LayoutGrid, MousePointer2, Share2, Video, CodeXml } from "lucide-react"
+import { Type, Square, Layout, Image as ImageIcon, FormInput, Columns, LayoutGrid, MousePointer2, Share2, Video, CodeXml, Sparkles } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -36,7 +36,7 @@ function SidebarDraggableItem({ type, label, icon: Icon, onClick }: { type: LPEl
 }
 
 export function SidebarLeft() {
-    const { addElement, elements } = useLPBuilder()
+    const { addElement, elements, selectedElement } = useLPBuilder()
 
     const handleQuickInsert = (type: LPElementType) => {
         let newElement: LPElement
@@ -84,20 +84,50 @@ export function SidebarLeft() {
                     { id: crypto.randomUUID(), type: 'container', styles: { flex: '1', minHeight: '100px', border: '1px dashed #ccc', padding: '10px' }, children: [] }
                 ]
             }
+        } else if (type === 'spacer') {
+            newElement = {
+                id: crypto.randomUUID(),
+                type: 'spacer',
+                styles: {
+                    width: '100%',
+                    height: '50px',
+                    backgroundColor: 'transparent'
+                }
+            }
         } else {
             newElement = {
                 id: crypto.randomUUID(),
                 type: type,
                 styles: {
                     width: type === 'container' || type === 'section' ? '100%' : undefined,
-                    ...((type === 'container' || type === 'section') && { display: 'flex', flexDirection: 'column', padding: '20px', minHeight: '150px' })
+                    ...((type === 'container' || type === 'section') && {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '20px',
+                        minHeight: '150px',
+                        backgroundColor: 'transparent'
+                    })
                 },
                 children: []
             }
         }
 
-        // Insert at the end
-        addElement(elements.length, newElement)
+        // SMART INSERTION: Insert into selected container/section if applicable
+        if (selectedElement && (selectedElement.type === 'section' || selectedElement.type === 'container')) {
+            // Validation: Prevent section inside container
+            if (type === 'section' && selectedElement.type === 'container') {
+                console.warn("Cannot place Section inside a Container")
+                // TODO: Show toast notification to user
+                return
+            }
+
+            // Insert inside the selected container as last child
+            const childrenCount = selectedElement.children?.length || 0
+            addElement(childrenCount, newElement, selectedElement.id)
+        } else {
+            // Insert at root level (end)
+            addElement(elements.length, newElement)
+        }
     }
 
     return (
@@ -116,15 +146,17 @@ export function SidebarLeft() {
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase">Elementos</h3>
             </div>
             <div className="grid grid-cols-2 gap-2">
-                <SidebarDraggableItem type="heading" label="Título" icon={Type} />
-                <SidebarDraggableItem type="text" label="Texto Simples" icon={Type} />
-                <SidebarDraggableItem type="rich-text" label="Texto Rico" icon={CodeXml} />
-                <SidebarDraggableItem type="image" label="Imagem" icon={ImageIcon} />
-                <SidebarDraggableItem type="button" label="Botão" icon={MousePointer2} />
-                <SidebarDraggableItem type="social" label="Redes Sociais" icon={Share2} />
-                <SidebarDraggableItem type="video" label="Vídeo" icon={Video} />
-                <SidebarDraggableItem type="custom-html" label="HTML / Embed" icon={CodeXml} />
-                <SidebarDraggableItem type="form" label="Formulário" icon={FormInput} />
+                <SidebarDraggableItem type="heading" label="Título" icon={Type} onClick={() => handleQuickInsert('heading')} />
+                <SidebarDraggableItem type="text" label="Texto Simples" icon={Type} onClick={() => handleQuickInsert('text')} />
+                <SidebarDraggableItem type="rich-text" label="Texto Rico" icon={CodeXml} onClick={() => handleQuickInsert('rich-text')} />
+                <SidebarDraggableItem type="image" label="Imagem" icon={ImageIcon} onClick={() => handleQuickInsert('image')} />
+                <SidebarDraggableItem type="button" label="Botão" icon={MousePointer2} onClick={() => handleQuickInsert('button')} />
+                <SidebarDraggableItem type="social" label="Redes Sociais" icon={Share2} onClick={() => handleQuickInsert('social')} />
+                <SidebarDraggableItem type="video" label="Vídeo" icon={Video} onClick={() => handleQuickInsert('video')} />
+                <SidebarDraggableItem type="custom-html" label="HTML / Embed" icon={CodeXml} onClick={() => handleQuickInsert('custom-html')} />
+                <SidebarDraggableItem type="form" label="Formulário" icon={FormInput} onClick={() => handleQuickInsert('form')} />
+                <SidebarDraggableItem type="spacer" label="Espaçamento" icon={Separator} onClick={() => handleQuickInsert('spacer')} />
+                <SidebarDraggableItem type="icon" label="Ícone" icon={Sparkles} onClick={() => handleQuickInsert('icon')} />
             </div>
         </div>
     )

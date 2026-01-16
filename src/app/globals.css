@@ -37,16 +37,24 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    
+
     /* Purple palette colors - based on provided hex values */
-    --purple-900: 277 52% 35%; /* #662D91 */
-    --purple-800: 277 78% 42%; /* #7B19C1 */
-    --purple-700: 277 75% 50%; /* #9444E2 */
-    --purple-600: 277 70% 58%; /* #A665E6 */
-    --purple-500: 277 65% 66%; /* #B37CEA */
-    --purple-400: 277 60% 74%; /* #C295EE */
-    --purple-300: 277 55% 82%; /* #D1AEF2 */
-    --purple-200: 277 50% 90%; /* lighter shade */
+    --purple-900: 277 52% 35%;
+    /* #662D91 */
+    --purple-800: 277 78% 42%;
+    /* #7B19C1 */
+    --purple-700: 277 75% 50%;
+    /* #9444E2 */
+    --purple-600: 277 70% 58%;
+    /* #A665E6 */
+    --purple-500: 277 65% 66%;
+    /* #B37CEA */
+    --purple-400: 277 60% 74%;
+    /* #C295EE */
+    --purple-300: 277 55% 82%;
+    /* #D1AEF2 */
+    --purple-200: 277 50% 90%;
+    /* lighter shade */
   }
 
   .dark {
@@ -82,8 +90,20 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Placeholder for contentEditable elements */
+  [contenteditable][data-placeholder]:empty:before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    pointer-events: none;
+    font-style: italic;
   }
 }
 
@@ -109,12 +129,15 @@
     0% {
       transform: translate(0px, 0px) scale(1);
     }
+
     33% {
       transform: translate(30px, -50px) scale(1.1);
     }
+
     66% {
       transform: translate(-20px, 20px) scale(0.9);
     }
+
     100% {
       transform: translate(0px, 0px) scale(1);
     }
@@ -124,9 +147,11 @@
     0% {
       background-position: 0% 50%;
     }
+
     50% {
       background-position: 100% 50%;
     }
+
     100% {
       background-position: 0% 50%;
     }
@@ -136,6 +161,7 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
@@ -145,6 +171,7 @@
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
@@ -162,6 +189,7 @@
     0% {
       transform: translateX(-100%);
     }
+
     100% {
       transform: translateX(100%);
     }

@@ -10,6 +10,7 @@ import { useDroppable } from "@dnd-kit/core"
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Facebook, Instagram, Linkedin, Twitter, Youtube, Github, Globe, Mail, ChevronUp, ChevronDown, Copy, Trash2, GripVertical } from "lucide-react"
+import * as Icons from "lucide-react"
 import { EmbeddedForm } from "./embedded-form"
 import { RichTextEditor } from "./rich-text-editor"
 
@@ -256,6 +257,7 @@ export function CanvasElement({ element }: { element: LPElement }) {
         const isEmpty = !element.children || element.children.length === 0
         return (
             <section
+                id={element.properties?.anchorId || undefined}
                 {...commonProps}
                 className={cn(
                     commonProps.className,
@@ -279,6 +281,7 @@ export function CanvasElement({ element }: { element: LPElement }) {
         const isEmpty = !element.children || element.children.length === 0
         return (
             <div
+                id={element.properties?.anchorId || undefined}
                 {...commonProps}
                 className={cn(
                     commonProps.className,
@@ -317,17 +320,18 @@ export function CanvasElement({ element }: { element: LPElement }) {
                         }
                     }}
                     className={cn(
-                        "p-2 cursor-text outline-none focus:ring-1 focus:ring-blue-500 rounded transition-colors w-full m-0", // Added m-0 to reset default margins
-                        !element.content && "min-w-[50px] min-h-[1em] bg-slate-50/50" // Placeholder visibility
+                        "p-2 cursor-text outline-none focus:ring-1 focus:ring-blue-500 rounded transition-colors w-full m-0",
+                        !element.content && "min-w-[50px] min-h-[1em] bg-slate-50/50"
                     )}
                     style={{
                         fontWeight: element.styles?.fontWeight || 'bold',
-                        fontFamily: element.styles?.fontFamily, // Ensure font family is applied
-                        color: 'inherit', // Inherit color from wrapper (commonProps)
-                        textAlign: 'inherit', // Inherit alignment
-                        whiteSpace: 'pre-wrap', // Allow line breaks
-                        wordBreak: 'break-word' // Prevent overflow
+                        fontFamily: element.styles?.fontFamily,
+                        color: 'inherit',
+                        textAlign: 'inherit',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
                     }}
+                    data-placeholder="Clique para digitar o título"
                 >
                     {element.content}
                 </Tag>
@@ -354,16 +358,18 @@ export function CanvasElement({ element }: { element: LPElement }) {
                         }
                     }}
                     className={cn(
-                        "p-2 cursor-text outline-none focus:ring-1 focus:ring-blue-500 rounded transition-colors w-full m-0" // Added m-0
+                        "p-2 cursor-text outline-none focus:ring-1 focus:ring-blue-500 rounded transition-colors w-full m-0",
+                        !element.content && "min-w-[50px] min-h-[1em] bg-slate-50/50"
                     )}
                     style={{
                         fontWeight: element.styles?.fontWeight || 'normal',
                         fontFamily: element.styles?.fontFamily,
                         color: 'inherit',
                         textAlign: 'inherit',
-                        whiteSpace: 'pre-wrap', // Allow line breaks
-                        wordBreak: 'break-word' // Prevent overflow
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word'
                     }}
+                    data-placeholder="Clique para digitar o texto"
                 >
                     {element.content}
                 </Tag>
@@ -486,6 +492,63 @@ export function CanvasElement({ element }: { element: LPElement }) {
     }
 
 
+
+    if (element.type === 'spacer') {
+        const spacerStyle = {
+            ...style,
+            width: style.width || '100%',
+            height: style.height || '50px',
+            backgroundColor: style.backgroundColor || 'transparent',
+            // Show a visual hint in builder mode if height is 0 or transparent
+            ...(mode === 'builder' && (!style.height || style.height === '0px') && {
+                minHeight: '20px',
+                outline: '1px dashed #ccc',
+                opacity: 0.5
+            })
+        }
+
+        return (
+            <div
+                ref={setRefs}
+                style={spacerStyle}
+                {...attributes}
+                {...listeners}
+                className={cn(
+                    "relative group",
+                    isSelected && "ring-2 ring-primary ring-offset-2"
+                )}
+                onClick={handleClick}
+            >
+                {/* Element Toolbar */}
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
+
+                {/* Visual hint for spacer in builder mode */}
+                {mode === 'builder' && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-muted text-[10px] text-muted-foreground px-1 rounded border">Spacer</div>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
+    // Icon
+    if (element.type === 'icon') {
+        const iconName = element.properties?.iconName || 'Star'
+        const IconComponent = Icons[iconName as keyof typeof Icons] as any
+
+        if (!IconComponent) return null
+
+        return (
+            <div
+                {...commonProps}
+                className={cn(commonProps.className, "inline-flex items-center justify-center")}
+            >
+                <IconComponent style={{ width: '1em', height: '1em' }} />
+                {isSelected && mode === 'builder' && <ElementToolbar element={element} />}
+            </div>
+        )
+    }
 
     if (element.type === 'custom-html') {
         return (

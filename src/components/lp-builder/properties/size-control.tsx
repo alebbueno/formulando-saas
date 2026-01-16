@@ -4,14 +4,19 @@ import React, { useEffect, useState } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { useLPBuilder } from "../context/lp-builder-context"
+// import { useLPBuilder } from "../context/lp-builder-context"
 
 const units = ["auto", "px", "%"] as const
 type Unit = (typeof units)[number]
 
-export function SizeControl() {
-    const { selectedElement, updateElement } = useLPBuilder()
+interface SizeControlProps {
+    width?: string
+    height?: string
+    onChangeWidth: (val: string) => void
+    onChangeHeight: (val: string) => void
+}
 
+export function SizeControl({ width, height, onChangeWidth, onChangeHeight }: SizeControlProps) {
     // Helper to parse value and unit from style string (e.g. "100px" -> { value: "100", unit: "px" })
     const parseSize = (value: string | undefined): { val: string, unit: Unit } => {
         if (!value || value === "auto") return { val: "", unit: "auto" }
@@ -25,32 +30,28 @@ export function SizeControl() {
     const [widthState, setWidthState] = useState<{ val: string, unit: Unit }>({ val: "", unit: "auto" })
     const [heightState, setHeightState] = useState<{ val: string, unit: Unit }>({ val: "", unit: "auto" })
 
+    // Sync with props
     useEffect(() => {
-        if (selectedElement) {
-            setWidthState(parseSize(selectedElement.styles?.width))
-            setHeightState(parseSize(selectedElement.styles?.height))
-        }
-    }, [selectedElement])
+        setWidthState(parseSize(width))
+        setHeightState(parseSize(height))
+    }, [width, height])
 
-    const handleUpdate = (prop: 'width' | 'height', val: string, unit: Unit) => {
-        if (!selectedElement) return
-
+    const handleUpdate = (dim: 'width' | 'height', val: string, unit: Unit) => {
         let newValue = "auto"
         if (unit !== "auto") {
-            // Keep existing number if just switching unit, or use default
-            const num = val === "" ? "100" : val
-            newValue = `${num}${unit}`
+            const num = val === "" ? "" : val // Allow empty string while typing
+            if (num === "") return // Don't allow empty value to be saved as "px" yet or handle it? 
+            // Better: if empty, maybe don't update parent yet? Or update as empty+unit?
+            // Existing logic was: const num = val === "" ? "100" : val.
+            // Let's stick to safe fallback if user commits, but for controlled input we want to pass valid CSS.
+
+            const cleanNum = val === "" ? "0" : val
+            newValue = `${cleanNum}${unit}`
         }
 
-        updateElement(selectedElement.id, {
-            styles: {
-                ...selectedElement.styles,
-                [prop]: newValue
-            }
-        })
+        if (dim === 'width') onChangeWidth(newValue)
+        else onChangeHeight(newValue)
     }
-
-    if (!selectedElement) return null
 
     return (
         <div className="space-y-4 border-t pt-4">
@@ -69,7 +70,7 @@ export function SizeControl() {
                         disabled={widthState.unit === 'auto'}
                         onChange={(e) => {
                             const newVal = e.target.value
-                            setWidthState(prev => ({ ...prev, val: newVal })) // Optimistic UI
+                            setWidthState(prev => ({ ...prev, val: newVal }))
                             handleUpdate('width', newVal, widthState.unit)
                         }}
                         className="h-8 text-xs"

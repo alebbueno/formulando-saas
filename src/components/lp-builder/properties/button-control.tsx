@@ -98,6 +98,21 @@ export function ButtonControl() {
                             className="pl-8"
                         />
                     </div>
+                    {/* Open in new tab toggle */}
+                    <div className="flex items-center justify-between pt-2">
+                        <Label className="text-xs cursor-pointer">Abrir em nova aba</Label>
+                        <Switch
+                            checked={selectedElement.properties?.openInNewTab !== false}
+                            onCheckedChange={(checked) => {
+                                updateElement(selectedElement.id, {
+                                    properties: {
+                                        ...selectedElement.properties,
+                                        openInNewTab: checked
+                                    }
+                                })
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -269,6 +284,24 @@ export function ButtonControl() {
                     </div>
                 </div>
 
+                <div className="space-y-2">
+                    <Label className="text-xs">Alinhamento</Label>
+                    <Select
+                        value={styles.textAlign || 'center'}
+                        onValueChange={(val) => handleStyleChange('textAlign', val)}
+                    >
+                        <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="left">Esquerda</SelectItem>
+                            <SelectItem value="center">Centro</SelectItem>
+                            <SelectItem value="right">Direita</SelectItem>
+                            <SelectItem value="justify">Justificado</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <div className="flex items-center justify-between">
                     <Label className="text-xs">Maiúsculas (Uppercase)</Label>
                     <Switch
@@ -276,6 +309,36 @@ export function ButtonControl() {
                         onCheckedChange={(checked) => handleStyleChange('textTransform', checked ? 'uppercase' : 'none')}
                     />
                 </div>
+            </div>
+
+            <div className="space-y-4 border-t pt-4">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground">
+                    Dimensões
+                </h3>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label className="text-xs">Largura</Label>
+                        <Input
+                            placeholder="auto"
+                            value={styles.width || ''}
+                            onChange={(e) => handleStyleChange('width', e.target.value)}
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-xs">Altura</Label>
+                        <Input
+                            placeholder="auto"
+                            value={styles.height || ''}
+                            onChange={(e) => handleStyleChange('height', e.target.value)}
+                            className="h-8 text-xs"
+                        />
+                    </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                    Use px, %, rem, etc. Ex: 200px, 100%, auto
+                </p>
             </div>
         </div>
     )

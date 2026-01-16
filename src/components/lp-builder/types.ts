@@ -12,7 +12,9 @@ export type LPElementType =
     | 'video'
     | 'social'
     | 'custom-html'
-    | 'rich-text';
+    | 'rich-text'
+    | 'spacer'
+    | 'icon';
 
 export interface LPElement {
     id: string;

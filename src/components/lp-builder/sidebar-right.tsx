@@ -17,6 +17,7 @@ import { ButtonControl } from "./properties/button-control"
 import { SocialControl } from "./properties/social-control"
 import { VideoControl } from "./properties/video-control"
 import { CustomHtmlControl } from "./properties/custom-html-control"
+import { IconControl } from "./properties/icon-control"
 import { Monitor, Tablet, Smartphone, ChevronUp, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ResponsiveStyleProvider } from "./context/responsive-style-context"
@@ -356,8 +357,38 @@ export function SidebarRight() {
                         <>
                             <div className="space-y-4">
                                 <h3 className="text-xs font-semibold uppercase text-muted-foreground">Layout</h3>
+
+                                {/* Anchor ID Field */}
+                                <div className="space-y-1">
+                                    <Label className="text-xs">ID da Âncora</Label>
+                                    <Input
+                                        placeholder="ex: sobre, contato"
+                                        value={selectedElement.properties?.anchorId || ''}
+                                        onChange={(e) => {
+                                            const value = e.target.value
+                                            // Sanitize: only allow valid HTML ID characters
+                                            const sanitized = value.replace(/[^a-zA-Z0-9_-]/g, '')
+                                            updateElement(selectedElement.id, {
+                                                properties: {
+                                                    ...selectedElement.properties,
+                                                    anchorId: sanitized
+                                                }
+                                            })
+                                        }}
+                                        className="h-9"
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Use para navegação com #id. Ex: #sobre
+                                    </p>
+                                </div>
+
                                 <ColumnsControl />
-                                <SizeControl />
+                                <SizeControl
+                                    width={getCurrentStyleValue('width')}
+                                    height={getCurrentStyleValue('height')}
+                                    onChangeWidth={(val) => handleStyleChange('width', val)}
+                                    onChangeHeight={(val) => handleStyleChange('height', val)}
+                                />
                                 <Separator className="my-4" />
                                 <FlexControl />
                             </div>
@@ -397,8 +428,47 @@ export function SidebarRight() {
                         )}
                     </div>
 
+                    {/* Spacer Properties */}
+                    {selectedElement.type === 'spacer' && (
+                        <div className="space-y-6">
+                            <h3 className="text-xs font-semibold uppercase text-muted-foreground">Propriedades do Espaçamento</h3>
+                            <SizeControl
+                                width={getCurrentStyleValue('width')}
+                                height={getCurrentStyleValue('height')}
+                                onChangeWidth={(val) => handleStyleChange('width', val)}
+                                onChangeHeight={(val) => handleStyleChange('height', val)}
+                            />
+                            <div className="space-y-1">
+                                <Label className="text-xs">Cor de Fundo</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="color"
+                                        className="w-10 h-10 p-1 cursor-pointer"
+                                        value={getCurrentStyleValue('backgroundColor') || '#ffffff'}
+                                        onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+                                    />
+                                    <Input
+                                        value={getCurrentStyleValue('backgroundColor')}
+                                        onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
+                                        placeholder="transparent"
+                                    />
+                                </div>
+                            </div>
+                            <Separator className="my-4" />
+                            <SpacingControl type="margin" />
+                        </div>
+                    )}
+
+                    {/* Icon Properties */}
+                    {selectedElement.type === 'icon' && (
+                        <>
+                            <IconControl />
+                            <Separator className="my-4" />
+                        </>
+                    )}
+
                     {/* Generic Typography & Colors (Hide for Button as it has its own) */}
-                    {!['button', 'form'].includes(selectedElement.type) && (
+                    {!['button', 'form', 'spacer', 'icon'].includes(selectedElement.type) && (
                         <>
                             <div className="space-y-1">
                                 <Label className="text-xs">Background Color</Label>

@@ -2,6 +2,7 @@
 
 import React from "react"
 import { LPElement } from "./types"
+import * as Icons from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Facebook, Instagram, Linkedin, Twitter, Youtube, Github, Mail, Globe } from "lucide-react"
 import { EmbeddedForm } from "./embedded-form"
@@ -10,6 +11,19 @@ interface LPRendererProps {
     elements: LPElement[]
     className?: string
 }
+
+const GOOGLE_FONTS = [
+    "Inter",
+    "Roboto",
+    "Open Sans",
+    "Lato",
+    "Montserrat",
+    "Oswald",
+    "Raleway",
+    "Merriweather",
+    "Playfair Display",
+    "Nunito"
+]
 
 // Helper to get social icon component
 const getSocialIcon = (platform: string) => {
@@ -122,6 +136,7 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <section
+                        id={element.properties?.anchorId || undefined}
                         className={`w-full min-h-[100px] p-4 ${uniqueClass}`}
                         style={baseStyle}
                     >
@@ -130,62 +145,117 @@ function RenderElement({ element }: { element: LPElement }) {
                 </>
             )
 
-        case 'container':
+        case 'container': {
+            // Check if custom width or padding is set (ignore 'auto' and empty values)
+            const widthValue = element.styles?.width || element.responsiveStyles?.desktop?.width ||
+                element.responsiveStyles?.tablet?.width || element.responsiveStyles?.mobile?.width
+            const paddingValue = element.styles?.padding || element.responsiveStyles?.desktop?.padding ||
+                element.responsiveStyles?.tablet?.padding || element.responsiveStyles?.mobile?.padding
+
+            const hasCustomWidth = widthValue && widthValue !== 'auto' && widthValue.trim() !== ''
+            const hasCustomPadding = paddingValue && paddingValue !== 'auto' && paddingValue.trim() !== ''
+
+            // Apply defaults only if not customized
+            const containerClasses = cn(
+                'mx-auto min-h-[50px]',
+                !hasCustomWidth && 'w-full max-w-7xl',
+                !hasCustomPadding && 'p-2',
+                uniqueClass
+            )
+
             return (
                 <>
                     {generateResponsiveCSS()}
                     <div
-                        className={`mx-auto w-full max-w-7xl min-h-[50px] p-2 ${uniqueClass}`}
+                        id={element.properties?.anchorId || undefined}
+                        className={containerClasses}
                         style={baseStyle}
                     >
                         {renderChildren()}
                     </div>
                 </>
             )
+        }
 
-        case 'heading':
+        case 'heading': {
+            const Tag = (element.properties?.tag || 'h2') as any
             return (
                 <>
                     {generateResponsiveCSS()}
-                    <h1
-                        className={`text-4xl font-bold ${uniqueClass}`}
+                    <Tag
+                        className={uniqueClass}
                         style={baseStyle}
                     >
                         {element.content}
-                    </h1>
+                    </Tag>
                 </>
             )
+        }
 
-        case 'text':
+        case 'text': {
+            const Tag = (element.properties?.tag || 'p') as any
             return (
                 <>
                     {generateResponsiveCSS()}
-                    <p
-                        className={`text-base ${uniqueClass}`}
+                    <Tag
+                        className={uniqueClass}
                         style={baseStyle}
                     >
                         {element.content}
-                    </p>
+                    </Tag>
                 </>
             )
+        }
 
-        case 'button':
+        case 'button': {
+            const hoverStyles = element.properties?.hoverStyles || {}
+            const openInNewTab = element.properties?.openInNewTab !== false // Default true
+
+            // Generate hover CSS
+            const hoverCss = Object.keys(hoverStyles).length > 0 ? `
+                .${uniqueClass}:hover {
+                    ${Object.entries(hoverStyles).map(([key, value]) => {
+                const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
+                return `${cssKey}: ${value} !important;`
+            }).join(' ')}
+                }
+            ` : ''
+
             return (
                 <>
                     {generateResponsiveCSS()}
-                    <button
-                        className={`px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 ${uniqueClass}`}
+                    {hoverCss && <style dangerouslySetInnerHTML={{ __html: hoverCss }} />}
+                    <a
+                        href={element.url || '#'}
+                        target={openInNewTab ? '_blank' : '_self'}
+                        rel={openInNewTab ? 'noopener noreferrer' : undefined}
+                        className={`inline-block px-4 py-2 rounded transition-colors ${uniqueClass}`}
                         style={baseStyle}
-                        onClick={() => {
-                            if (element.url) {
-                                window.open(element.url, '_blank')
-                            }
-                        }}
                     >
                         {element.content}
-                    </button>
+                    </a>
                 </>
             )
+        }
+
+        case 'icon': {
+            const iconName = element.properties?.iconName || 'Star'
+            const IconComponent = Icons[iconName as keyof typeof Icons] as any
+
+            if (!IconComponent) return null
+
+            return (
+                <>
+                    {generateResponsiveCSS()}
+                    <div
+                        className={`inline-flex items-center justify-center ${uniqueClass}`}
+                        style={baseStyle}
+                    >
+                        <IconComponent style={{ width: '1em', height: '1em' }} />
+                    </div>
+                </>
+            )
+        }
 
         case 'image':
             return (
@@ -317,9 +387,25 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <div
-                        className={`prose prose-sm sm:prose-base max-w-none ${uniqueClass}`}
+                        className={`prose prose-sm sm:prose-base max-w-none [&_*]:font-[inherit] ${uniqueClass}`}
                         style={baseStyle}
                         dangerouslySetInnerHTML={{ __html: element.content || '' }}
+                    />
+                </>
+            )
+
+        case 'spacer':
+            return (
+                <>
+                    {generateResponsiveCSS()}
+                    <div
+                        className={uniqueClass}
+                        style={{
+                            width: '100%',
+                            height: baseStyle.height || '50px',
+                            backgroundColor: baseStyle.backgroundColor || 'transparent',
+                            ...baseStyle
+                        }}
                     />
                 </>
             )
@@ -330,6 +416,18 @@ function RenderElement({ element }: { element: LPElement }) {
 }
 
 export function LPRenderer({ elements, className }: LPRendererProps) {
+    // Load Google Fonts
+    React.useEffect(() => {
+        const linkId = 'lp-renderer-fonts-loader'
+        if (!document.getElementById(linkId)) {
+            const link = document.createElement('link')
+            link.id = linkId
+            link.href = `https://fonts.googleapis.com/css2?family=${GOOGLE_FONTS.join('&family=').replace(/\s/g, '+')}:ital,wght@0,300;0,400;0,700;1,400&display=swap`
+            link.rel = 'stylesheet'
+            document.head.appendChild(link)
+        }
+    }, [])
+
     return (
         <div className={cn("w-full", className)}>
             {elements.map(element => (
