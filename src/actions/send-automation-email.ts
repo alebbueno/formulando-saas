@@ -14,15 +14,40 @@ interface LeadData {
     [key: string]: any // Allow any additional fields
 }
 
+interface MergeTagData {
+    lead: LeadData
+    workspace?: {
+        name?: string
+        [key: string]: any
+    }
+    user?: {
+        name?: string
+        email?: string
+        [key: string]: any
+    }
+}
+
 /**
- * Replace merge tags in text with actual lead data
- * Supports: {{lead.field_name}}
+ * Replace merge tags in text with actual data
+ * Supports: {{lead.field}}, {{workspace.field}}, {{user.field}}
  */
-function replaceMergeTags(text: string, leadData: LeadData): string {
-    return text.replace(/\{\{lead\.(\w+)\}\}/g, (match, field) => {
-        const value = leadData[field]
-        return value !== undefined && value !== null ? String(value) : match
-    })
+function replaceMergeTags(text: string, data: MergeTagData): string {
+    return text
+        // Replace {{lead.field}}
+        .replace(/\{\{lead\.(\w+)\}\}/g, (match, field) => {
+            const value = data.lead?.[field]
+            return value !== undefined && value !== null ? String(value) : match
+        })
+        // Replace {{workspace.field}}
+        .replace(/\{\{workspace\.(\w+)\}\}/g, (match, field) => {
+            const value = data.workspace?.[field]
+            return value !== undefined && value !== null ? String(value) : match
+        })
+        // Replace {{user.field}}
+        .replace(/\{\{user\.(\w+)\}\}/g, (match, field) => {
+            const value = data.user?.[field]
+            return value !== undefined && value !== null ? String(value) : match
+        })
 }
 
 /**
@@ -61,16 +86,30 @@ export async function sendAutomationEmail(
             throw new Error("Lead não possui email")
         }
 
-        // Replace merge tags in subject and body
-        const personalizedSubject = replaceMergeTags(template.subject, leadData)
-        const personalizedBody = replaceMergeTags(template.body_html, leadData)
-
-        // Get workspace info for "from" email
+        // Get workspace info for "from" email and merge tags
         const { data: workspace } = await supabase
             .from("workspaces")
             .select("name")
             .eq("id", workspaceId)
             .single()
+
+        // Get user info for merge tags
+        const { data: userData } = await supabase
+            .from("users")
+            .select("name, email")
+            .eq("id", user.id)
+            .single()
+
+        // Prepare merge tag data
+        const mergeData: MergeTagData = {
+            lead: leadData,
+            workspace: workspace || undefined,
+            user: userData || undefined
+        }
+
+        // Replace merge tags in subject and body
+        const personalizedSubject = replaceMergeTags(template.subject, mergeData)
+        const personalizedBody = replaceMergeTags(template.body_html, mergeData)
 
         const fromName = workspace?.name || "Formulando"
         const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
@@ -152,8 +191,14 @@ export async function previewAutomationEmail(
         throw new Error("Template não encontrado")
     }
 
-    const personalizedSubject = replaceMergeTags(template.subject, sampleLeadData)
-    const personalizedBody = replaceMergeTags(template.body_html, sampleLeadData)
+    const mergeData: MergeTagData = {
+        lead: sampleLeadData,
+        workspace: { name: "Example Workspace" },
+        user: { name: "Example User", email: "user@example.com" }
+    }
+
+    const personalizedSubject = replaceMergeTags(template.subject, mergeData)
+    const personalizedBody = replaceMergeTags(template.body_html, mergeData)
 
     return {
         subject: personalizedSubject,
