@@ -149,33 +149,35 @@ export function SidebarRight() {
             <ResponsiveStyleProvider editingDevice={editingDevice}>
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                     {/* Typography Section (Moved to Top) */}
-                    {(selectedElement.type === 'heading' || selectedElement.type === 'text') && (
+                    {(selectedElement.type === 'heading' || selectedElement.type === 'text' || selectedElement.type === 'container') && (
                         <div className="space-y-4">
                             <h3 className="text-xs font-semibold uppercase text-muted-foreground">Tipografia</h3>
                             <div className="grid gap-3">
-                                {/* Tag Selector (Semantic HTML) */}
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Tag HTML (SEO)</Label>
-                                    <select
-                                        className="w-full h-9 px-3 py-1 text-sm rounded-md border border-input bg-background"
-                                        value={selectedElement.properties?.tag || (selectedElement.type === 'heading' ? 'h2' : 'p')}
-                                        onChange={(e) => {
-                                            updateElement(selectedElement.id, {
-                                                properties: { ...selectedElement.properties, tag: e.target.value }
-                                            })
-                                        }}
-                                    >
-                                        <option value="h1">H1 (Título Principal)</option>
-                                        <option value="h2">H2 (Título Secundário)</option>
-                                        <option value="h3">H3 (Subtítulo)</option>
-                                        <option value="h4">H4</option>
-                                        <option value="h5">H5</option>
-                                        <option value="h6">H6</option>
-                                        <option value="p">P (Parágrafo)</option>
-                                        <option value="span">Span</option>
-                                        <option value="div">Div</option>
-                                    </select>
-                                </div>
+                                {/* Tag Selector (Semantic HTML) - Only for text/heading */}
+                                {(selectedElement.type === 'heading' || selectedElement.type === 'text') && (
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Tag HTML (SEO)</Label>
+                                        <select
+                                            className="w-full h-9 px-3 py-1 text-sm rounded-md border border-input bg-background"
+                                            value={selectedElement.properties?.tag || (selectedElement.type === 'heading' ? 'h2' : 'p')}
+                                            onChange={(e) => {
+                                                updateElement(selectedElement.id, {
+                                                    properties: { ...selectedElement.properties, tag: e.target.value }
+                                                })
+                                            }}
+                                        >
+                                            <option value="h1">H1 (Título Principal)</option>
+                                            <option value="h2">H2 (Título Secundário)</option>
+                                            <option value="h3">H3 (Subtítulo)</option>
+                                            <option value="h4">H4</option>
+                                            <option value="h5">H5</option>
+                                            <option value="h6">H6</option>
+                                            <option value="p">P (Parágrafo)</option>
+                                            <option value="span">Span</option>
+                                            <option value="div">Div</option>
+                                        </select>
+                                    </div>
+                                )}
 
                                 {/* Font Family */}
                                 <div className="space-y-1">

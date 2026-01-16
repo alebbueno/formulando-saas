@@ -162,7 +162,7 @@ export function RichTextEditor({ content, onChange, editable = true, className }
     return (
         <div className="relative w-full">
             {editable && (
-                <BubbleMenu editor={editor} className="flex flex-col rounded-md border bg-background shadow-md">
+                <BubbleMenu editor={editor} className="flex flex-col rounded-md border bg-background shadow-md text-slate-950">
                     {/* Top Row: Formatting & Links & Alignment */}
                     <div className="flex items-center p-1 bg-white dark:bg-zinc-900 gap-0.5 border-b rounded-t-md">
 
