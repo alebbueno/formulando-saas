@@ -83,11 +83,17 @@ export async function sendAutomationEmail(
         }
 
         // Get workspace info for "from" email and merge tags
-        const { data: workspace } = await supabase
+        const { data: workspace, error: workspaceError } = await supabase
             .from("workspaces")
             .select("name, created_by, sender_email, sender_name")
             .eq("id", workspaceId)
             .single()
+
+        if (workspaceError) {
+            console.error('[sendAutomationEmail] Error fetching workspace:', workspaceError)
+        }
+
+        console.log('[sendAutomationEmail] Workspace data:', workspace)
 
         // Get user info for merge tags (workspace owner)
         let userData = null
@@ -107,19 +113,30 @@ export async function sendAutomationEmail(
             user: userData || undefined
         }
 
+        console.log('[sendAutomationEmail] Merge data prepared:', {
+            hasLead: !!mergeData.lead,
+            hasWorkspace: !!mergeData.workspace,
+            workspaceName: mergeData.workspace?.name,
+            hasUser: !!mergeData.user
+        })
+
         // Replace merge tags in subject and body
         const personalizedSubject = replaceMergeTags(template.subject, mergeData)
         const personalizedBody = replaceMergeTags(template.body_html, mergeData)
 
-        // Use workspace custom sender email/name if configured, otherwise use defaults
+        // Configure sender: always send from system email, use workspace name
         const fromName = workspace?.sender_name || workspace?.name || "Formulando"
-        const fromEmail = workspace?.sender_email || process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
+        const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
+
+        // Use workspace sender_email as Reply-To if configured
+        const replyTo = workspace?.sender_email || undefined
 
         console.log('[sendAutomationEmail] Sending via Resend to:', leadData.email)
 
         // Send email via Resend
         const { data, error } = await resend.emails.send({
             from: `${fromName} <${fromEmail}>`,
+            replyTo: replyTo,
             to: [leadData.email],
             subject: personalizedSubject,
             html: personalizedBody,

@@ -94,6 +94,45 @@ export async function updateWorkspaceName(id: string, name: string) {
     return { success: true }
 }
 
+export async function updateWorkspaceEmailSettings(
+    id: string,
+    senderEmail: string | null,
+    senderName: string | null
+) {
+    const { user, supabase } = await getUserOrRedirect()
+
+    // Verify ownership
+    const { data: workspace, error: wsError } = await supabase
+        .from("workspaces")
+        .select("id")
+        .eq("id", id)
+        .eq("owner_id", user.id)
+        .single()
+
+    if (wsError || !workspace) {
+        return { error: "Você não tem permissão para alterar esta marca." }
+    }
+
+    // Use Admin Client to bypass RLS for the update
+    const adminSupabase = createAdminClient()
+    const { error } = await adminSupabase
+        .from("workspaces")
+        .update({
+            sender_email: senderEmail || null,
+            sender_name: senderName || null,
+            updated_at: new Date().toISOString()
+        })
+        .eq("id", id)
+
+    if (error) {
+        console.error("Error updating workspace email settings:", error)
+        return { error: "Erro ao atualizar configurações de email." }
+    }
+
+    revalidatePath("/dashboard")
+    return { success: true }
+}
+
 export async function createProject() {
     const { user, supabase } = await getUserOrRedirect()
 

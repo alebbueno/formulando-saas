@@ -8,32 +8,53 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useWorkspace } from "@/context/workspace-context"
 import { useState, useEffect } from "react"
-import { updateWorkspaceName } from "@/app/dashboard/actions"
+import { updateWorkspaceName, updateWorkspaceEmailSettings } from "@/app/dashboard/actions"
 import { toast } from "sonner"
-import { Loader2, Upload } from "lucide-react"
+import { Loader2, Upload, Mail } from "lucide-react"
 
 export function GeneralSettings() {
     const { activeWorkspace, refreshWorkspaces } = useWorkspace()
     const [name, setName] = useState(activeWorkspace?.name || "")
+    const [senderEmail, setSenderEmail] = useState("")
+    const [senderName, setSenderName] = useState("")
     const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
-        if (activeWorkspace) setName(activeWorkspace.name)
+        if (activeWorkspace) {
+            setName(activeWorkspace.name)
+            setSenderEmail((activeWorkspace as any).sender_email || "")
+            setSenderName((activeWorkspace as any).sender_name || "")
+        }
     }, [activeWorkspace])
 
     const handleSave = async () => {
         if (!activeWorkspace) return
         setIsLoading(true)
         try {
-            const result = await updateWorkspaceName(activeWorkspace.id, name)
-            if (result.error) {
-                toast.error(result.error)
-            } else {
-                toast.success("Workspace atualizado com sucesso!")
-                refreshWorkspaces()
+            // Update workspace name
+            const nameResult = await updateWorkspaceName(activeWorkspace.id, name)
+            if (nameResult.error) {
+                toast.error(nameResult.error)
+                setIsLoading(false)
+                return
             }
+
+            // Update email settings
+            const emailResult = await updateWorkspaceEmailSettings(
+                activeWorkspace.id,
+                senderEmail || null,
+                senderName || null
+            )
+            if (emailResult.error) {
+                toast.error(emailResult.error)
+                setIsLoading(false)
+                return
+            }
+
+            toast.success("Configurações atualizadas com sucesso!")
+            refreshWorkspaces()
         } catch (error) {
-            toast.error("Erro ao atualizar workspace")
+            toast.error("Erro ao atualizar configurações")
         } finally {
             setIsLoading(false)
         }
@@ -72,6 +93,62 @@ export function GeneralSettings() {
                                 </Button>
                             </div>
                         </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="border-border/50 shadow-sm bg-background/50 backdrop-blur-sm">
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Mail className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-xl font-semibold">Configurações de Email</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Configure o remetente dos emails enviados pelas automações deste workspace.
+                        <br />
+                        <span className="text-xs text-muted-foreground/80 mt-1 block">
+                            💡 Os emails serão enviados do nosso sistema, mas as respostas irão para o email configurado abaixo (Reply-To).
+                        </span>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div className="space-y-2.5">
+                            <Label className="text-sm text-foreground/80">
+                                Email de Resposta
+                                <span className="text-xs text-muted-foreground ml-1">(opcional)</span>
+                            </Label>
+                            <Input
+                                type="email"
+                                placeholder="contato@seudominio.com"
+                                value={senderEmail}
+                                onChange={(e) => setSenderEmail(e.target.value)}
+                                className="bg-muted/30 border-border/50 focus:border-primary/50"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Quando leads responderem, o email virá para este endereço
+                            </p>
+                        </div>
+                        <div className="space-y-2.5">
+                            <Label className="text-sm text-foreground/80">
+                                Nome do Remetente
+                                <span className="text-xs text-muted-foreground ml-1">(opcional)</span>
+                            </Label>
+                            <Input
+                                placeholder="Equipe Atendimento"
+                                value={senderName}
+                                onChange={(e) => setSenderName(e.target.value)}
+                                className="bg-muted/30 border-border/50 focus:border-primary/50"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Nome que aparecerá como remetente do email
+                            </p>
+                        </div>
+                    </div>
+                    <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                        <p className="text-sm text-foreground/80">
+                            <strong>Como funciona:</strong> Os emails serão enviados de <code className="bg-muted px-1 py-0.5 rounded text-xs">noreply@formulando.app</code>, mas quando o destinatário clicar em "Responder", o email será direcionado para o endereço configurado acima.
+                        </p>
                     </div>
                 </CardContent>
             </Card>

@@ -11,6 +11,8 @@ export type Workspace = {
     name: string
     slug: string
     role: "owner" | "member" | "client" | "finance_client"
+    sender_email?: string
+    sender_name?: string
     kanban_columns?: any[]
     subscription_status?: string
     plan?: {
@@ -55,6 +57,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                         id,
                         name,
                         slug,
+                        sender_email,
+                        sender_name,
                         kanban_columns,
                         subscription_status,
                         plan:plans(slug, name, max_leads_per_month, max_emails_per_month)
@@ -72,6 +76,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                 name: member.workspace.name,
                 slug: member.workspace.slug,
                 role: member.role,
+                sender_email: member.workspace.sender_email,
+                sender_name: member.workspace.sender_name,
                 kanban_columns: member.workspace.kanban_columns,
                 subscription_status: member.workspace.subscription_status,
                 plan: member.workspace.plan,
