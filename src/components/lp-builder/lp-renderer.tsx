@@ -7,6 +7,29 @@ import { cn } from "@/lib/utils"
 import { Facebook, Instagram, Linkedin, Twitter, Youtube, Github, Mail, Globe } from "lucide-react"
 import { EmbeddedForm } from "./embedded-form"
 
+// Helper function to get visibility classes based on device settings
+function getVisibilityClasses(element: LPElement): string {
+    const visibility = element.properties?.visibility || { desktop: true, mobile: true }
+
+    const classes: string[] = []
+
+    // Both hidden
+    if (!visibility.desktop && !visibility.mobile) {
+        classes.push('hidden')
+    }
+    // Desktop hidden, mobile visible
+    else if (!visibility.desktop && visibility.mobile) {
+        classes.push('md:hidden')
+    }
+    // Desktop visible, mobile hidden
+    else if (visibility.desktop && !visibility.mobile) {
+        classes.push('hidden md:block')
+    }
+    // Both visible = no classes needed
+
+    return classes.join(' ')
+}
+
 interface LPRendererProps {
     elements: LPElement[]
     className?: string
@@ -42,6 +65,15 @@ const getSocialIcon = (platform: string) => {
 function RenderElement({ element }: { element: LPElement }) {
     // Clone styles to avoid mutating original object and filter out dashed borders
     let baseStyle = { ...(element.styles || {}) } as React.CSSProperties
+
+    // Merge desktop responsive styles into baseStyle (these are the defaults for larger screens)
+    if (element.responsiveStyles?.desktop) {
+        baseStyle = {
+            ...baseStyle,
+            ...element.responsiveStyles.desktop
+        }
+    }
+
     if (baseStyle.border?.toString().includes('dashed')) {
         delete baseStyle.border
     }
@@ -102,6 +134,25 @@ function RenderElement({ element }: { element: LPElement }) {
             }
         }
 
+        // Desktop styles (min-width: 1025px) - only if desktop styles differ from base
+        // Desktop styles are already in baseStyle, but we add a media query for explicit override
+        if (element.responsiveStyles.desktop) {
+            const desktopStyles = Object.entries(element.responsiveStyles.desktop)
+                .map(([key, value]) => {
+                    if (key === 'border' && String(value).includes('dashed')) return ''
+                    if (key === 'borderStyle' && String(value).includes('dashed')) return ''
+
+                    const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase()
+                    return `${cssKey}: ${value} !important;`
+                })
+                .filter(Boolean)
+                .join(' ')
+
+            if (desktopStyles) {
+                cssRules.push(`@media (min-width: 1025px) { .${uniqueClass} { ${desktopStyles} } }`)
+            }
+        }
+
         if (cssRules.length === 0) return null
 
         const finalCSS = cssRules.join('\n')
@@ -112,6 +163,7 @@ function RenderElement({ element }: { element: LPElement }) {
             hasResponsiveStyles: !!element.responsiveStyles,
             mobileStyles: element.responsiveStyles?.mobile,
             tabletStyles: element.responsiveStyles?.tablet,
+            desktopStyles: element.responsiveStyles?.desktop,
             cssRules,
             finalCSS
         })
@@ -137,7 +189,7 @@ function RenderElement({ element }: { element: LPElement }) {
                     {generateResponsiveCSS()}
                     <section
                         id={element.properties?.anchorId || undefined}
-                        className={`w-full min-h-[100px] p-4 ${uniqueClass}`}
+                        className={`w-full min-h-[100px] p-4 ${uniqueClass} ${getVisibilityClasses(element)}`}
                         style={baseStyle}
                     >
                         {renderChildren()}
@@ -168,7 +220,7 @@ function RenderElement({ element }: { element: LPElement }) {
                     {generateResponsiveCSS()}
                     <div
                         id={element.properties?.anchorId || undefined}
-                        className={containerClasses}
+                        className={cn(containerClasses, getVisibilityClasses(element))}
                         style={baseStyle}
                     >
                         {renderChildren()}
@@ -183,7 +235,7 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <Tag
-                        className={uniqueClass}
+                        className={cn(uniqueClass, getVisibilityClasses(element))}
                         style={baseStyle}
                     >
                         {element.content}
@@ -198,7 +250,7 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <Tag
-                        className={uniqueClass}
+                        className={cn(uniqueClass, getVisibilityClasses(element))}
                         style={baseStyle}
                     >
                         {element.content}
@@ -229,7 +281,7 @@ function RenderElement({ element }: { element: LPElement }) {
                         href={element.url || '#'}
                         target={openInNewTab ? '_blank' : '_self'}
                         rel={openInNewTab ? 'noopener noreferrer' : undefined}
-                        className={`inline-block px-4 py-2 rounded transition-colors ${uniqueClass}`}
+                        className={cn(`inline-block px-4 py-2 rounded transition-colors ${uniqueClass}`, getVisibilityClasses(element))}
                         style={baseStyle}
                     >
                         {element.content}
@@ -248,7 +300,7 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <div
-                        className={`inline-flex items-center justify-center ${uniqueClass}`}
+                        className={cn(`inline-flex items-center justify-center ${uniqueClass}`, getVisibilityClasses(element))}
                         style={baseStyle}
                     >
                         <IconComponent style={{ width: '1em', height: '1em' }} />
@@ -264,7 +316,7 @@ function RenderElement({ element }: { element: LPElement }) {
                     <img
                         src={element.url}
                         alt={element.properties?.alt || "Image"}
-                        className={`max-w-full h-auto ${uniqueClass}`}
+                        className={cn(`max-w-full h-auto ${uniqueClass}`, getVisibilityClasses(element))}
                         style={baseStyle}
                     />
                 </>
@@ -368,7 +420,7 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <div
-                        className={`min-h-[100px] ${uniqueClass}`}
+                        className={cn(`min-h-[100px] ${uniqueClass}`, getVisibilityClasses(element))}
                         style={baseStyle}
                     >
                         {element.properties?.formId ? (
@@ -387,7 +439,7 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <div
-                        className={`prose prose-sm sm:prose-base max-w-none [&_*]:font-[inherit] ${uniqueClass}`}
+                        className={cn(`prose prose-sm sm:prose-base max-w-none [&_*]:font-[inherit] ${uniqueClass}`, getVisibilityClasses(element))}
                         style={baseStyle}
                         dangerouslySetInnerHTML={{ __html: element.content || '' }}
                     />
@@ -399,7 +451,7 @@ function RenderElement({ element }: { element: LPElement }) {
                 <>
                     {generateResponsiveCSS()}
                     <div
-                        className={uniqueClass}
+                        className={cn(uniqueClass, getVisibilityClasses(element))}
                         style={{
                             width: '100%',
                             height: baseStyle.height || '50px',

@@ -18,6 +18,7 @@ import { SocialControl } from "./properties/social-control"
 import { VideoControl } from "./properties/video-control"
 import { CustomHtmlControl } from "./properties/custom-html-control"
 import { IconControl } from "./properties/icon-control"
+import { VisibilityControl } from "./properties/visibility-control"
 import { Monitor, Tablet, Smartphone, ChevronUp, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ResponsiveStyleProvider } from "./context/responsive-style-context"
@@ -507,6 +508,10 @@ export function SidebarRight() {
 
                         </>
                     )}
+
+                    {/* Visibility Control - Show for all elements */}
+                    <Separator className="my-4" />
+                    <VisibilityControl />
                 </div>
             </ResponsiveStyleProvider>
         </div>
