@@ -2,8 +2,8 @@ export const PLANS = {
     growth: {
         name: "Growth",
         slug: "growth",
-        productId: "prod_TnUveTAWrd3vMA",
-        priceId: "price_1Sptw3KCwACzC5XnBy67qfWS",
+        productId: "prod_TnwGaQKBmEWv4z",
+        priceId: "price_1SqKNc2c9gUP7wyGDg8QMB2T",
         price: 249,
         limits: {
             leads: 5000,
@@ -23,8 +23,8 @@ export const PLANS = {
     scale: {
         name: "Scale",
         slug: "scale",
-        productId: "prod_TnUvnNywl8KSo0",
-        priceId: "price_1SptwHKCwACzC5XnQFMJ9901",
+        productId: "prod_TnwGOC1SFq1RwT",
+        priceId: "price_1SqKNd2c9gUP7wyGJU7PWPrD",
         price: 549,
         limits: {
             leads: 25000,
@@ -44,8 +44,8 @@ export const PLANS = {
     agency_pro: {
         name: "Agency Pro",
         slug: "agency-pro",
-        productId: "prod_TnUw4hvnE4xKdf",
-        priceId: "price_1SptwUKCwACzC5XnH3ZOzYDR",
+        productId: "prod_TnwGt7rJWD5V4I",
+        priceId: "price_1SqKNe2c9gUP7wyGPSZHlkU6",
         price: 899,
         limits: {
             leads: 999999, // Unlimited
