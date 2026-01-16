@@ -373,7 +373,6 @@ interface KanbanColumnProps {
     onDelete?: () => void
     onRename?: (newLabel: string) => void
     onColorChange?: (color: string, bg: string) => void
-    onColorChange?: (color: string, bg: string) => void
     isOverlay?: boolean
     viewMode?: "expanded" | "compact"
 }
