@@ -59,14 +59,10 @@ export async function sendAutomationEmail(
     workspaceId: string
 ) {
     try {
-        const supabase = await createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-
-        if (!user) {
-            throw new Error("Usuário não autenticado")
-        }
-
         console.log('[sendAutomationEmail] Starting...', { templateId, leadEmail: leadData.email })
+
+        // Use service role client for automation context (no user auth required)
+        const supabase = await createClient()
 
         // Fetch the email template
         const template = await getEmailTemplate(templateId)
@@ -89,16 +85,20 @@ export async function sendAutomationEmail(
         // Get workspace info for "from" email and merge tags
         const { data: workspace } = await supabase
             .from("workspaces")
-            .select("name")
+            .select("name, created_by")
             .eq("id", workspaceId)
             .single()
 
-        // Get user info for merge tags
-        const { data: userData } = await supabase
-            .from("users")
-            .select("name, email")
-            .eq("id", user.id)
-            .single()
+        // Get user info for merge tags (workspace owner)
+        let userData = null
+        if (workspace?.created_by) {
+            const { data } = await supabase
+                .from("users")
+                .select("name, email")
+                .eq("id", workspace.created_by)
+                .single()
+            userData = data
+        }
 
         // Prepare merge tag data
         const mergeData: MergeTagData = {
