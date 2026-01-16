@@ -19,7 +19,7 @@ export default async function WhatsappPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">WhatsApp Widget</h2>
                 <div className="text-sm text-muted-foreground">
-                    Capture leads diretamente pelo WhatsApp
+                    Capture leads e direcione para o WhatsApp
                 </div>
             </div>
 

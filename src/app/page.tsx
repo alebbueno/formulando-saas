@@ -7,12 +7,20 @@ import { AutomationsSection } from "@/components/landing/automations-section"
 import { DashboardSection } from "@/components/landing/dashboard-section"
 import { WhatsAppWidgetSection } from "@/components/landing/whatsapp-widget-section"
 import { IntegrationsShowcaseSection } from "@/components/landing/integrations-showcase-section"
-import { TemplatesSection } from "@/components/landing/templates-section"
-import { TestimonialsSection } from "@/components/landing/testimonials-section"
-import { PricingSection } from "@/components/landing/pricing-section"
-import { FAQSection } from "@/components/landing/faq-section"
-import { CTASection } from "@/components/landing/cta-section"
 import { Footer } from "@/components/landing/footer"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Formulando - Plataforma Completa de Captação e Conversão para Agências",
+  description: "Crie formulários inteligentes, landing pages de alta conversão, gerencie leads com CRM integrado, automatize processos e conecte tudo ao WhatsApp. A solução completa para agências modernas.",
+  keywords: ["plataforma para agências", "formulários online", "landing pages", "CRM para agências", "automação de marketing", "widget WhatsApp", "captação de leads", "funil de vendas", "gestão de clientes"],
+  openGraph: {
+    title: "Formulando - Plataforma Completa de Captação e Conversão",
+    description: "A plataforma completa para agências modernas captarem e converterem mais leads.",
+    type: "website",
+    locale: "pt_BR",
+  },
+}
 
 export default function Home() {
   return (
@@ -26,11 +34,6 @@ export default function Home() {
       <DashboardSection />
       <WhatsAppWidgetSection />
       <IntegrationsShowcaseSection />
-      <TemplatesSection />
-      <TestimonialsSection />
-      <PricingSection />
-      <FAQSection />
-      <CTASection />
       <Footer />
     </main>
   )

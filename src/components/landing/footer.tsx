@@ -26,8 +26,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-gray-600 text-sm mb-6 max-w-md leading-relaxed">
-              Plataforma poderosa que ajuda você a criar formulários profissionais,
-              páginas de captura e pesquisas interativas com facilidade.
+              A plataforma completa de captação e conversão para agências modernas.
+              Formulários, landing pages, CRM, automações e muito mais em um só lugar.
             </p>
             <div className="flex gap-3">
               <a
@@ -114,27 +114,27 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="#recursos"
+                  href="/#funcionalidades"
                   className="text-sm text-gray-600 hover:text-purple-700 transition-colors flex items-center group"
                 >
                   <span className="group-hover:translate-x-1 transition-transform">
-                    Recursos
+                    Funcionalidades
                   </span>
                 </Link>
               </li>
               <li>
                 <Link
-                  href="#precos"
+                  href="/#automacoes"
                   className="text-sm text-gray-600 hover:text-purple-700 transition-colors flex items-center group"
                 >
                   <span className="group-hover:translate-x-1 transition-transform">
-                    Preços
+                    Automações
                   </span>
                 </Link>
               </li>
               <li>
                 <Link
-                  href="#templates"
+                  href="/#templates"
                   className="text-sm text-gray-600 hover:text-purple-700 transition-colors flex items-center group"
                 >
                   <span className="group-hover:translate-x-1 transition-transform">
@@ -144,7 +144,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="#integracoes"
+                  href="/#integracoes"
                   className="text-sm text-gray-600 hover:text-purple-700 transition-colors flex items-center group"
                 >
                   <span className="group-hover:translate-x-1 transition-transform">
@@ -161,11 +161,21 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="#ajuda"
+                  href="/precos"
                   className="text-sm text-gray-600 hover:text-purple-700 transition-colors flex items-center group"
                 >
                   <span className="group-hover:translate-x-1 transition-transform">
-                    Central de Ajuda
+                    Preços
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/faq"
+                  className="text-sm text-gray-600 hover:text-purple-700 transition-colors flex items-center group"
+                >
+                  <span className="group-hover:translate-x-1 transition-transform">
+                    FAQ
                   </span>
                 </Link>
               </li>

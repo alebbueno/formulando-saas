@@ -45,7 +45,7 @@ export function CTASection() {
                 "transition-all"
               )}
             >
-              <Link href="#precos">
+              <Link href="/precos">
                 Ver Planos
               </Link>
             </Button>

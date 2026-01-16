@@ -45,7 +45,7 @@ export function FAQSection() {
     {
       question: "Como funciona o widget do WhatsApp?",
       answer:
-        "É um botão flutuante que você adiciona ao seu site. Quando o visitante clica, abre direto no WhatsApp com uma mensagem pré-configurada. Você pode personalizar mensagens diferentes para cada página e todos os leads são capturados automaticamente.",
+        "É um botão flutuante que você adiciona ao seu site. Quando o visitante clica, abre um formulário personalizado para capturar as informações dele. Após o preenchimento, o lead é salvo automaticamente no seu CRM e direcionado para conversar com você no WhatsApp.",
     },
     {
       question: "O que acontece se eu exceder os limites do meu plano?",

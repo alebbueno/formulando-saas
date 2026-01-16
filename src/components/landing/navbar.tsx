@@ -53,72 +53,39 @@ export function Navbar() {
 
             {/* Desktop Navigation - Centered */}
             <div className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
-              {/* Produto Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all">
-                    Produto
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="#recursos" className="cursor-pointer">
-                      Recursos
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="#templates" className="cursor-pointer">
-                      Templates
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="#integracoes" className="cursor-pointer">
-                      Integrações
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Recursos Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all">
-                    Recursos
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link href="#blog" className="cursor-pointer">
-                      Blog
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="#documentacao" className="cursor-pointer">
-                      Documentação
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="#ajuda" className="cursor-pointer">
-                      Central de Ajuda
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
               <Link
-                href="#empresa"
+                href="/#funcionalidades"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
               >
-                Empresa
+                Funcionalidades
               </Link>
               
               <Link
-                href="#precos"
+                href="/#automacoes"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
+              >
+                Automações
+              </Link>
+              
+              <Link
+                href="/#integracoes"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
+              >
+                Integrações
+              </Link>
+              
+              <Link
+                href="/precos"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
               >
                 Preços
+              </Link>
+
+              <Link
+                href="/faq"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
+              >
+                FAQ
               </Link>
             </div>
 
@@ -157,39 +124,39 @@ export function Navbar() {
             <div className="lg:hidden py-4 border-t border-gray-200 animate-in slide-in-from-top duration-200">
               <div className="flex flex-col gap-2">
                 <Link
-                  href="#recursos"
+                  href="/#funcionalidades"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Recursos
+                  Funcionalidades
                 </Link>
                 <Link
-                  href="#solucoes"
+                  href="/#automacoes"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Soluções
+                  Automações
                 </Link>
                 <Link
-                  href="#templates"
+                  href="/#integracoes"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Templates
+                  Integrações
                 </Link>
                 <Link
-                  href="#empresa"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Empresa
-                </Link>
-                <Link
-                  href="#precos"
+                  href="/precos"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Preços
+                </Link>
+                <Link
+                  href="/faq"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  FAQ
                 </Link>
               </div>
             </div>

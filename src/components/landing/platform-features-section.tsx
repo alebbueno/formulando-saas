@@ -47,9 +47,9 @@ export function PlatformFeaturesSection() {
       icon: FaWhatsapp,
       title: "Widget WhatsApp",
       description:
-        "Botão flutuante para captura de leads direto no WhatsApp. Configure mensagens automáticas e capture leads em tempo real no app mais usado do Brasil.",
+        "Botão flutuante com formulário personalizado. Capture informações dos visitantes e direcione-os automaticamente para conversar com você no WhatsApp.",
       gradient: "from-green-600 to-emerald-500",
-      stats: "Captura em tempo real",
+      stats: "Conversão automática",
       isReactIcon: true,
     },
     {

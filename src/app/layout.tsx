@@ -18,8 +18,20 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Formulando - Crie Formulários Profissionais com Facilidade",
-  description: "Plataforma poderosa para criar formulários profissionais com IA, páginas de captura e pesquisas interativas com interface intuitiva de arrastar e soltar.",
+  title: "Formulando - Plataforma Completa de Captação e Conversão para Agências",
+  description: "Crie formulários, landing pages, gerencie leads com CRM integrado, automatize processos e conecte com WhatsApp. Tudo que sua agência precisa em um só lugar.",
+  keywords: ["formulários online", "landing pages", "CRM", "automação de marketing", "captação de leads", "widget WhatsApp", "gestão de leads", "funil de vendas"],
+  openGraph: {
+    title: "Formulando - Plataforma Completa de Captação e Conversão",
+    description: "A plataforma completa para agências modernas. Formulários, landing pages, CRM, automações e muito mais.",
+    type: "website",
+    locale: "pt_BR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Formulando - Plataforma Completa de Captação e Conversão",
+    description: "A plataforma completa para agências modernas. Formulários, landing pages, CRM, automações e muito mais.",
+  },
 };
 
 import { Toaster } from "@/components/ui/sonner";

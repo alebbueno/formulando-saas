@@ -25,34 +25,34 @@ export function WhatsAppWidgetSection() {
               </div>
 
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6">
-                Capture leads direto no{" "}
+                Conecte seu site ao{" "}
                 <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
                   WhatsApp
                 </span>
               </h2>
 
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Adicione um botão flutuante em seu site que conecta visitantes diretamente 
-                ao seu WhatsApp. Configure mensagens automáticas e capture leads em tempo 
-                real no aplicativo mais usado do Brasil.
+                Botão flutuante que abre um formulário personalizado para capturar informações 
+                dos visitantes. Após o preenchimento, o lead é direcionado automaticamente 
+                para conversar com você no WhatsApp.
               </p>
 
               <div className="space-y-4 mb-8">
                 {[
                   {
                     icon: Zap,
-                    title: "Configuração instantânea",
-                    description: "Adicione o widget em minutos com um simples código",
+                    title: "Instalação em minutos",
+                    description: "Adicione o widget em seu site com um simples código",
                   },
                   {
                     icon: Users,
-                    title: "Mensagens personalizadas",
-                    description: "Configure mensagens automáticas por página ou produto",
+                    title: "Formulário personalizado",
+                    description: "Configure campos customizados para capturar as informações certas",
                   },
                   {
                     icon: TrendingUp,
-                    title: "Leads qualificados",
-                    description: "Capture leads já prontos para conversão direta",
+                    title: "Conversão automática",
+                    description: "Lead cadastrado e direcionado ao WhatsApp automaticamente",
                   },
                 ].map((item, index) => {
                   const Icon = item.icon
