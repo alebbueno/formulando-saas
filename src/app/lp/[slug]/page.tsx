@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { LPRenderer } from "@/components/lp-builder/lp-renderer"
 import { LPElement } from "@/components/lp-builder/types"
 import { Metadata } from "next"
+import { UTMTrackerScript } from "./utm-tracker-script"
 
 interface LPPublicPageProps {
     params: Promise<{
@@ -102,6 +103,9 @@ export default async function LPPublicPage(props: LPPublicPageProps) {
             {settings.customHeadScripts && (
                 <div dangerouslySetInnerHTML={{ __html: settings.customHeadScripts }} />
             )}
+
+            {/* UTM Parameter Tracking */}
+            <UTMTrackerScript />
 
             <LPRenderer elements={elements} />
         </div>

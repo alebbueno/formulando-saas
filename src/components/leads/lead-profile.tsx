@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Briefcase, Building2, Mail, MapPin, Globe, Calendar, Tag, TrendingUp, Hash } from "lucide-react"
+import { Briefcase, Building2, Mail, MapPin, Globe, Calendar, Tag, TrendingUp, Hash, MousePointerClick, ExternalLink } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -92,6 +92,71 @@ export function LeadProfile({ lead }: LeadProfileProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* UTM Tracking / Campaign Attribution */}
+                {(lead.utm_source || lead.utm_campaign || lead.landing_page_url) && (
+                    <>
+                        <Separator />
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                <MousePointerClick className="w-3.5 h-3.5" />
+                                Origem do Lead
+                            </h3>
+                            <div className="grid gap-2">
+                                {lead.utm_source && (
+                                    <div className="flex flex-col gap-1 p-3 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900">
+                                        <span className="text-xs text-muted-foreground font-medium">Fonte</span>
+                                        <Badge variant="secondary" className="font-mono text-xs w-fit">
+                                            {lead.utm_source}
+                                        </Badge>
+                                    </div>
+                                )}
+                                {lead.utm_medium && (
+                                    <div className="flex flex-col gap-1 p-3 rounded-lg bg-secondary/30">
+                                        <span className="text-xs text-muted-foreground font-medium">Mídia</span>
+                                        <span className="text-sm font-medium font-mono">{lead.utm_medium}</span>
+                                    </div>
+                                )}
+                                {lead.utm_campaign && (
+                                    <div className="flex flex-col gap-1 p-3 rounded-lg bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900">
+                                        <span className="text-xs text-muted-foreground font-medium">Campanha</span>
+                                        <span className="text-sm font-medium font-mono break-words">
+                                            {lead.utm_campaign}
+                                        </span>
+                                    </div>
+                                )}
+                                {lead.utm_content && (
+                                    <div className="flex flex-col gap-1 p-3 rounded-lg bg-secondary/30">
+                                        <span className="text-xs text-muted-foreground font-medium">Conteúdo</span>
+                                        <span className="text-sm font-medium font-mono break-words">
+                                            {lead.utm_content}
+                                        </span>
+                                    </div>
+                                )}
+                                {lead.utm_term && (
+                                    <div className="flex flex-col gap-1 p-3 rounded-lg bg-secondary/30">
+                                        <span className="text-xs text-muted-foreground font-medium">Termo</span>
+                                        <span className="text-sm font-medium font-mono break-words">{lead.utm_term}</span>
+                                    </div>
+                                )}
+                                {lead.landing_page_url && (
+                                    <div className="flex flex-col p-3 rounded-lg bg-secondary/30 gap-1.5">
+                                        <span className="text-xs text-muted-foreground font-medium">Página de Entrada</span>
+                                        <a
+                                            href={lead.landing_page_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs text-primary hover:underline flex items-start gap-1.5 font-mono break-all"
+                                        >
+                                            <span className="flex-1 leading-relaxed">{lead.landing_page_url}</span>
+                                            <ExternalLink className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* Custom Fields */}
                 {lead.custom_fields && Object.keys(lead.custom_fields).length > 0 && (

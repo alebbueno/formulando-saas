@@ -119,7 +119,19 @@ export async function updateFormSettings(id: string, settings: any) {
     revalidatePath(`/builder/${id}`)
 }
 
-export async function submitForm(formUrl: string, content: string) {
+export async function submitForm(
+    formUrl: string,
+    content: string,
+    utmData?: {
+        utm_source: string | null
+        utm_medium: string | null
+        utm_campaign: string | null
+        utm_content: string | null
+        utm_term: string | null
+        landing_page_url: string | null
+        referrer: string | null
+    } | null
+) {
     // Use Service Role (Admin) to bypass RLS for public submissions
     // Ideally we should have a public insert policy, but for robustness/speed we use Admin here (like leads.ts)
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -161,7 +173,7 @@ export async function submitForm(formUrl: string, content: string) {
     // Trigger Lead System Processing (Async - don't block response if possible, but safe to await here for now)
     try {
         const { processNewSubmission } = await import("./leads")
-        await processNewSubmission(formUrl, JSON.parse(content), submission?.id)
+        await processNewSubmission(formUrl, JSON.parse(content), submission?.id, utmData)
     } catch (leadError) {
         console.error("Error processing lead system:", leadError)
         // We don't throw here to avoid failing the user submission if just the lead logic fails

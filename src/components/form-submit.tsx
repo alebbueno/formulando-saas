@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { useRef, useState, useTransition } from "react"
 import { submitForm } from "@/actions/form"
 import { Loader2 } from "lucide-react"
+import { getStoredUTMParameters, clearUTMParameters } from "@/lib/utm-tracker"
 
 interface FormSubmitComponentProps {
     formUrl: string
@@ -99,8 +100,15 @@ export function FormSubmitComponent({ formUrl, content, buttonSettings }: FormSu
 
         startTransition(async () => {
             try {
-                await submitForm(formUrl, JSON.stringify(data))
+                // Get stored UTM parameters for campaign attribution
+                const utmData = getStoredUTMParameters()
+
+                await submitForm(formUrl, JSON.stringify(data), utmData)
                 setSubmitted(true)
+
+                // Clear UTM parameters after successful submission
+                clearUTMParameters()
+
                 toast.success("Formulário enviado com sucesso!")
             } catch (error) {
                 console.error(error)

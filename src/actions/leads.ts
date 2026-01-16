@@ -180,7 +180,20 @@ export async function createLead(data: {
     return { success: true, leadId: newLead.id }
 }
 
-export async function processNewSubmission(projectId: string, submissionData: any, submissionId?: string) {
+export async function processNewSubmission(
+    projectId: string,
+    submissionData: any,
+    submissionId?: string,
+    utmData?: {
+        utm_source: string | null
+        utm_medium: string | null
+        utm_campaign: string | null
+        utm_content: string | null
+        utm_term: string | null
+        landing_page_url: string | null
+        referrer: string | null
+    } | null
+) {
     console.log(`>>> processNewSubmission: START for Project ${projectId}, Submission ${submissionId}`)
 
     // We MUST use the Admin Client (Service Role) for the entire process.
@@ -347,7 +360,15 @@ export async function processNewSubmission(projectId: string, submissionData: an
                     score_reason: reason,
                     status: score >= 60 ? 'Qualificado' : 'Novo Lead',
                     tags: tags,
-                    custom_fields: customFields
+                    custom_fields: customFields,
+                    // UTM tracking data
+                    utm_source: utmData?.utm_source,
+                    utm_medium: utmData?.utm_medium,
+                    utm_campaign: utmData?.utm_campaign,
+                    utm_content: utmData?.utm_content,
+                    utm_term: utmData?.utm_term,
+                    landing_page_url: utmData?.landing_page_url,
+                    referrer: utmData?.referrer
                 })
                 .select("id")
                 .single()
@@ -462,6 +483,14 @@ export type Lead = {
     tags: string[]
     custom_fields?: Record<string, any>
     notes?: string
+    // UTM Tracking
+    utm_source?: string | null
+    utm_medium?: string | null
+    utm_campaign?: string | null
+    utm_content?: string | null
+    utm_term?: string | null
+    landing_page_url?: string | null
+    referrer?: string | null
     ai_analysis?: {
         score_final?: number
         score_adjustment_reason?: string

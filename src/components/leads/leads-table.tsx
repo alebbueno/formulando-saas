@@ -68,6 +68,7 @@ export function LeadsTable({ leads, totalPages, currentPage }: LeadsTableProps) 
                         <TableRow className="hover:bg-transparent">
                             <TableHead className="w-[300px]">Lead</TableHead>
                             <TableHead>Empresa / Cargo</TableHead>
+                            <TableHead>Origem</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Score</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
@@ -100,6 +101,25 @@ export function LeadsTable({ leads, totalPages, currentPage }: LeadsTableProps) 
                                                 <span>{lead.company || "-"}</span>
                                             </div>
                                             <span className="text-xs text-muted-foreground pl-5">{lead.job_title}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col text-xs gap-0.5">
+                                            {lead.utm_source && (
+                                                <div className="flex items-center gap-1">
+                                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">
+                                                        {lead.utm_source}
+                                                    </Badge>
+                                                    {lead.utm_campaign && (
+                                                        <span className="text-muted-foreground truncate max-w-[120px]">
+                                                            {lead.utm_campaign}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {!lead.utm_source && (
+                                                <span className="text-muted-foreground">Direto</span>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
