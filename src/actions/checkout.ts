@@ -3,6 +3,28 @@
 import { stripe } from "@/lib/stripe"
 import { createClient } from "@/lib/supabase/server"
 
+// Helper function to ensure URL has proper scheme
+function getBaseUrl(): string {
+    // If NEXT_PUBLIC_APP_URL is set and valid, use it
+    if (process.env.NEXT_PUBLIC_APP_URL) {
+        const url = process.env.NEXT_PUBLIC_APP_URL
+        // If it already has a scheme, return as is
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url
+        }
+        // Otherwise, add https:// prefix
+        return `https://${url}`
+    }
+
+    // In production on Vercel, use VERCEL_URL
+    if (process.env.VERCEL_URL) {
+        return `https://${process.env.VERCEL_URL}`
+    }
+
+    // Fallback to localhost for development
+    return 'http://localhost:3000'
+}
+
 export async function createCheckoutSession(priceId: string, workspaceId: string, trialDays: number = 0) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -41,6 +63,8 @@ export async function createCheckoutSession(priceId: string, workspaceId: string
         // but the webhook handles the sync when checkout completes.
     }
 
+    const baseUrl = getBaseUrl()
+
     const session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -58,8 +82,8 @@ export async function createCheckoutSession(priceId: string, workspaceId: string
                 workspaceId: workspaceId
             }
         },
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?canceled=true`,
+        success_url: `${baseUrl}/dashboard?success=true`,
+        cancel_url: `${baseUrl}/dashboard?canceled=true`,
         metadata: {
             workspaceId: workspaceId,
         },
