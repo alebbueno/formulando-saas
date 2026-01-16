@@ -103,7 +103,7 @@ export async function sendAutomationEmail(
         // Get workspace info for "from" email and merge tags
         const { data: workspace, error: workspaceError } = await supabase
             .from("workspaces")
-            .select("name, created_by, sender_email, sender_name")
+            .select("name, owner_id, sender_email, sender_name")
             .eq("id", workspaceId)
             .single()
 
@@ -115,11 +115,11 @@ export async function sendAutomationEmail(
 
         // Get user info for merge tags (workspace owner)
         let userData = null
-        if (workspace?.created_by) {
+        if (workspace?.owner_id) {
             const { data } = await supabase
                 .from("users")
                 .select("name, email")
-                .eq("id", workspace.created_by)
+                .eq("id", workspace.owner_id)
                 .single()
             userData = data
         }

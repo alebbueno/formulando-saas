@@ -88,13 +88,19 @@ export async function getWorkspaceUsage(workspaceId: string) {
         return { leads: 0, emails: 0 }
     }
 
-    // Email usage is currently not tracked in DB, returning mock or 0
-    // If we have an 'emails_sent' table log, we would query it similarly.
-    // For now, let's assume 0 or random for demo? Best to return 0 until implemented.
-    const emailsCount = 0
+    // Get email usage from workspaces table
+    const { data: workspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('emails_sent_this_month')
+        .eq('id', workspaceId)
+        .single()
+
+    if (workspaceError) {
+        console.error("Error fetching email usage:", workspaceError)
+    }
 
     return {
         leads: count || 0,
-        emails: emailsCount
+        emails: workspace?.emails_sent_this_month || 0
     }
 }
