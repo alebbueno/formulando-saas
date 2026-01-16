@@ -33,9 +33,9 @@ export async function generateMetadata(props: LPPublicPageProps): Promise<Metada
     return {
         title: settings.seoTitle || landingPage.name,
         description: settings.seoDescription || `Landing Page: ${landingPage.name}`,
-        icons: settings.favicon ? {
-            icon: settings.favicon
-        } : undefined
+        icons: {
+            icon: settings.favicon || '/icon-formulando.png'
+        }
     }
 }
 
