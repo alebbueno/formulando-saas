@@ -61,6 +61,24 @@ export async function sendAutomationEmail(
     try {
         console.log('[sendAutomationEmail] Starting...', { templateId, leadEmail: leadData.email })
 
+        // Check email limit before sending
+        const { checkEmailLimit, incrementEmailUsage } = await import('./email-usage')
+        const limitCheck = await checkEmailLimit(workspaceId)
+
+        if (!limitCheck.canSend) {
+            console.error('[sendAutomationEmail] Email limit reached:', {
+                used: limitCheck.used,
+                limit: limitCheck.limit
+            })
+            throw new Error(`Limite de emails atingido (${limitCheck.used}/${limitCheck.limit}). Faça upgrade do seu plano.`)
+        }
+
+        console.log('[sendAutomationEmail] Email limit OK:', {
+            used: limitCheck.used,
+            limit: limitCheck.limit,
+            remaining: limitCheck.limit - limitCheck.used
+        })
+
         // Use service role client for automation context (no user auth required)
         const supabase = await createClient()
 
@@ -115,14 +133,25 @@ export async function sendAutomationEmail(
 
         console.log('[sendAutomationEmail] Merge data prepared:', {
             hasLead: !!mergeData.lead,
+            leadName: mergeData.lead?.name,
             hasWorkspace: !!mergeData.workspace,
             workspaceName: mergeData.workspace?.name,
-            hasUser: !!mergeData.user
+            hasUser: !!mergeData.user,
+            userName: mergeData.user?.name,
+            userEmail: mergeData.user?.email
         })
+
+        console.log('[sendAutomationEmail] Full merge data:', JSON.stringify(mergeData, null, 2))
 
         // Replace merge tags in subject and body
         const personalizedSubject = replaceMergeTags(template.subject, mergeData)
         const personalizedBody = replaceMergeTags(template.body_html, mergeData)
+
+        console.log('[sendAutomationEmail] Personalization complete:', {
+            originalSubject: template.subject,
+            personalizedSubject,
+            bodyHasWorkspaceName: personalizedBody.includes(workspace?.name || 'MISSING')
+        })
 
         // Configure sender: always send from system email, use workspace name
         const fromName = workspace?.sender_name || workspace?.name || "Formulando"
@@ -145,6 +174,17 @@ export async function sendAutomationEmail(
         if (error) {
             console.error("Resend error:", error)
             throw new Error(`Erro ao enviar email: ${error.message}`)
+        }
+
+        console.log('[sendAutomationEmail] Email sent successfully!', data?.id)
+
+        // Increment email usage counter for workspace
+        try {
+            await incrementEmailUsage(workspaceId)
+            console.log('[sendAutomationEmail] Email usage incremented for workspace')
+        } catch (usageError) {
+            console.error('[sendAutomationEmail] Failed to increment usage:', usageError)
+            // Don't fail the email send if usage tracking fails
         }
 
         // Log the email sent event (optional - won't fail if table doesn't exist)
