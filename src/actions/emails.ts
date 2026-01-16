@@ -56,11 +56,6 @@ export async function getEmailTemplates(workspaceId: string) {
  */
 export async function getEmailTemplate(id: string) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        throw new Error("Usuário não autenticado")
-    }
 
     const { data, error } = await supabase
         .from("email_templates")
