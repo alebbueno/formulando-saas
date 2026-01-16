@@ -53,15 +53,25 @@ export function ImageGalleryModal({ open, onOpenChange, onSelect, workspaceId }:
 
             const [workspaceRes, rootRes] = await Promise.all([workspacePromise, rootPromise])
 
+            console.log("Workspace response:", JSON.stringify(workspaceRes, null, 2))
+            console.log("Root response:", JSON.stringify(rootRes, null, 2))
+
             if (workspaceRes.error) console.error("Workspace fetch error:", workspaceRes.error)
             if (rootRes.error) console.error("Root fetch error:", rootRes.error)
 
             let allFiles: any[] = []
 
+            const isImage = (file: any) => {
+                if (file.metadata?.mimetype?.startsWith('image/')) return true
+                // Fallback: check extension
+                if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)) return true
+                return false
+            }
+
             // Process Workspace Files
             if (workspaceRes.data) {
                 const wsFiles = workspaceRes.data
-                    .filter(file => file.metadata?.mimetype?.startsWith('image/'))
+                    .filter(file => isImage(file))
                     .map(file => ({
                         name: file.name,
                         // Workspace files need path prefix
@@ -74,7 +84,7 @@ export function ImageGalleryModal({ open, onOpenChange, onSelect, workspaceId }:
             // Process Root Files (Legacy)
             if (rootRes.data) {
                 const rootFiles = rootRes.data
-                    .filter(file => file.metadata?.mimetype?.startsWith('image/') && file.name !== '.emptyFolderPlaceholder') // filter folders if any
+                    .filter(file => isImage(file) && file.name !== '.emptyFolderPlaceholder')
                     .map(file => ({
                         name: file.name,
                         // Root files are just filename

@@ -453,7 +453,6 @@ export function LPBuilderProvider({ children, initialData }: { children: React.R
                 updateElement,
                 moveElement,
                 moveElementDirection,
-                moveElementDirection,
                 duplicateElement,
                 saveLP,
                 workspaceId
