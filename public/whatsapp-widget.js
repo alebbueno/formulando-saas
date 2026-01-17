@@ -270,6 +270,52 @@
         modal.querySelector('.close-btn').addEventListener('click', toggle);
 
         const form = modal.querySelector('#widget-form');
+
+        // Phone Mask Logic
+        const phoneInput = form.querySelector('input[name="phone"]') || form.querySelector('input[type="tel"]');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, "");
+                // Max length for (XX) XXXXX-XXXX is 11 digits + formatting
+                if (v.length > 11) v = v.slice(0, 11);
+
+                // Apply mask
+                if (v.length > 2) {
+                    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+                }
+                if (v.length > 7) { // (XX) X...
+                    // Mobile 9 digits + 2 area = 11. Format: (XX) XXXXX-XXXX
+                    // Landline 8 digits + 2 area = 10. Format: (XX) XXXX-XXXX
+                    // Let's assume dynamic behavior
+                    if (v.length > 14) { // Including formatting chars
+                        v = v.replace(/(\d{5})(\d{4})$/, "$1-$2");
+                    } else {
+                        // Temporary invalid state or typing
+                    }
+                }
+
+                // Simpler regex replace that handles both well enough for simple mask
+                // Re-calculating from raw digits
+                let raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+                if (raw.length > 2) {
+                    raw = raw.replace(/^(\d{2})(\d)/, "($1) $2");
+                }
+                if (raw.length > 9) { // 10 or 11 digits
+                    // If 11 digits (mobile): (XX) XXXXX-XXXX
+                    // If 10 digits (landline): (XX) XXXX-XXXX
+                    // Straight replace for trailing part
+                    if (raw.length > 14) { // (XX) XXXXX-XXXX -> 15 chars
+                        // Already formatted
+                    } else {
+                        // Simple logic: last 4 digits are suffix
+                        raw = raw.replace(/(\d)(\d{4})$/, "$1-$2");
+                    }
+                }
+                e.target.value = raw;
+            });
+            // Better simpler version for the tool
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const submitBtn = modal.querySelector('#submit-btn');
