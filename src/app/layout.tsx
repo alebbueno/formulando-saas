@@ -59,6 +59,11 @@ export default function RootLayout({
         />
         {children}
         <Toaster />
+
+        <script
+          src="https://www.formulando.app/whatsapp-widget.js"
+          data-workspace="2e66e7cd-a7a3-4a32-801a-7fdf1088a474"
+        ></script>
       </body>
     </html>
   );

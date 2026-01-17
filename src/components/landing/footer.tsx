@@ -15,9 +15,9 @@ export function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4 group">
               <div className="w-8 h-8 flex items-center justify-center transition-all group-hover:scale-110">
-                <img 
-                  src="/icon-formulando.svg" 
-                  alt="Formulando" 
+                <img
+                  src="/icon-formulando.svg"
+                  alt="Formulando"
                   className="w-full h-full"
                 />
               </div>
@@ -31,28 +31,14 @@ export function Footer() {
             </p>
             <div className="flex gap-3">
               <a
-                href="#"
+                href="https://www.linkedin.com/company/formulando/" target="_blank"
                 className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-center transition-all hover:scale-110 shadow-sm"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-4 h-4 text-gray-600" />
               </a>
               <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-center transition-all hover:scale-110 shadow-sm"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-4 h-4 text-gray-600" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-center transition-all hover:scale-110 shadow-sm"
-                aria-label="YouTube"
-              >
-                <Youtube className="w-4 h-4 text-gray-600" />
-              </a>
-              <a
-                href="#"
+                href="https://www.instagram.com/formulando.app/" target="_blank"
                 className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 flex items-center justify-center transition-all hover:scale-110 shadow-sm"
                 aria-label="Instagram"
               >
@@ -214,7 +200,7 @@ export function Footer() {
         </div>
 
         {/* Newsletter Section */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
+        {/* <div className="mt-12 pt-8 border-t border-gray-200">
           <div className="max-w-md">
             <h3 className="font-semibold text-gray-900 mb-2">
               Assine nossa newsletter
@@ -241,7 +227,7 @@ export function Footer() {
               </Button>
             </form>
           </div>
-        </div>
+        </div> */}
 
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-gray-200">
