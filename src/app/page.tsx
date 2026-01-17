@@ -8,6 +8,7 @@ import { DashboardSection } from "@/components/landing/dashboard-section"
 import { WhatsAppWidgetSection } from "@/components/landing/whatsapp-widget-section"
 import { IntegrationsShowcaseSection } from "@/components/landing/integrations-showcase-section"
 import { Footer } from "@/components/landing/footer"
+import Script from "next/script"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -35,6 +36,11 @@ export default function Home() {
       <WhatsAppWidgetSection />
       <IntegrationsShowcaseSection />
       <Footer />
+      <Script
+        src="https://www.formulando.app/whatsapp-widget.js"
+        data-workspace="2e66e7cd-a7a3-4a32-801a-7fdf1088a474"
+        strategy="afterInteractive"
+      />
     </main>
   )
 }
