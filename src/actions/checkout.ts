@@ -87,7 +87,8 @@ export async function createCheckoutSession(priceId: string, workspaceId: string
         metadata: {
             workspaceId: workspaceId,
         },
-        client_reference_id: workspaceId
+        client_reference_id: workspaceId,
+        allow_promotion_codes: true,
     })
 
     if (!session.url) {
