@@ -2,12 +2,12 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AccountOverview } from "@/components/dashboard/account/account-overview"
-import { AccountFinancial } from "./account-financial"
+
 import { AccountUsers } from "./account-users"
 import { AccountSettings } from "./account-settings"
 import { Button } from "@/components/ui/button"
 import { User } from "@supabase/supabase-js"
-import { Users, CreditCard, Settings, LayoutGrid } from "lucide-react"
+import { Users, Settings, LayoutGrid } from "lucide-react"
 
 interface AccountTabsProps {
     user: User
@@ -29,12 +29,7 @@ export function AccountTabs({ user }: AccountTabsProps) {
                 >
                     <Users className="w-4 h-4" /> Usuários
                 </TabsTrigger>
-                <TabsTrigger
-                    value="financial"
-                    className="flex gap-2 rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
-                >
-                    <CreditCard className="w-4 h-4" /> Financeiro
-                </TabsTrigger>
+
                 <TabsTrigger
                     value="settings"
                     className="flex gap-2 rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
@@ -51,9 +46,7 @@ export function AccountTabs({ user }: AccountTabsProps) {
                 <AccountUsers />
             </TabsContent>
 
-            <TabsContent value="financial" className="space-y-4">
-                <AccountFinancial />
-            </TabsContent>
+
 
             <TabsContent value="settings" className="space-y-4 pt-4">
                 <AccountSettings

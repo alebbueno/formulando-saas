@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { Plus, ExternalLink, MoreVertical, Zap } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import {
     DropdownMenu,
@@ -101,7 +102,7 @@ export function AccountOverview() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <CreateBrandDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
 
             <AlertDialog open={!!workspaceToDelete} onOpenChange={(open) => !open && setWorkspaceToDelete(null)}>
@@ -125,128 +126,142 @@ export function AccountOverview() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AccountStats
-                totalLeads={stats?.totalLeads || 0}
-                activeForms={stats?.activeForms || 0}
-                totalViews={stats?.totalViews || 0}
-                conversionRate={stats?.conversionRate || 0}
-            />
-            <AccountCharts
-                leadsGrowthData={stats?.leadsGrowthData || []}
-                workspaceDistributionData={stats?.workspaceDistributionData || []}
-            />
-
-            <div className="flex items-center justify-between pt-4">
-                <div>
-                    <h3 className="text-lg font-medium">Seus Workspaces</h3>
-                    <p className="text-sm text-muted-foreground">
-                        Gerencie seus planos e limites por workspace.
-                    </p>
-                </div>
-                <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Workspace
-                </Button>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {workspaces.map(workspace => {
-                    const usagePercent = Math.min(100, (workspace.usage.leads / workspace.usage.limit) * 100)
-                    const isAgency = workspace.plan?.slug === 'agency-pro'
-
-                    return (
-                        <Card key={workspace.id} className="group relative overflow-hidden transition-all hover:border-primary/50 hover:shadow-md flex flex-col">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-9 w-9 border">
-                                        <AvatarImage src={`https://avatar.vercel.sh/${workspace.id}.png`} alt={workspace.name} />
-                                        <AvatarFallback>{workspace.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="space-y-1">
-                                        <CardTitle className="text-base font-semibold leading-none">
-                                            {workspace.name}
-                                        </CardTitle>
-                                        <CardDescription className="text-xs">
-                                            {workspace.plan?.name || "Gratuito"}
-                                        </CardDescription>
-                                    </div>
-                                </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <MoreVertical className="h-4 w-4" />
-                                            <span className="sr-only">Menu</span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem asChild>
-                                            <Link href={`/dashboard/plans?workspace=${workspace.id}`}>Alterar Plano</Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            className="text-destructive focus:text-destructive cursor-pointer"
-                                            onSelect={(e) => {
-                                                e.preventDefault() // Prevent closing immediately if needed, mainly for dialog stability
-                                                setWorkspaceToDelete(workspace.id)
-                                            }}
-                                        >
-                                            Excluir
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </CardHeader>
-                            <CardContent className="pb-2 flex-1">
-                                <div className="mt-4 space-y-3">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground font-medium">Uso de Leads</span>
-                                        <span className={usagePercent > 90 && !isAgency ? "text-red-500 font-bold" : "text-muted-foreground"}>
-                                            {isAgency ? "Ilimitado" : `${workspace.usage.leads} / ${workspace.usage.limit}`}
-                                        </span>
-                                    </div>
-                                    <Progress value={isAgency ? 1 : usagePercent} className={isAgency ? "bg-primary/20" : ""} />
-
-                                    <div className="flex items-center gap-2 pt-2">
-                                        <Badge variant={workspace.subscription_status === 'active' ? 'default' : 'secondary'} className="capitalize">
-                                            {workspace.subscription_status === 'active' ? 'Ativo' : 'Grátis'}
-                                        </Badge>
-                                    </div>
-                                </div>
-                            </CardContent>
-                            <CardFooter className="pt-4 border-t bg-muted/5">
-                                <div className="flex gap-2 w-full">
-                                    <Button
-                                        variant="secondary"
-                                        className="flex-1 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                                        onClick={() => handleAccess(workspace.id)}
-                                    >
-                                        Acessar
-                                        <ExternalLink className="ml-2 h-4 w-4" />
-                                    </Button>
-                                    {(workspace.plan?.slug === 'free' || usagePercent > 80) && !isAgency && (
-                                        <Button variant="outline" size="icon" className="shrink-0 border-primary/20 text-primary hover:bg-primary/10" title="Fazer Upgrade" asChild>
-                                            <Link href="/dashboard/plans">
-                                                <Zap className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
-                                    )}
-                                </div>
-                            </CardFooter>
-                        </Card>
-                    )
-                })}
-            </div>
-
-            {workspaces.length === 0 && !isLoading && (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                        <Plus className="h-10 w-10 text-muted-foreground" />
+            {/* Workspaces Section */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-medium">Seus Workspaces</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Gerencie seus planos e limites por workspace.
+                        </p>
                     </div>
-                    <h3 className="mt-4 text-lg font-semibold">Nenhum workspace encontrado</h3>
-                    <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm">
-                        Crie seu primeiro workspace para começar.
-                    </p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)}>Criar Workspace</Button>
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Novo Workspace
+                    </Button>
                 </div>
-            )}
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {workspaces.map(workspace => {
+                        const usagePercent = Math.min(100, (workspace.usage.leads / workspace.usage.limit) * 100)
+                        const isAgency = workspace.plan?.slug === 'agency-pro'
+
+                        return (
+                            <Card key={workspace.id} className="group relative overflow-hidden transition-all hover:border-primary/50 hover:shadow-md flex flex-col">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-9 w-9 border">
+                                            <AvatarImage src={`https://avatar.vercel.sh/${workspace.id}.png`} alt={workspace.name} />
+                                            <AvatarFallback>{workspace.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="space-y-1">
+                                            <CardTitle className="text-base font-semibold leading-none">
+                                                {workspace.name}
+                                            </CardTitle>
+                                            <CardDescription className="text-xs">
+                                                {workspace.plan?.name || "Gratuito"}
+                                            </CardDescription>
+                                        </div>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <MoreVertical className="h-4 w-4" />
+                                                <span className="sr-only">Menu</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/dashboard/plans?workspace=${workspace.id}`}>Alterar Plano</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                className="text-destructive focus:text-destructive cursor-pointer"
+                                                onSelect={(e) => {
+                                                    e.preventDefault() // Prevent closing immediately if needed, mainly for dialog stability
+                                                    setWorkspaceToDelete(workspace.id)
+                                                }}
+                                            >
+                                                Excluir
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </CardHeader>
+                                <CardContent className="pb-2 flex-1">
+                                    <div className="mt-4 space-y-3">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-muted-foreground font-medium">Uso de Leads</span>
+                                            <span className={usagePercent > 90 && !isAgency ? "text-red-500 font-bold" : "text-muted-foreground"}>
+                                                {isAgency ? "Ilimitado" : `${workspace.usage.leads} / ${workspace.usage.limit}`}
+                                            </span>
+                                        </div>
+                                        <Progress value={isAgency ? 1 : usagePercent} className={isAgency ? "bg-primary/20" : ""} />
+
+                                        <div className="flex items-center gap-2 pt-2">
+                                            <Badge variant={workspace.subscription_status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                                                {workspace.subscription_status === 'active' ? 'Ativo' : 'Grátis'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="pt-4 border-t bg-muted/5">
+                                    <div className="flex gap-2 w-full">
+                                        <Button
+                                            variant="secondary"
+                                            className="flex-1 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                                            onClick={() => handleAccess(workspace.id)}
+                                        >
+                                            Acessar
+                                            <ExternalLink className="ml-2 h-4 w-4" />
+                                        </Button>
+                                        {(workspace.plan?.slug === 'free' || usagePercent > 80) && !isAgency && (
+                                            <Button variant="outline" size="icon" className="shrink-0 border-primary/20 text-primary hover:bg-primary/10" title="Fazer Upgrade" asChild>
+                                                <Link href="/dashboard/plans">
+                                                    <Zap className="h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                        )}
+                                    </div>
+                                </CardFooter>
+                            </Card>
+                        )
+                    })}
+                </div>
+
+                {workspaces.length === 0 && !isLoading && (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+                            <Plus className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        <h3 className="mt-4 text-lg font-semibold">Nenhum workspace encontrado</h3>
+                        <p className="mb-4 mt-2 text-sm text-muted-foreground max-w-sm">
+                            Crie seu primeiro workspace para começar.
+                        </p>
+                        <Button onClick={() => setIsCreateDialogOpen(true)}>Criar Workspace</Button>
+                    </div>
+                )}
+            </div>
+
+            <Separator />
+
+            {/* Stats Section */}
+            <div className="space-y-6">
+                <div>
+                    <h3 className="text-lg font-medium">Visão Geral da Conta</h3>
+                    <p className="text-sm text-muted-foreground">
+                        Métricas consolidadas de todos os seus workspaces.
+                    </p>
+                </div>
+                <AccountStats
+                    totalLeads={stats?.totalLeads || 0}
+                    activeForms={stats?.activeForms || 0}
+                    totalViews={stats?.totalViews || 0}
+                    conversionRate={stats?.conversionRate || 0}
+                />
+                <AccountCharts
+                    leadsGrowthData={stats?.leadsGrowthData || []}
+                    workspaceDistributionData={stats?.workspaceDistributionData || []}
+                />
+            </div>
         </div>
     )
 }

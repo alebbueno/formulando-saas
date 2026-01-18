@@ -22,7 +22,7 @@ export async function login(prevState: any, formData: FormData) {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/dashboard')
+    redirect('/dashboard/account')
 }
 
 export async function signup(prevState: any, formData: FormData) {

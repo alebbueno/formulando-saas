@@ -21,7 +21,9 @@ export async function createCustomerPortalSession(workspaceId: string) {
         .single()
 
     if (!workspace || !workspace.stripe_customer_id) {
-        throw new Error("Workspace not found or no subscription active")
+        console.error(`[Billing] Workspace not found or no customer ID. Workspace: ${workspaceId}, User: ${user.id}`)
+        console.error(`[Billing] Workspace data:`, workspace)
+        throw new Error("Workspace não encontrado ou assinatura não configurada. Por favor, assine um plano primeiro.")
     }
 
     const session = await stripe.billingPortal.sessions.create({

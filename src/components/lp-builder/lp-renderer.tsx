@@ -229,6 +229,45 @@ function RenderElement({ element }: { element: LPElement }) {
             )
         }
 
+        case '2-col':
+            return (
+                <>
+                    {generateResponsiveCSS()}
+                    <div
+                        className={cn(`flex flex-col md:flex-row gap-4 w-full ${uniqueClass}`, getVisibilityClasses(element))}
+                        style={baseStyle}
+                    >
+                        {renderChildren()}
+                    </div>
+                </>
+            )
+
+        case '3-col':
+            return (
+                <>
+                    {generateResponsiveCSS()}
+                    <div
+                        className={cn(`grid grid-cols-1 md:grid-cols-3 gap-4 w-full ${uniqueClass}`, getVisibilityClasses(element))}
+                        style={baseStyle}
+                    >
+                        {renderChildren()}
+                    </div>
+                </>
+            )
+
+        case 'column':
+            return (
+                <>
+                    {generateResponsiveCSS()}
+                    <div
+                        className={cn(`flex-1 min-h-[20px] ${uniqueClass}`, getVisibilityClasses(element))}
+                        style={baseStyle}
+                    >
+                        {renderChildren()}
+                    </div>
+                </>
+            )
+
         case 'heading': {
             const Tag = (element.properties?.tag || 'h2') as any
             return (

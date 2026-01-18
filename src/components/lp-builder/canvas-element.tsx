@@ -125,7 +125,8 @@ export function CanvasElement({ element }: { element: LPElement }) {
         data: {
             type: element.type,
             elementId: element.id,
-            isContainer: element.type === 'container' || element.type === 'section',
+            isContainer: element.type === 'container' || element.type === 'section' || element.type === 'column',
+            elementId: element.id,
             sortable: true,
         }
     })
@@ -135,10 +136,10 @@ export function CanvasElement({ element }: { element: LPElement }) {
     const { isOver, setNodeRef: setDroppableRef } = useDroppable({
         id: element.id + "-drop-zone",
         data: {
-            isContainer: element.type === 'container' || element.type === 'section',
+            isContainer: element.type === 'container' || element.type === 'section' || element.type === 'column',
             elementId: element.id
         },
-        disabled: element.type !== 'container' && element.type !== 'section'
+        disabled: element.type !== 'container' && element.type !== 'section' && element.type !== 'column'
     })
 
     // Merge refs if it's a container (needs both). If not, just sortable.
@@ -294,6 +295,73 @@ export function CanvasElement({ element }: { element: LPElement }) {
                 {isEmpty && !isOver && mode === 'builder' && (
                     <div className="text-slate-400 text-sm pointer-events-none">
                         Arraste componentes aqui
+                    </div>
+                )}
+                {childrenRenderer}
+            </div>
+        )
+    }
+
+    if (element.type === '2-col') {
+        const isEmpty = !element.children || element.children.length === 0
+        return (
+            <div
+                {...commonProps}
+                className={cn(
+                    commonProps.className,
+                    "min-h-[100px] transition-all flex flex-col md:flex-row gap-4",
+                    mode === 'builder' && "border border-dashed border-slate-300 rounded p-2",
+                    isEmpty && mode === 'builder' && "items-center justify-center bg-slate-50"
+                )}
+            >
+                {isEmpty && !isOver && mode === 'builder' && (
+                    <div className="text-slate-400 text-xs pointer-events-none">
+                        2 Colunas
+                    </div>
+                )}
+                {childrenRenderer}
+            </div>
+        )
+    }
+
+    if (element.type === '3-col') {
+        const isEmpty = !element.children || element.children.length === 0
+        return (
+            <div
+                {...commonProps}
+                className={cn(
+                    commonProps.className,
+                    "min-h-[100px] transition-all grid grid-cols-1 md:grid-cols-3 gap-4",
+                    mode === 'builder' && "border border-dashed border-slate-300 rounded p-2",
+                    isEmpty && mode === 'builder' && "items-center justify-center bg-slate-50"
+                )}
+            >
+                {isEmpty && !isOver && mode === 'builder' && (
+                    <div className="text-slate-400 text-xs pointer-events-none">
+                        3 Colunas
+                    </div>
+                )}
+                {childrenRenderer}
+            </div>
+        )
+    }
+
+    if (element.type === 'column') {
+        const isEmpty = !element.children || element.children.length === 0
+        return (
+            <div
+                {...commonProps}
+                ref={setRefs} /* Columns are container-like so they need setRefs */
+                className={cn(
+                    commonProps.className,
+                    "min-h-[50px] flex-1 transition-all flex flex-col",
+                    mode === 'builder' && "border border-dashed border-slate-200 rounded p-2",
+                    isEmpty && mode === 'builder' && "items-center justify-center bg-slate-50"
+                )}
+            >
+                {isEmpty && !isOver && mode === 'builder' && (
+                    <div className="text-slate-300 text-[10px] pointer-events-none">
+                        Coluna
                     </div>
                 )}
                 {childrenRenderer}

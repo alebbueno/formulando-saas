@@ -19,7 +19,8 @@ import {
 import { DialogDescription } from "@/components/ui/dialog"
 import { GeneralSettings } from "./settings/general-settings"
 import { DomainSettings } from "./settings/domain-settings"
-import { Settings } from "lucide-react"
+import { Settings, Sparkles } from "lucide-react"
+import { AILPGenerator } from "./ai-lp-generator"
 
 function generateHTML(elements: LPElement[]): string {
     return elements.map(el => {
@@ -39,6 +40,12 @@ function generateHTML(elements: LPElement[]): string {
                 return `<section class="w-full min-h-[100px] p-4"${styleAttr}>${childrenHTML}</section>`
             case 'container':
                 return `<div class="mx-auto w-full max-w-7xl min-h-[50px] p-2"${styleAttr}>${childrenHTML}</div>`
+            case '2-col':
+                return `<div class="flex flex-col md:flex-row gap-4 w-full"${styleAttr}>${childrenHTML}</div>`
+            case '3-col':
+                return `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full"${styleAttr}>${childrenHTML}</div>`
+            case 'column':
+                return `<div class="flex-1 min-h-[20px]"${styleAttr}>${childrenHTML}</div>`
             case 'heading':
                 return `<h1 class="text-4xl font-bold"${styleAttr}>${el.content}</h1>`
             case 'text':
@@ -57,6 +64,7 @@ function generateHTML(elements: LPElement[]): string {
 
 export function BuilderToolbar() {
     const { elements, setMode, mode, saveLP, isSaving, lastSaved, isPublished, setIsPublished, slug, setSlug, projectId, previewDevice, setPreviewDevice, lpName, setLpName, customDomain, settings, setSettings } = useLPBuilder()
+    const [showAI, setShowAI] = useState(false)
     const [showSaved, setShowSaved] = useState(false)
     const [isPublishing, setIsPublishing] = useState(false)
     const [showCopied, setShowCopied] = useState(false)
@@ -98,6 +106,8 @@ export function BuilderToolbar() {
 
     return (
         <div className="border-b bg-white p-2 flex items-center justify-between gap-4">
+            <AILPGenerator open={showAI} onClose={() => setShowAI(false)} />
+
             <div className="flex items-center gap-4 flex-1">
                 <div className="flex items-center gap-2">
                     <Button
@@ -125,6 +135,18 @@ export function BuilderToolbar() {
                             placeholder="slug-da-pagina"
                         />
                     </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAI(true)}
+                        className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:from-indigo-600 hover:to-purple-700 hover:text-white"
+                    >
+                        <Sparkles className="h-3 w-3 mr-2" />
+                        IA Mágica
+                    </Button>
                 </div>
 
                 <Dialog>

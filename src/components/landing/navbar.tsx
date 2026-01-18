@@ -32,13 +32,13 @@ export function Navbar() {
 
   useEffect(() => {
     const supabase = createClient()
-    
+
     async function getUser() {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       setLoading(false)
     }
-    
+
     getUser()
 
     // Listen for auth changes
@@ -79,9 +79,9 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
               <div className="w-8 h-8 flex items-center justify-center transition-all group-hover:scale-110">
-                <img 
-                  src="/icon-formulando.svg" 
-                  alt="Formulando" 
+                <img
+                  src="/icon-formulando.svg"
+                  alt="Formulando"
                   className="w-full h-full"
                 />
               </div>
@@ -98,21 +98,21 @@ export function Navbar() {
               >
                 Funcionalidades
               </Link>
-              
+
               <Link
                 href="/#automacoes"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
               >
                 Automações
               </Link>
-              
+
               <Link
                 href="/#integracoes"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
               >
                 Integrações
               </Link>
-              
+
               <Link
                 href="/precos"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
@@ -155,13 +155,13 @@ export function Navbar() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem asChild>
-                            <Link href="/dashboard" className="cursor-pointer flex items-center gap-2">
+                            <Link href="/dashboard/account" className="cursor-pointer flex items-center gap-2">
                               <LayoutDashboard className="w-4 h-4" />
                               Dashboard
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={handleLogout}
                             className="cursor-pointer flex items-center gap-2 text-red-600 focus:text-red-600"
                           >
@@ -195,7 +195,7 @@ export function Navbar() {
                   )}
                 </>
               )}
-              
+
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -245,7 +245,7 @@ export function Navbar() {
                 >
                   FAQ
                 </Link>
-                
+
                 {/* Mobile Auth Buttons */}
                 {!loading && (
                   <div className="mt-2 pt-2 border-t border-gray-200">

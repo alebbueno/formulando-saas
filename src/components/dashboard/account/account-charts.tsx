@@ -36,8 +36,15 @@ export function AccountCharts({ leadsGrowthData, workspaceDistributionData }: Ac
                                 tickFormatter={(value) => `${value}`}
                             />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
-                                itemStyle={{ color: 'var(--foreground)' }}
+                                contentStyle={{
+                                    backgroundColor: 'hsl(var(--popover))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'var(--radius)',
+                                    color: 'hsl(var(--popover-foreground))',
+                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                }}
+                                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                                labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '0.25rem' }}
                             />
                             <Line type="monotone" dataKey="leads" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }} />
                         </LineChart>
@@ -65,9 +72,16 @@ export function AccountCharts({ leadsGrowthData, workspaceDistributionData }: Ac
                                 width={80}
                             />
                             <Tooltip
-                                cursor={{ fill: 'transparent' }}
-                                contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
-                                itemStyle={{ color: 'var(--foreground)' }}
+                                cursor={{ fill: 'hsl(var(--muted) / 0.2)' }}
+                                contentStyle={{
+                                    backgroundColor: 'hsl(var(--popover))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: 'var(--radius)',
+                                    color: 'hsl(var(--popover-foreground))',
+                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                }}
+                                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                                labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '0.25rem' }}
                             />
                             <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={30} />
                         </BarChart>
