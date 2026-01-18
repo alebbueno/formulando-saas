@@ -23,7 +23,8 @@ if (!stripeKey || !supabaseUrl || !supabaseServiceKey) {
 }
 
 const stripe = new Stripe(stripeKey, {
-    apiVersion: '2025-01-27.acacia' as any,
+    apiVersion: '2025-12-15.clover',
+    typescript: true,
 })
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -91,6 +92,13 @@ async function syncSubscription(subscriptionId: string) {
         console.log(`   Plan DB ID: ${plan.id}`)
 
         // 5. Update workspace
+        // Handle current_period_end which might be null for trialing subscriptions
+        const periodEnd = (subscription as any).current_period_end
+            ? new Date((subscription as any).current_period_end * 1000).toISOString()
+            : (subscription as any).trial_end
+                ? new Date((subscription as any).trial_end * 1000).toISOString()
+                : null
+
         const { error: updateError } = await supabase
             .from('workspaces')
             .update({
@@ -98,7 +106,7 @@ async function syncSubscription(subscriptionId: string) {
                 subscription_id: subscription.id,
                 subscription_status: subscription.status,
                 plan_id: plan.id,
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+                ...(periodEnd && { current_period_end: periodEnd })
             })
             .eq('id', workspaceId)
 

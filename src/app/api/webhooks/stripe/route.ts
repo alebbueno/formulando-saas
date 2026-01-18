@@ -78,13 +78,27 @@ export async function POST(req: Request) {
 
                 if (planId) {
                     console.log(`   Updating workspace ${workspaceId} with plan ${planId}`)
+
+                    // Get subscription details to save current_period_end
+                    let currentPeriodEnd: string | null = null
+                    if (session.subscription) {
+                        try {
+                            const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+                            currentPeriodEnd = new Date((subscription as any).current_period_end * 1000).toISOString()
+                            console.log(`   Current period end: ${currentPeriodEnd}`)
+                        } catch (error) {
+                            console.error("⚠️  [Stripe Webhook] Could not retrieve subscription details:", error)
+                        }
+                    }
+
                     const { error: updateError } = await adminSupabase
                         .from("workspaces")
                         .update({
                             stripe_customer_id: session.customer as string,
                             subscription_id: session.subscription as string,
                             subscription_status: 'active',
-                            plan_id: planId
+                            plan_id: planId,
+                            current_period_end: currentPeriodEnd
                         })
                         .eq("id", workspaceId)
 
