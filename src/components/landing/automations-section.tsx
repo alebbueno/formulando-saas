@@ -4,6 +4,7 @@ import { Workflow, Mail, Clock, Zap, GitBranch, Target, CheckCircle, Send } from
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
 
 export function AutomationsSection() {
   const automationTypes = [
@@ -194,7 +195,7 @@ export function AutomationsSection() {
           </div>
 
           {/* Use Cases */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
             {useCases.map((useCase, index) => (
               <Card key={index} className="border-2 border-purple-100 p-6 hover:shadow-lg transition-shadow">
                 <h3 className="font-bold text-gray-900 mb-4 flex items-start gap-2">
@@ -213,6 +214,24 @@ export function AutomationsSection() {
                 </ul>
               </Card>
             ))}
+          </div>
+
+          {/* CTA */}
+          <div className="text-center bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-8 lg:p-12 border-2 border-purple-200">
+            <Workflow className="w-12 h-12 text-purple-600 mx-auto mb-4" />
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+              Automatize seu marketing hoje mesmo
+            </h3>
+            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              Crie fluxos ilimitados de automação sem código. Economize horas de trabalho manual 
+              e nunca mais perca um lead por falta de follow-up.
+            </p>
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-purple-700 text-white font-semibold rounded-lg hover:bg-purple-800 transition-all hover:shadow-lg hover:scale-105"
+            >
+              Criar Minha Primeira Automação
+            </Link>
           </div>
         </div>
       </div>

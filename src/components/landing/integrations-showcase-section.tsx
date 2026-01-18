@@ -4,6 +4,7 @@ import { Database, Mail, Cloud } from "lucide-react"
 import { SiZapier, SiNotion, SiGooglesheets } from "react-icons/si"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
+import Link from "next/link"
 
 export function IntegrationsShowcaseSection() {
   const integrations = [
@@ -64,7 +65,7 @@ export function IntegrationsShowcaseSection() {
         </div>
 
         {/* Features list */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-16">
           {[
             {
               title: "Webhooks Instantâneos",
@@ -84,6 +85,31 @@ export function IntegrationsShowcaseSection() {
               <p className="text-sm text-gray-600">{item.description}</p>
             </div>
           ))}
+        </div>
+
+        {/* Final CTA */}
+        <div className="max-w-4xl mx-auto text-center bg-gradient-to-br from-purple-700 to-purple-600 rounded-2xl p-8 lg:p-12 text-white shadow-2xl shadow-purple-500/30">
+          <h3 className="text-3xl sm:text-4xl font-bold mb-4">
+            Comece a captar mais leads hoje mesmo
+          </h3>
+          <p className="text-purple-100 text-lg mb-8 max-w-2xl mx-auto">
+            Junte-se a milhares de empresas que já usam o Formulando para 
+            captar, gerenciar e converter leads automaticamente.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-purple-700 font-bold rounded-lg hover:bg-gray-50 transition-all hover:shadow-xl hover:scale-105"
+            >
+              Teste Grátis por 7 Dias
+            </Link>
+            <Link
+              href="/precos"
+              className="inline-flex items-center gap-2 px-8 py-4 border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-all"
+            >
+              Conhecer Planos
+            </Link>
+          </div>
         </div>
       </div>
     </section>

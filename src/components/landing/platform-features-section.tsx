@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FileText, Layout, Users, Workflow, Plug } from "lucide-react"
 import { FaWhatsapp } from "react-icons/fa"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 export function PlatformFeaturesSection() {
   const features = [
@@ -134,6 +135,32 @@ export function PlatformFeaturesSection() {
               </Card>
             )
           })}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-16 text-center">
+          <div className="max-w-3xl mx-auto">
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+              Pronto para transformar sua captação de leads?
+            </h3>
+            <p className="text-gray-600 mb-8">
+              Teste todas as funcionalidades gratuitamente por 7 dias. Sem cartão de crédito.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-700 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-800 hover:to-purple-700 transition-all hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105"
+              >
+                Começar Teste Grátis
+              </Link>
+              <Link
+                href="/precos"
+                className="inline-flex items-center gap-2 px-8 py-4 border-2 border-purple-600 text-purple-700 font-semibold rounded-lg hover:bg-purple-50 transition-all"
+              >
+                Ver Planos e Preços
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </section>

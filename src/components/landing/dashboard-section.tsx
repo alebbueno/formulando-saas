@@ -2,6 +2,7 @@
 
 import { BarChart3, TrendingUp, Users, Target } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 export function DashboardSection() {
   const stats = [
@@ -113,7 +114,7 @@ export function DashboardSection() {
                 leads, funil de vendas e muito mais em um único lugar.
               </p>
 
-              <div className="space-y-4">
+              <div className="space-y-4 mb-8">
                 {[
                   {
                     title: "Métricas em tempo real",
@@ -140,6 +141,22 @@ export function DashboardSection() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* CTA */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/precos"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-purple-700 text-white font-semibold rounded-lg hover:bg-purple-800 transition-all hover:shadow-lg"
+                >
+                  Ver Planos
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-purple-600 text-purple-700 font-semibold rounded-lg hover:bg-purple-50 transition-all"
+                >
+                  Testar Gratuitamente
+                </Link>
               </div>
             </div>
           </div>
