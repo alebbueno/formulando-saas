@@ -126,7 +126,6 @@ export function CanvasElement({ element }: { element: LPElement }) {
             type: element.type,
             elementId: element.id,
             isContainer: element.type === 'container' || element.type === 'section' || element.type === 'column',
-            elementId: element.id,
             sortable: true,
         }
     })
