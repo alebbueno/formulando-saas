@@ -117,7 +117,9 @@ export async function generateLPWithAI(prompt: string, currentElements?: LPEleme
            - Section 7: Final CTA (Gradient bg).
            - Footer.
 
-        The Output must be a purely VALID JSON array of LPElement objects.
+        The Output must be a purely VALID JSON object with a single key "elements" containing the array of LPElement objects.
+        MINIFY the JSON (no whitespace) to save tokens.
+        Example: { "elements": [ ... ] }
         `;
 
         if (isEditing) {
@@ -128,29 +130,32 @@ export async function generateLPWithAI(prompt: string, currentElements?: LPEleme
         }
 
         const response = await openai.chat.completions.create({
-            model: "gpt-4o", // Use the smartest model for design logic
+            model: "gpt-4o-2024-08-06", // Supports 16k output tokens, ensuring large JSONs don't cut off
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: prompt }
             ],
             temperature: 0.7,
-            max_tokens: 4000,
+            max_tokens: 12000,
+            response_format: { type: "json_object" },
         });
 
         const responseText = response.choices[0].message.content || "[]";
         // Clean markdown
         const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        let generatedElements;
+        let generatedData;
         try {
-            generatedElements = JSON.parse(cleanedText);
+            generatedData = JSON.parse(cleanedText);
         } catch (e) {
             console.error("Failed to parse AI response:", cleanedText);
             return { success: false, error: "Erro ao processar a resposta da IA." };
         }
 
+        const generatedElements = generatedData.elements;
+
         if (!Array.isArray(generatedElements)) {
-            return { success: false, error: "Formato de resposta inválido." };
+            return { success: false, error: "Formato de resposta inválido. Esperado array de elementos." };
         }
 
         // Ensure IDs are present
