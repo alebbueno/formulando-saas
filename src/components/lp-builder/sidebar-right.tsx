@@ -354,7 +354,7 @@ export function SidebarRight() {
                     <Separator />
 
                     {/* Layout Section for Containers */}
-                    {['section', 'container'].includes(selectedElement.type) && (
+                    {['section', 'container', 'column'].includes(selectedElement.type) && (
                         <>
                             <div className="space-y-4">
                                 <h3 className="text-xs font-semibold uppercase text-muted-foreground">Layout</h3>
@@ -402,7 +402,7 @@ export function SidebarRight() {
                         <h3 className="text-xs font-semibold uppercase text-muted-foreground">Estilos</h3>
 
                         {/* Spacing (Margin & Padding) - Available for all relevant visible elements */}
-                        {['section', 'container', 'button', 'social', 'image', 'video', 'text', 'heading'].includes(selectedElement.type) && (
+                        {['section', 'container', 'column', 'button', 'social', 'image', 'video', 'text', 'heading'].includes(selectedElement.type) && (
                             <div className="space-y-4">
                                 <SpacingControl type="margin" />
                                 <SpacingControl type="padding" />
@@ -412,7 +412,7 @@ export function SidebarRight() {
                         <Separator className="my-4" />
 
                         {/* Decorations (Border Radius) */}
-                        {['container', 'video', 'image', 'button'].includes(selectedElement.type) && (
+                        {['container', 'column', 'video', 'image', 'button'].includes(selectedElement.type) && (
                             <>
                                 <BorderRadiusControl />
                                 <Separator className="my-4" />
@@ -420,7 +420,7 @@ export function SidebarRight() {
                         )}
 
                         {/* Background Image Control */}
-                        {['section', 'container'].includes(selectedElement.type) && (
+                        {['section', 'container', 'column'].includes(selectedElement.type) && (
                             <div className="space-y-2">
                                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Background Image</h4>
                                 <BackgroundControl />
