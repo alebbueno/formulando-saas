@@ -51,12 +51,15 @@ export function FormSubmitComponent({ formUrl, content, buttonSettings }: FormSu
                 const isComplexField = ["AddressField", "DateRangeField"].includes(element.type)
 
                 // Check for empty values
-                // Note: File objects (even empty ones) return truthy strings from value.toString()
-                // so we added a check for File size if needed, but for now filtering empty strings/nulls
-                const isEmpty = !value || value.toString().trim() === ""
+                let isEmpty = false
+                if (value instanceof File) {
+                    isEmpty = value.size === 0
+                } else {
+                    isEmpty = !value || value.toString().trim() === ""
+                }
 
                 if (!isComplexField && isEmpty) {
-                    console.error(`[Validation Failed] Field ${element.id} is empty.`)
+                    console.error(`[Validation Failed] Field "${element.extraAttributes?.label || element.id}" (${element.type}) is empty. ID: ${element.id}`)
                     errors[element.id] = true
                     isValid = false
                 }

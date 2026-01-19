@@ -151,7 +151,7 @@ export function SidebarRight() {
             <ResponsiveStyleProvider editingDevice={editingDevice}>
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                     {/* Typography Section (Moved to Top) */}
-                    {(selectedElement.type === 'heading' || selectedElement.type === 'text' || selectedElement.type === 'container') && (
+                    {['heading', 'text', 'container', 'section', 'column'].includes(selectedElement.type) && (
                         <div className="space-y-4">
                             <h3 className="text-xs font-semibold uppercase text-muted-foreground">Tipografia</h3>
                             <div className="grid gap-3">

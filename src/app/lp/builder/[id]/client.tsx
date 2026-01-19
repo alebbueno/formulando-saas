@@ -9,6 +9,7 @@ import { Project, LandingPage } from "@/types"
 import { BuilderToolbar } from "@/components/lp-builder/toolbar"
 import { DndContext, DragEndEvent, useSensor, useSensors, MouseSensor, TouchSensor, DragOverlay } from "@dnd-kit/core"
 import { LPElementType, LPElement } from "@/components/lp-builder/types"
+import { cn } from "@/lib/utils"
 
 function LPBuilderEditor({ project }: { project: Project | LandingPage }) {
     const { addElement, elements, moveElement, setProjectId, setElements, setSlug, setIsPublished, setLpName, setCustomDomain, setSettings } = useLPBuilder()
@@ -166,6 +167,9 @@ function LPBuilderEditor({ project }: { project: Project | LandingPage }) {
 
 
 
+    const [leftSidebarOpen, setLeftSidebarOpen] = React.useState(true)
+    const [rightSidebarOpen, setRightSidebarOpen] = React.useState(true)
+
     return (
         <DndContext
             sensors={sensors}
@@ -173,12 +177,66 @@ function LPBuilderEditor({ project }: { project: Project | LandingPage }) {
         >
             <div className="flex-1 flex flex-col overflow-hidden h-[calc(100vh-56px)]">
                 <BuilderToolbar />
-                <div className="flex-1 flex overflow-hidden">
-                    <SidebarLeft />
-                    <main className="flex-1 overflow-y-auto bg-slate-50 p-8">
+                <div className="flex-1 flex overflow-hidden relative">
+                    {/* Left Sidebar Wrapper */}
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-in-out flex-shrink-0 border-r bg-white z-20",
+                            leftSidebarOpen ? "w-80 translate-x-0 opacity-100" : "w-0 -translate-x-full opacity-0 overflow-hidden border-none"
+                        )}
+                    >
+                        <div className="w-80 h-full">
+                            <SidebarLeft />
+                        </div>
+                    </div>
+
+                    {/* Left Toggle Button - Floating */}
+                    <button
+                        onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+                        className={cn(
+                            "absolute top-1/2 transform -translate-y-1/2 z-30 flex items-center justify-center w-6 h-12 bg-white border border-slate-200 shadow-md rounded-r-md text-muted-foreground hover:text-primary transition-all duration-300",
+                            leftSidebarOpen ? "left-80" : "left-0"
+                        )}
+                        title={leftSidebarOpen ? "Fecbar barra lateral" : "Abrir barra lateral"}
+                    >
+                        {leftSidebarOpen ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                        )}
+                    </button>
+
+                    <main className="flex-1 overflow-y-auto bg-slate-50 p-8 transition-all duration-300">
                         <Designer />
                     </main>
-                    <SidebarRight />
+
+                    {/* Right Toggle Button - Floating */}
+                    <button
+                        onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
+                        className={cn(
+                            "absolute top-1/2 transform -translate-y-1/2 z-30 flex items-center justify-center w-6 h-12 bg-white border border-slate-200 shadow-md rounded-l-md text-muted-foreground hover:text-primary transition-all duration-300",
+                            rightSidebarOpen ? "right-80" : "right-0"
+                        )}
+                        title={rightSidebarOpen ? "Fechar propriedades" : "Abrir propriedades"}
+                    >
+                        {rightSidebarOpen ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                        )}
+                    </button>
+
+                    {/* Right Sidebar Wrapper */}
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-in-out flex-shrink-0 border-l bg-white z-20",
+                            rightSidebarOpen ? "w-80 translate-x-0 opacity-100" : "w-0 translate-x-full opacity-0 overflow-hidden border-none"
+                        )}
+                    >
+                        <div className="w-80 h-full">
+                            <SidebarRight />
+                        </div>
+                    </div>
                 </div>
             </div>
             {/* Potential DragOverlay here in future */}
