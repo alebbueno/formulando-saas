@@ -1,5 +1,7 @@
 "use client"
 
+import { useSearchParams } from "next/navigation"
+
 import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from "@dnd-kit/core"
 import { BuilderSidebar } from "@/components/builder/builder-sidebar"
 import { BuilderCanvas } from "@/components/builder/builder-canvas"
@@ -11,6 +13,8 @@ import { useState } from "react"
 import { BuilderHeader } from "@/components/builder/builder-header"
 import { TemplateSelector } from "@/components/builder/template-selector"
 import { AIChat } from "@/components/builder/ai-chat"
+import { OnboardingModal } from "@/components/builder/onboarding-modal"
+import { SuccessModal } from "@/components/builder/success-modal"
 import { toast } from "sonner"
 
 import { updateProjectContent, publishProject } from "@/actions/form"
@@ -26,6 +30,12 @@ function BuilderPageContent({ project }: { project: any }) {
     const [isAIChatOpen, setIsAIChatOpen] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [isPublished, setIsPublished] = useState(project.is_published || false)
+
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
+
+    const searchParams = useSearchParams()
+    // Initialize state from URL param, but keep it true even if param is removed
+    const [isOnboarding] = useState(() => searchParams?.get("onboarding") === "true")
 
     const sensors = useSensors(
         useSensor(MouseSensor, {
@@ -48,7 +58,15 @@ function BuilderPageContent({ project }: { project: any }) {
         try {
             setIsSaving(true)
             await updateProjectContent(projectId, JSON.stringify(elements), projectName)
-            toast.success("Salvo com sucesso!")
+
+            if (isOnboarding) {
+                await publishProject(projectId, true)
+                setIsPublished(true)
+                toast.success("Salvo e publicado com sucesso!")
+                setIsSuccessModalOpen(true)
+            } else {
+                toast.success("Salvo com sucesso!")
+            }
         } catch (error) {
             console.error(error)
             toast.error("Erro ao salvar")
@@ -63,6 +81,7 @@ function BuilderPageContent({ project }: { project: any }) {
             await publishProject(projectId, checked)
             if (checked) {
                 toast.success("Formulário publicado com sucesso!")
+                setIsSuccessModalOpen(true)
             } else {
                 toast.info("Formulário despublicado (rascunho).")
             }
@@ -101,6 +120,18 @@ function BuilderPageContent({ project }: { project: any }) {
                 onClose={() => setIsAIChatOpen(false)}
                 elements={elements}
                 onElementsChange={setElements}
+            />
+
+            <OnboardingModal
+                onInsertAI={handleInsertAI}
+                onOpenTemplates={() => setIsTemplateSelectorOpen(true)}
+            />
+
+            <SuccessModal
+                open={isSuccessModalOpen}
+                onOpenChange={setIsSuccessModalOpen}
+                projectSlug={project.slug}
+                projectName={projectName}
             />
 
             {/* Floating AI Button (FAB) - Visible only when we have elements and chat is closed */}
@@ -195,6 +226,7 @@ function BuilderPageContent({ project }: { project: any }) {
                         isPublished={isPublished}
                         onPublishToggle={handlePublishToggle}
                         isSaving={isSaving}
+                        isOnboarding={isOnboarding}
                     />
                     <div className="flex flex-grow w-full h-[calc(100vh-64px)] relative">
 

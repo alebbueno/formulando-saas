@@ -1,4 +1,31 @@
 export const PLANS = {
+    free: {
+        name: "Free",
+        slug: "free",
+        productId: "",
+        priceId: "",
+        price: 0,
+        limits: {
+            leads: 100,
+            emails: 100, // Disparos/mês
+            landingPages: 1,
+            workspaces: 1,
+            forms: 2,
+            automations: 1,
+            emailTemplates: 2, // Email criados
+            whatsapp: false,
+            integrations: false
+        },
+        features: [
+            "1 Workspace",
+            "2 Formulários",
+            "1 Landing Page",
+            "100 Leads/mês",
+            "1 Automação",
+            "100 Disparos de email/mês",
+            "WhatsApp não incluído"
+        ]
+    },
     growth: {
         name: "Growth",
         slug: "growth",
@@ -9,7 +36,12 @@ export const PLANS = {
             leads: 5000,
             emails: 2000,
             landingPages: 10,
-            workspaces: 3
+            workspaces: 3,
+            forms: -1, // Unlimited
+            automations: 5,
+            emailTemplates: 10,
+            whatsapp: true,
+            integrations: true
         },
         features: [
             "Até 5.000 leads",
@@ -29,8 +61,13 @@ export const PLANS = {
         limits: {
             leads: 25000,
             emails: 10000,
-            landingPages: 999999, // Unlimited
-            workspaces: 10
+            landingPages: -1, // Unlimited
+            workspaces: 10,
+            forms: -1,
+            automations: -1,
+            emailTemplates: -1,
+            whatsapp: true,
+            integrations: true
         },
         features: [
             "Até 25.000 leads",
@@ -48,10 +85,15 @@ export const PLANS = {
         priceId: "price_1SqsjfD0Hr6fCA3P4Qep9xvt",
         price: 899,
         limits: {
-            leads: 999999, // Unlimited
+            leads: -1, // Unlimited
             emails: 30000,
-            landingPages: 999999, // Unlimited
-            workspaces: 999999 // Unlimited
+            landingPages: -1, // Unlimited
+            workspaces: -1, // Unlimited
+            forms: -1,
+            automations: -1,
+            emailTemplates: -1,
+            whatsapp: true,
+            integrations: true
         },
         features: [
             "Leads ilimitados",

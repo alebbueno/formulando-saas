@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog"
+import { LeadsEmptyState } from "@/components/leads/leads-empty-state"
 
 export default async function LeadsPage({
     searchParams,
@@ -64,11 +65,23 @@ export default async function LeadsPage({
                 </div>
 
                 <TabsContent value="kanban" className="flex-1 h-full overflow-hidden">
-                    <LeadsKanban initialLeads={leads} />
+                    {leads.length === 0 ? (
+                        <div className="p-4 h-full">
+                            <LeadsEmptyState />
+                        </div>
+                    ) : (
+                        <LeadsKanban initialLeads={leads} />
+                    )}
                 </TabsContent>
 
                 <TabsContent value="list" className="h-[calc(100%-2rem)]">
-                    <LeadsTable leads={leads} totalPages={totalPages} currentPage={page} />
+                    {leads.length === 0 ? (
+                        <div className="p-4 h-full">
+                            <LeadsEmptyState />
+                        </div>
+                    ) : (
+                        <LeadsTable leads={leads} totalPages={totalPages} currentPage={page} />
+                    )}
                 </TabsContent>
             </Tabs>
         </div>

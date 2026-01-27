@@ -4,6 +4,9 @@ import { LandingPageList } from "@/components/dashboard/landing-page-list"
 import { Button } from "@/components/ui/button"
 import { Plus, Layout } from "lucide-react"
 import { createLandingPage } from "@/app/dashboard/actions"
+import { UsageLimitCard } from "@/components/dashboard/usage-limit-card"
+import { getActiveWorkspace } from "@/lib/get-active-workspace"
+import { getWorkspaceUsage } from "@/actions/usage"
 
 export default async function LandingPagesPage() {
     const supabase = await createClient()
@@ -13,23 +16,16 @@ export default async function LandingPagesPage() {
         return <div>Usuário não autenticado</div>
     }
 
-    const cookieStore = await cookies()
-    const workspaceId = cookieStore.get("formu-workspace-id")?.value
-    let activeWorkspaceId = workspaceId
-
-    const { data: workspaces } = await supabase
-        .from("workspaces")
-        .select("id, name")
-        .eq("owner_id", user.id)
-    // ... (keep existing workspace selection logic)
+    const { activeWorkspace } = await getActiveWorkspace() || {}
+    const usageData = activeWorkspace ? await getWorkspaceUsage(activeWorkspace.id) : null
 
     let landingPages: any[] = []
 
-    if (activeWorkspaceId) {
+    if (activeWorkspace) {
         const { data } = await supabase
             .from("landing_pages")
             .select("*")
-            .eq("workspace_id", activeWorkspaceId)
+            .eq("workspace_id", activeWorkspace.id)
             .order("created_at", { ascending: false })
 
         if (data) landingPages = data
@@ -39,12 +35,25 @@ export default async function LandingPagesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight">Landing Pages</h2>
-                <form action={createLandingPage}>
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nova Landing Page
-                    </Button>
-                </form>
+                <div className="flex items-center gap-4">
+                    {usageData && usageData.plan.slug === 'free' && (
+                        <div className="min-w-[300px]">
+                            <UsageLimitCard
+                                current={usageData.usage.landingPages}
+                                limit={usageData.usage.landingPagesLimit}
+                                label="Landing Pages"
+                                unit="unid"
+                                planSlug={usageData.plan.slug}
+                            />
+                        </div>
+                    )}
+                    <form action={createLandingPage}>
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Nova Landing Page
+                        </Button>
+                    </form>
+                </div>
             </div>
 
             {landingPages.length === 0 ? (

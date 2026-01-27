@@ -54,13 +54,22 @@ export function MarketingOverview({ stats }: MarketingOverviewProps) {
                     </Card>
                 ))}
                 {/* Fill empty spots if less than 2 statuses */}
+                {/* Fill empty spots if less than 2 statuses */}
                 {stats.byStatus.length < 2 && (
-                    <Card className="opacity-50 border-dashed">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">Explorando...</CardTitle>
+                    <Card className="relative overflow-hidden group border-purple-100 dark:border-purple-900/50">
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent dark:from-purple-900/20 opacity-50 group-hover:opacity-100 transition-opacity" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+                            <CardTitle className="text-sm font-medium text-purple-900 dark:text-purple-100">Ativar Automação</CardTitle>
+                            <div className="h-4 w-4 text-purple-600 dark:text-purple-400">
+                                <Activity className="h-4 w-4" />
+                            </div>
                         </CardHeader>
-                        <CardContent>
-                            <p className="text-xs text-muted-foreground">Mais dados em breve.</p>
+                        <CardContent className="relative">
+                            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">IA</div>
+                            <p className="text-xs text-muted-foreground mb-1">Qualifique leads 24/7</p>
+                            <Link href="/dashboard/automations" className="text-[10px] text-purple-600 font-medium hover:underline flex items-center gap-1">
+                                Configurar agora →
+                            </Link>
                         </CardContent>
                     </Card>
                 )}

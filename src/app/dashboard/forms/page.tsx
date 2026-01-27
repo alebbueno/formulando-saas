@@ -4,6 +4,7 @@ import { ProjectList } from "@/components/dashboard/project-list"
 import { Button } from "@/components/ui/button"
 import { Plus, Folder } from "lucide-react"
 import { createProject } from "@/app/dashboard/actions"
+import { UsageLimitCard } from "@/components/dashboard/usage-limit-card"
 
 export default async function FormsPage() {
     const supabase = await createClient()
@@ -14,11 +15,14 @@ export default async function FormsPage() {
     }
 
     const { getActiveWorkspace } = await import("@/lib/get-active-workspace")
+    const { getWorkspaceUsage } = await import("@/actions/usage")
     const { activeWorkspace, allWorkspaces } = await getActiveWorkspace() || {}
 
     let projects: any[] = []
+    let usageData: any = null
 
     if (activeWorkspace) {
+        usageData = await getWorkspaceUsage(activeWorkspace.id)
         console.log(">>> [FormsPage] Fetching projects for workspace:", activeWorkspace.id)
         console.log(">>> [FormsPage] Available workspaces:", allWorkspaces?.map(w => w.id))
 
@@ -49,12 +53,25 @@ export default async function FormsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight">Formulários</h2>
-                <form action={createProject}>
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Novo Formulário
-                    </Button>
-                </form>
+                <div className="flex items-center gap-4">
+                    {usageData && usageData.plan.slug === 'free' && (
+                        <div className="min-w-[300px]">
+                            <UsageLimitCard
+                                current={usageData.usage.forms}
+                                limit={usageData.usage.formsLimit}
+                                label="Formulários"
+                                unit="unid"
+                                planSlug={usageData.plan.slug}
+                            />
+                        </div>
+                    )}
+                    <form action={createProject}>
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Novo Formulário
+                        </Button>
+                    </form>
+                </div>
             </div>
 
             {projects.length === 0 ? (

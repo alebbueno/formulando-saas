@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { Plus, Folder, Users } from "lucide-react"
 import { createProject } from "./actions"
 import { createClient } from "@/lib/supabase/server"
@@ -13,6 +14,7 @@ import {
 import { ProjectList } from "@/components/dashboard/project-list"
 import { Overview } from "@/components/dashboard/overview"
 import { MarketingOverview } from "@/components/dashboard/marketing-overview"
+import { DashboardChecklist } from "@/components/dashboard/dashboard-checklist"
 
 import { cookies } from "next/headers"
 
@@ -36,6 +38,16 @@ export default async function DashboardPage() {
     const { getLeadStats } = await import("@/actions/leads")
     const leadStats = await getLeadStats(activeWorkspace.id)
 
+    // Fetch projects to determine checklist status
+    const { data: projects } = await supabase
+        .from("projects")
+        .select("id, is_published")
+        .eq("workspace_id", activeWorkspace.id)
+
+    const hasProjects = (projects?.length ?? 0) > 0
+    const hasPublishedProjects = projects?.some(p => p.is_published) ?? false
+    const hasLeads = leadStats.total > 0
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -52,6 +64,12 @@ export default async function DashboardPage() {
                     </form>
                 </div>
             </div>
+
+            <DashboardChecklist
+                hasProjects={hasProjects}
+                hasPublishedProjects={hasPublishedProjects}
+                hasLeads={hasLeads}
+            />
 
             <MarketingOverview stats={leadStats} />
 

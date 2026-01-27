@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { ProjectType } from "@/types"
+import { checkLimit } from "@/lib/limits"
 
 // Helper to get user or redirect
 async function getUserOrRedirect() {
@@ -30,8 +31,7 @@ export async function setActiveWorkspaceCookie(workspaceId: string) {
 export async function createWorkspace(data: { name: string; slug: string }) {
     const { user, supabase } = await getUserOrRedirect()
 
-    // Validate slug uniqueness globally (or per user? Slugs usually global if used in URLs)
-    // For now assuming global slug uniqueness based on schema constraint
+    // Validate slug uniqueness globally
     const { data: existing } = await supabase
         .from("workspaces")
         .select("id")
@@ -66,7 +66,6 @@ export async function updateWorkspaceName(id: string, name: string) {
     const { user, supabase } = await getUserOrRedirect()
 
     // Verify ownership
-    // Only owner can rename for now
     const { data: workspace, error: wsError } = await supabase
         .from("workspaces")
         .select("id")
@@ -152,6 +151,9 @@ export async function createProject() {
             workspaceId = workspaces[0].id
         } else {
             // Create default workspace if absolutely none exist
+            // TODO: Checking workspace creation limit here effectively?
+            // For now, allow default creation if none exists.
+
             const { data: newWorkspace, error: workspaceError } = await supabase
                 .from("workspaces")
                 .insert({
@@ -168,6 +170,12 @@ export async function createProject() {
             }
             workspaceId = newWorkspace.id
         }
+    }
+
+    // CHECK LIMITS
+    const limitCheck = await checkLimit(workspaceId, "forms")
+    if (!limitCheck.allowed) {
+        throw new Error(limitCheck.error || "Limite de formulários atingido para o seu plano.")
     }
 
     // Create new project
@@ -205,6 +213,12 @@ export async function createLandingPage() {
     }
 
     if (!workspaceId) throw new Error("No workspace found")
+
+    // CHECK LIMITS
+    const limitCheck = await checkLimit(workspaceId, "landing_pages")
+    if (!limitCheck.allowed) {
+        throw new Error(limitCheck.error || "Limite de Landing Pages atingido para o seu plano.")
+    }
 
     const { data: lp, error } = await supabase
         .from("landing_pages")

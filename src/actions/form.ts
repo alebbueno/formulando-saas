@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { FormElementInstance } from "@/context/builder-context"
+import { checkLimit } from "@/lib/limits"
 
 export async function getForms() {
     const supabase = await createClient()
@@ -147,12 +148,18 @@ export async function submitForm(
     // Validate that the project exists
     const { data: project, error: projectError } = await supabase
         .from("projects")
-        .select("id")
+        .select("id, workspace_id")
         .eq("id", formUrl)
         .single()
 
     if (projectError || !project) {
         throw new Error("Formulário não encontrado")
+    }
+
+    // CHECK LEAD LIMIT
+    const limitCheck = await checkLimit(project.workspace_id, "leads", supabase)
+    if (!limitCheck.allowed) {
+        throw new Error(limitCheck.error || "Limite de leads atingido.")
     }
 
     // Insert into raw submissions table (formerly leads)

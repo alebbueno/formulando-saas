@@ -15,6 +15,7 @@ interface BuilderHeaderProps {
     isPublished: boolean
     onPublishToggle: (checked: boolean) => void
     isSaving?: boolean
+    isOnboarding?: boolean
 }
 
 import { SettingsModal } from "./settings-modal"
@@ -29,7 +30,8 @@ export function BuilderHeader({
     onProjectNameChange,
     isPublished,
     onPublishToggle,
-    isSaving
+    isSaving,
+    isOnboarding
 }: BuilderHeaderProps) {
     const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
 
@@ -101,11 +103,16 @@ export function BuilderHeader({
                     variant="default"
                     size="sm"
                     disabled={isSaving}
-                    className="gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-indigo-500/20 border-0 transition-all hover:scale-105 active:scale-95"
+                    className={cn(
+                        "gap-2 border-0 transition-all hover:scale-105 active:scale-95 shadow-lg",
+                        isOnboarding
+                            ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-emerald-500/20"
+                            : "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-indigo-500/20"
+                    )}
                     onClick={onSave}
                 >
                     <span className="font-semibold text-white">
-                        {isSaving ? "Salvando..." : "Salvar"}
+                        {isSaving ? "Salvando..." : isOnboarding ? "Finalizar" : "Salvar"}
                     </span>
                     {!isSaving && <Check className="h-3.5 w-3.5 text-white/90" />}
                 </Button>

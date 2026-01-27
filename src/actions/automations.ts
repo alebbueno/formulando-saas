@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { checkLimit } from "@/lib/limits"
 
 export async function getAutomations(workspaceId: string) {
     const supabase = await createClient()
@@ -48,6 +49,12 @@ export async function createAutomation(name: string, workspaceId: string, formId
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) throw new Error("Unauthorized")
+
+    // CHECK LIMITS
+    const limitCheck = await checkLimit(workspaceId, "automations")
+    if (!limitCheck.allowed) {
+        throw new Error(limitCheck.error || "Limite de automações atingido.")
+    }
 
     let flowData: any = { nodes: [], edges: [] }
 

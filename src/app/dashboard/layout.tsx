@@ -1,64 +1,24 @@
-"use client"
+import { redirect } from "next/navigation"
+import { getActiveWorkspace } from "@/lib/get-active-workspace"
+import ClientLayout from "./client-layout"
 
-import { Header } from "@/components/dashboard/header"
-import { Sidebar } from "@/components/dashboard/sidebar"
-import { SidebarProvider, useSidebar } from "@/context/sidebar-context"
-import { WorkspaceProvider } from "@/context/workspace-context"
-import { cn } from "@/lib/utils"
-
-import { usePathname } from "next/navigation"
-
-
-function DashboardLayoutContent({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const { isOpen } = useSidebar()
-    const pathname = usePathname()
-    const isAccountPage = pathname?.includes("/dashboard/account")
-    const isPlansPage = pathname === "/dashboard/plans"
+    // 1. Check workspace status serverside
+    const { allWorkspaces } = await getActiveWorkspace() || {}
 
-    if (isPlansPage) {
-        return (
-            <div className="min-h-screen bg-background overflow-y-auto">
-                {children}
-            </div>
-        )
+    // 2. Redirect if needed
+    if (!allWorkspaces || allWorkspaces.length === 0) {
+        redirect("/onboarding")
     }
 
+    // 3. Render client layout
     return (
-        <div className="flex h-screen overflow-hidden bg-background">
-            {!isAccountPage && (
-                <aside className={cn(
-                    "hidden flex-col border-r md:flex transition-all duration-300",
-                    isOpen ? "w-64" : "w-16"
-                )}>
-                    <Sidebar className="bg-background" />
-                </aside>
-            )}
-            <div className="flex flex-col flex-1 overflow-hidden">
-                <Header />
-                <main className="flex-1 overflow-y-auto p-6 md:p-8">
-                    {children}
-                </main>
-            </div>
-        </div>
-    )
-}
-
-export default function DashboardLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
-    return (
-        <WorkspaceProvider>
-            <SidebarProvider>
-                <DashboardLayoutContent>
-                    {children}
-                </DashboardLayoutContent>
-            </SidebarProvider>
-        </WorkspaceProvider>
+        <ClientLayout>
+            {children}
+        </ClientLayout>
     )
 }

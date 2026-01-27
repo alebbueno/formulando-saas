@@ -54,34 +54,34 @@ const sidebarItems = [
     locked: false,
   },
   {
-    title: "Formulários", // Previously Projects
+    title: "Formulários",
     href: "/dashboard/forms",
     icon: FileText,
-    locked: true, // Restricted
+    locked: false, // Free has access (max 2)
   },
   {
     title: "Landing Pages",
     href: "/dashboard/lp",
     icon: Layout,
-    locked: true, // Restricted
+    locked: false, // Free has access (max 1)
   },
   {
     title: "Automações",
     href: "/dashboard/automations",
     icon: Workflow,
-    locked: true, // Restricted
+    locked: false, // Free has access (max 1)
   },
   {
     title: "Botão Flutuante",
     href: "/dashboard/whatsapp",
     icon: MessageCircle,
-    locked: true, // Restricted
+    locked: true, // Restricted to paid plans
   },
   {
     title: "Integrações",
     href: "/dashboard/integrations",
     icon: Plug,
-    locked: true, // Restricted
+    locked: true, // Restricted to paid plans
   },
 ];
 
@@ -93,29 +93,27 @@ export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Logic to determine lock state
-  // Statuses that are BLOCKED: incomplete, canceled, unpaid, past_due (maybe strict?)
-  // Allowed: active, trialing.
-  // Note: If stripe subscription is canceled, status is 'canceled'.
-  const isRestricted =
-    activeWorkspace &&
-    ["incomplete", "canceled", "unpaid", "past_due"].includes(
-      activeWorkspace.subscription_status || "free"
-    ); // Default to free if undefined, usually leads to restrict if 'free' plan is gone?
-  // Wait, 'free' plan might be removed, so existing workspaces migrated to Growth?
-  // If status is 'active' or 'trialing', it's fine.
-
-  // Actually, checking exact status is better.
-  const isActive =
-    activeWorkspace?.subscription_status === "active" ||
-    activeWorkspace?.subscription_status === "trialing";
+  // New Subscription/Plan Logic
+  const subStatus = activeWorkspace?.subscription_status || "free";
+  const isFree = subStatus === "free";
+  const isSubscribed = ["active", "trialing"].includes(subStatus);
+  const isValid = isFree || isSubscribed;
+  const isInactive = !isValid && activeWorkspace;
 
   const handleItemClick = (
     e: React.MouseEvent,
     itemLocked: boolean,
     href: string
   ) => {
-    if (!isActive && itemLocked) {
+    // 1. If status is inactive/canceled (not free or active), block everything locked
+    if (!isValid && itemLocked) {
+      e.preventDefault();
+      router.push(`/dashboard/plans?workspace=${activeWorkspace?.id}`);
+      return;
+    }
+
+    // 2. If free and item is premium-only, block
+    if (isFree && itemLocked) {
       e.preventDefault();
       router.push(`/dashboard/plans?workspace=${activeWorkspace?.id}`);
     }
@@ -152,7 +150,7 @@ export function Sidebar({ className }: SidebarProps) {
                   formulando.
                 </span>
               )}
-              {/* Botão de toggle no canto superior direito */}
+              {/* Toggle button */}
               <div className={cn("absolute transition-all", "right-0 top-0")}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -182,35 +180,70 @@ export function Sidebar({ className }: SidebarProps) {
               </div>
             )}
 
-            {/* Subscription Alert for Restricted Workspaces */}
-            {isOpen && !isActive && activeWorkspace && (
-              <div className="mx-2 mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-xs text-destructive flex flex-col gap-2">
-                <div className="flex items-center gap-2 font-medium">
-                  <BadgeAlert className="h-4 w-4" />
-                  <span>Assinatura Inativa</span>
-                </div>
-                <p className="opacity-90 leading-tight">
-                  Seu plano não está ativo. Acesso limitado.
-                </p>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="h-7 text-xs w-full"
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/plans?workspace=${activeWorkspace.id}`
-                    )
-                  }
-                >
-                  Regularizar Agora
-                </Button>
-              </div>
+            {/* Subscription/Plan Alerts */}
+            {isOpen && activeWorkspace && (
+              <>
+                {/* INACTIVE ALERT */}
+                {isInactive && (
+                  <div className="mx-2 mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-xs text-destructive flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="flex items-center gap-2 font-medium">
+                      <BadgeAlert className="h-4 w-4" />
+                      <span>Assinatura Inativa</span>
+                    </div>
+                    <p className="opacity-90 leading-tight">
+                      Seu plano não está ativo. Acesso limitado.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-7 text-xs w-full"
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/plans?workspace=${activeWorkspace.id}`
+                        )
+                      }
+                    >
+                      Regularizar Agora
+                    </Button>
+                  </div>
+                )}
+
+                {/* FREE PLAN ALERT */}
+                {isFree && (
+                  <div className="mx-2 mb-4 p-3 bg-primary/5 border border-primary/20 rounded-md text-xs flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="flex items-center gap-2 font-semibold text-primary">
+                      <Image
+                        src="/icon-formulando.svg"
+                        width={14}
+                        height={14}
+                        alt="Free"
+                        className="opacity-70"
+                      />
+                      <span>Plano Free</span>
+                    </div>
+                    <p className="text-muted-foreground leading-tight">
+                      Você está em um plano de uso limitado.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 border-none shadow-sm"
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/plans?workspace=${activeWorkspace.id}`
+                        )
+                      }
+                    >
+                      Fazer Upgrade
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="space-y-1">
               {sidebarItems.map((item) => {
                 const isItemActive = pathname === item.href;
-                const isLocked = !isActive && item.locked;
+                const isLocked = !isSubscribed && item.locked;
 
                 const content = (
                   <>

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { checkLimit } from "@/lib/limits"
 
 export interface EmailTemplate {
     id: string
@@ -83,6 +84,12 @@ export async function createEmailTemplate(
 
     if (!user) {
         throw new Error("Usuário não autenticado")
+    }
+
+    // CHECK LIMITS
+    const limitCheck = await checkLimit(workspaceId, "email_templates")
+    if (!limitCheck.allowed) {
+        throw new Error(limitCheck.error || "Limite de templates de email atingido.")
     }
 
     const { data, error } = await supabase

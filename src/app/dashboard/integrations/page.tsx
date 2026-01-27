@@ -1,6 +1,40 @@
 import { IntegrationsList } from "@/components/integrations/integrations-list"
+import { getActiveWorkspace } from "@/lib/get-active-workspace"
+import { checkLimit } from "@/lib/limits"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Lock } from "lucide-react"
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+    const { activeWorkspace } = await getActiveWorkspace() || {}
+
+    if (!activeWorkspace) {
+        return <div>Selecione um workspace</div>
+    }
+
+    const limitCheck = await checkLimit(activeWorkspace.id, "integrations")
+
+    if (!limitCheck.allowed) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center space-y-6 animate-in fade-in duration-500">
+                <div className="p-4 bg-primary/5 rounded-full">
+                    <Lock className="w-12 h-12 text-primary/60" />
+                </div>
+                <div className="max-w-md space-y-2">
+                    <h3 className="text-2xl font-bold">Plano Free Limitado</h3>
+                    <p className="text-muted-foreground">
+                        Integrações com ferramentas externas (Google Sheets, Zapier, Webhooks) não estão disponíveis neste plano. Faça o upgrade para automatizar seus leads!
+                    </p>
+                </div>
+                <Button asChild size="lg" className="bg-gradient-to-r from-violet-600 to-indigo-600">
+                    <Link href="/dashboard/plans">
+                        Fazer Upgrade Agora
+                    </Link>
+                </Button>
+            </div>
+        )
+    }
+
     return (
         <div className="flex-1 space-y-8 p-8 pt-6 relative overflow-hidden">
             {/* Background elements */}
@@ -24,3 +58,4 @@ export default function IntegrationsPage() {
         </div>
     )
 }
+

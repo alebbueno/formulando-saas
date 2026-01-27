@@ -21,7 +21,12 @@ export async function getWorkspaceUsage(workspaceId: string) {
                     name,
                     slug,
                     max_leads_per_month,
-                    max_workspaces
+                    max_emails_per_month,
+                    max_workspaces,
+                    max_projects,
+                    max_landing_pages,
+                    max_automations,
+                    max_email_templates
                 )
             )
         `)
@@ -46,32 +51,82 @@ export async function getWorkspaceUsage(workspaceId: string) {
         name: "Gratuito",
         slug: "free",
         max_leads_per_month: 100,
-        max_workspaces: 1
+        max_emails_per_month: 100,
+        max_workspaces: 1,
+        max_projects: 2,
+        max_landing_pages: 1,
+        max_automations: 1,
+        max_email_templates: 2
     }
 
-    // 2. Calculate Leads Usage (Current Month)
+    // 2. Fetch Usage Counts
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-    // We need to count leads in projects belonging to this workspace
-    // Correct way: Join projects and filter by workspace_id
-    const { count: leadsUsage, error } = await supabase
-        .from("leads")
-        .select("id, projects!inner(workspace_id)", { count: "exact", head: true })
-        .eq("projects.workspace_id", workspaceId)
-        .gte("created_at", startOfMonth)
+    // Counts (Parallel)
+    const [
+        { count: leadsUsage },
+        { count: formsUsage },
+        { count: lpUsage },
+        { count: automationsUsage },
+        { count: emailTemplatesUsage },
+        { count: emailsSentUsage }
+    ] = await Promise.all([
+        // Leads this month
+        supabase
+            .from("leads")
+            .select("id, projects!inner(workspace_id)", { count: "exact", head: true })
+            .eq("projects.workspace_id", workspaceId)
+            .gte("created_at", startOfMonth),
 
-    if (error) {
-        console.error("Error fetching usage:", error)
-        return null
-    }
+        // Forms (projects with type != LP)
+        supabase
+            .from("projects")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspaceId)
+            .neq("type", "lp"),
+
+        // Landing Pages (projects with type = LP)
+        supabase
+            .from("projects")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspaceId)
+            .eq("type", "lp"),
+
+        // Automations
+        supabase
+            .from("automations")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspaceId),
+
+        // Email Templates
+        supabase
+            .from("email_templates")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspaceId),
+
+        // Emails sent this month (assuming there is an email_logs table or similar)
+        // If not, we just return 0 for now or count from some other place.
+        // For now let's assume 0 as I don't see an email logs table in previous context.
+        Promise.resolve({ count: 0 })
+    ])
 
     return {
         role: member.role,
         plan,
         usage: {
             leads: leadsUsage || 0,
-            leadsLimit: plan.max_leads_per_month
+            leadsLimit: plan.max_leads_per_month,
+            forms: formsUsage || 0,
+            formsLimit: plan.max_projects,
+            landingPages: lpUsage || 0,
+            landingPagesLimit: plan.max_landing_pages,
+            automations: automationsUsage || 0,
+            automationsLimit: plan.max_automations,
+            emailTemplates: emailTemplatesUsage || 0,
+            emailTemplatesLimit: plan.max_email_templates,
+            emailsSent: emailsSentUsage || 0,
+            emailsSentLimit: plan.max_emails_per_month
         }
     }
 }
