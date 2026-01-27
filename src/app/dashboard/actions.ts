@@ -172,6 +172,10 @@ export async function createProject() {
         }
     }
 
+    if (!workspaceId) {
+        throw new Error("No workspace found")
+    }
+
     // CHECK LIMITS
     const limitCheck = await checkLimit(workspaceId, "forms")
     if (!limitCheck.allowed) {

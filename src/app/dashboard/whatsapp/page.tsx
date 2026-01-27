@@ -12,11 +12,11 @@ import { ClientPageWrapper } from "@/components/whatsapp"
 export default async function WhatsappPage() {
     const { activeWorkspace } = await getActiveWorkspace() || {}
 
-    if (!activeWorkspace) {
+    if (!activeWorkspace?.id) {
         return <div>Selecione um workspace</div>
     }
 
-    const limitCheck = await checkLimit(activeWorkspace.id, "whatsapp")
+    const limitCheck = await checkLimit(activeWorkspace.id as string, "whatsapp")
 
     if (!limitCheck.allowed) {
         return (

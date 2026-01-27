@@ -8,11 +8,11 @@ import { Lock } from "lucide-react"
 export default async function IntegrationsPage() {
     const { activeWorkspace } = await getActiveWorkspace() || {}
 
-    if (!activeWorkspace) {
+    if (!activeWorkspace?.id) {
         return <div>Selecione um workspace</div>
     }
 
-    const limitCheck = await checkLimit(activeWorkspace.id, "integrations")
+    const limitCheck = await checkLimit(activeWorkspace.id as string, "integrations")
 
     if (!limitCheck.allowed) {
         return (
