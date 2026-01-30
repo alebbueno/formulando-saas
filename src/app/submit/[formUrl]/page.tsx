@@ -85,12 +85,7 @@ export default async function SubmitPage({
                     border-radius: var(--btn-radius) !important;
                 }
             `}} />
-            <div className="max-w-[800px] w-full bg-transparent p-8"> {/* Removed default bg/shadow to let page theme take over or keep it logic dependent? Usually user wants the whole page themed. */}
-                {/* For now, let's keep the card look IF the page background is not separate from form background. 
-                    Actually, in the builder, the canvas is the "Page". 
-                    So let's make the wrapper transparent and let the page background defined above be the main one. */}
-
-                <h1 className="text-2xl font-bold mb-8 text-center" style={{ color: theme.page?.textColor }}>{project.name}</h1>
+            <div className="max-w-[800px] w-full bg-transparent p-8">
                 <FormSubmitComponent
                     formUrl={formUrl}
                     content={formContent}
