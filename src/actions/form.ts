@@ -422,3 +422,32 @@ export async function publishProject(id: string, isPublished: boolean) {
     revalidatePath(`/builder/${id}`)
     revalidatePath("/dashboard")
 }
+
+/**
+ * Increment the visit counter for a project (form view tracking)
+ * This is called when someone views the form submission page
+ */
+export async function incrementVisit(projectId: string) {
+    // Use Service Role to bypass RLS for public form views
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.error("Missing Service Role Key for visit tracking")
+        return
+    }
+
+    const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+    const supabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+
+    // Increment visits field directly
+    const { error } = await supabase
+        .from('projects')
+        .update({ visits: supabase.raw('COALESCE(visits, 0) + 1') })
+        .eq('id', projectId)
+
+    if (error) {
+        console.error("Error incrementing visit:", error)
+        // Don't throw - we don't want to block page load if tracking fails
+    }
+}

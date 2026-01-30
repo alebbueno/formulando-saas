@@ -38,13 +38,24 @@ export async function getAccountStats() {
 
     // 2. Fetch Aggregated Data
     // a. Fetch projects to count active forms and sum views
-    const { data: userProjects, count: formsCount, error: projectsError } = await supabase
+    // Use admin client to bypass RLS since we already validated workspace ownership
+    console.log("🔍 [getAccountStats] Creating admin client...")
+    const adminSupabase = createAdminClient()
+    console.log("🔍 [getAccountStats] Admin client created, fetching projects...")
+
+    const { data: userProjects, count: formsCount, error: projectsError } = await adminSupabase
         .from('projects')
         .select('id, name, visits, is_published, workspace_id', { count: 'exact' })
         .in('workspace_id', workspaceIds)
 
+    console.log("🔍 [getAccountStats] Projects query result:", {
+        count: formsCount,
+        dataLength: userProjects?.length,
+        error: projectsError
+    })
+
     if (projectsError) {
-        console.error("Error fetching projects:", projectsError)
+        console.error("❌ [getAccountStats] Error fetching projects:", projectsError)
     }
 
     const projects = userProjects || []
@@ -52,7 +63,8 @@ export async function getAccountStats() {
 
     // b. Fetch leads
     // We need created_at for the graph, and workspace_id for distribution
-    const { data: userLeads, count: leadsCount, error: leadsError } = await supabase
+    // Use admin client for consistency
+    const { data: userLeads, count: leadsCount, error: leadsError } = await adminSupabase
         .from('leads')
         .select('id, created_at, workspace_id', { count: 'exact' })
         .in('workspace_id', workspaceIds)

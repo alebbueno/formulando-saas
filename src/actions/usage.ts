@@ -72,11 +72,11 @@ export async function getWorkspaceUsage(workspaceId: string) {
         { count: emailTemplatesUsage },
         { count: emailsSentUsage }
     ] = await Promise.all([
-        // Leads this month
+        // Leads this month - query directly by workspace_id to include all leads
         supabase
             .from("leads")
-            .select("id, projects!inner(workspace_id)", { count: "exact", head: true })
-            .eq("projects.workspace_id", workspaceId)
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspaceId)
             .gte("created_at", startOfMonth),
 
         // Forms (projects with type != LP)
@@ -162,12 +162,11 @@ export async function getOwnerWorkspacesWithUsage() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
     const workspacesWithUsage = await Promise.all(workspaces.map(async (ws) => {
+        // Query leads directly by workspace_id to include ALL leads (manual + form submissions)
         const { count } = await supabase
             .from("leads")
-            //.select("id, projects!inner(workspace_id)", { count: "exact", head: true }) // optimized count
-            // Standard way with filters might be tricky with join syntax in strict mode, let's try direct
-            .select("id, projects!inner(workspace_id)", { count: "exact", head: true })
-            .eq("projects.workspace_id", ws.id)
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", ws.id)
             .gte("created_at", startOfMonth)
 
         const planData = Array.isArray(ws.plan) ? ws.plan[0] : ws.plan

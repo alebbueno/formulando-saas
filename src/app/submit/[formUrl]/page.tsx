@@ -27,6 +27,12 @@ export default async function SubmitPage({
         return notFound()
     }
 
+    // Track visit (async, don't block page load)
+    const { incrementVisit } = await import("@/actions/form")
+    incrementVisit(formUrl).catch((err: unknown) => console.error("Failed to track visit:", err))
+
+
+
     const formContent = project.content as FormElementInstance[]
 
     if (!formContent) {

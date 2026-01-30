@@ -38,6 +38,9 @@ export default async function DashboardPage() {
     const { getLeadStats } = await import("@/actions/leads")
     const leadStats = await getLeadStats(activeWorkspace.id)
 
+    console.log("📊 Dashboard Page - leadStats:", leadStats)
+
+
     // Fetch projects to determine checklist status
     const { data: projects } = await supabase
         .from("projects")

@@ -844,19 +844,27 @@ export async function getLeadStats(workspaceId: string) {
         }
     }
 
-    const total = leads.length
-    const qualified = leads.filter(l => l.score >= 60 || l.status === 'Qualificado').length
+    console.log("🔍 DEBUG getLeadStats - workspaceId:", workspaceId)
+    console.log("🔍 DEBUG getLeadStats - leads count:", leads?.length || 0)
+    console.log("🔍 DEBUG getLeadStats - leads data:", leads)
+
+    // Handle null/undefined leads array
+    const safeLeads = leads || []
+
+    const total = safeLeads.length
+
+    const qualified = safeLeads.filter(l => l.score >= 60 || l.status === 'Qualificado').length
 
     // Group by status
     const statusCounts: Record<string, number> = {}
-    leads.forEach(l => {
+    safeLeads.forEach(l => {
         const s = l.status || "Novo Lead"
         statusCounts[s] = (statusCounts[s] || 0) + 1
     })
     const byStatus = Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
 
     // Hot Leads (Score >= 70)
-    const hotLeads = leads
+    const hotLeads = safeLeads
         .filter(l => l.score >= 70)
         .sort((a, b) => b.score - a.score)
         .slice(0, 5)
