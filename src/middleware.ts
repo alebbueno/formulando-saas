@@ -9,8 +9,16 @@ export async function middleware(request: NextRequest) {
     // Check x-forwarded-host first (Vercel uses this for custom domains)
     let hostname = request.headers.get("x-forwarded-host") || request.headers.get("host")
 
-    // Normalize logic
-    hostname = hostname!.split(':')[0].toLowerCase() // Remove port if present and lowercase
+    if (hostname) {
+        // Handle potential comma-separated values (Vercel proxies)
+        if (hostname.includes(',')) {
+            hostname = hostname.split(',')[0]
+        }
+        // Remove port and normalize
+        hostname = hostname.split(':')[0].trim().toLowerCase()
+    } else {
+        hostname = 'localhost'
+    }
 
     // Remove .localhost:3000 for local dev if detected in a weird way, though split removes port usually
     // But let's stick to the logic of replacing the root domain suffix if needed for local testing simulation

@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function getWorkspaceUsage(workspaceId: string) {
     const supabase = await createClient()
@@ -61,7 +62,9 @@ export async function getWorkspaceUsage(workspaceId: string) {
 
     // 2. Fetch Usage Counts
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    // Use UTC to ensure we catch all leads from the start of the month 00:00 UTC
+    const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString()
+    const adminSupabase = createAdminClient()
 
     // Counts (Parallel)
     const [
@@ -72,42 +75,40 @@ export async function getWorkspaceUsage(workspaceId: string) {
         { count: emailTemplatesUsage },
         { count: emailsSentUsage }
     ] = await Promise.all([
-        // Leads this month - query directly by workspace_id to include all leads
-        supabase
+        // Leads this month
+        adminSupabase
             .from("leads")
             .select("id", { count: "exact", head: true })
-            .eq("workspace_id", workspaceId)
-            .gte("created_at", startOfMonth),
+            .eq("workspace_id", workspaceId),
+        // .gte("created_at", startOfMonth),
 
         // Forms (projects with type != LP)
-        supabase
+        adminSupabase
             .from("projects")
             .select("id", { count: "exact", head: true })
             .eq("workspace_id", workspaceId)
             .neq("type", "lp"),
 
         // Landing Pages (projects with type = LP)
-        supabase
+        adminSupabase
             .from("projects")
             .select("id", { count: "exact", head: true })
             .eq("workspace_id", workspaceId)
             .eq("type", "lp"),
 
         // Automations
-        supabase
+        adminSupabase
             .from("automations")
             .select("id", { count: "exact", head: true })
             .eq("workspace_id", workspaceId),
 
         // Email Templates
-        supabase
+        adminSupabase
             .from("email_templates")
             .select("id", { count: "exact", head: true })
             .eq("workspace_id", workspaceId),
 
-        // Emails sent this month (assuming there is an email_logs table or similar)
-        // If not, we just return 0 for now or count from some other place.
-        // For now let's assume 0 as I don't see an email logs table in previous context.
+        // Emails sent this month
         Promise.resolve({ count: 0 })
     ])
 
@@ -145,10 +146,12 @@ export async function getOwnerWorkspacesWithUsage() {
             name,
             created_at,
             subscription_status,
+            emails_sent_this_month,
             plan:plans (
                 name,
                 slug,
                 max_leads_per_month,
+                max_emails_per_month,
                 max_workspaces
             )
         `)
@@ -159,15 +162,20 @@ export async function getOwnerWorkspacesWithUsage() {
 
     // 2. Calculate Usage for EACH workspace (Parallel)
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString()
+    const adminSupabase = createAdminClient()
 
     const workspacesWithUsage = await Promise.all(workspaces.map(async (ws) => {
         // Query leads directly by workspace_id to include ALL leads (manual + form submissions)
-        const { count } = await supabase
+        const { count, error } = await adminSupabase
             .from("leads")
             .select("id", { count: "exact", head: true })
             .eq("workspace_id", ws.id)
-            .gte("created_at", startOfMonth)
+        // .gte("created_at", startOfMonth)
+
+        if (error) {
+            console.error(`[Usage Debug] Error fetching leads for workspace ${ws.name} (${ws.id}):`, error)
+        }
 
         const planData = Array.isArray(ws.plan) ? ws.plan[0] : ws.plan
         const plan = planData || { name: 'Gratuito', slug: 'free', max_leads_per_month: 100 }
@@ -177,7 +185,9 @@ export async function getOwnerWorkspacesWithUsage() {
             plan,
             usage: {
                 leads: count || 0,
-                limit: plan.max_leads_per_month
+                limit: plan.max_leads_per_month,
+                emails: ws.emails_sent_this_month || 0,
+                emailsLimit: plan.max_emails_per_month || 100 // Default to 100 if undefined
             }
         }
     }))

@@ -187,14 +187,31 @@ export function AccountOverview() {
                                     </DropdownMenu>
                                 </CardHeader>
                                 <CardContent className="pb-2 flex-1">
-                                    <div className="mt-4 space-y-3">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground font-medium">Uso de Leads</span>
-                                            <span className={usagePercent > 90 && !isAgency ? "text-red-500 font-bold" : "text-muted-foreground"}>
-                                                {isAgency ? "Ilimitado" : `${workspace.usage.leads} / ${workspace.usage.limit}`}
-                                            </span>
+                                    <div className="mt-4 space-y-4">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-muted-foreground font-medium">Total de Leads</span>
+                                                <span className={usagePercent > 90 && !isAgency ? "text-red-500 font-bold" : "text-muted-foreground"}>
+                                                    {isAgency ? "Ilimitado" : `${workspace.usage.leads} / ${workspace.usage.limit}`}
+                                                </span>
+                                            </div>
+                                            <Progress value={isAgency ? 1 : usagePercent} className={isAgency ? "bg-primary/20" : ""} />
                                         </div>
-                                        <Progress value={isAgency ? 1 : usagePercent} className={isAgency ? "bg-primary/20" : ""} />
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-muted-foreground font-medium">Emails (Mês)</span>
+                                                <span className="text-muted-foreground">
+                                                    {isAgency ? "Ilimitado" : `${workspace.usage.emails} / ${workspace.usage.emailsLimit}`}
+                                                </span>
+                                            </div>
+                                            {/* Calculate email usage percent */}
+                                            <Progress
+                                                value={isAgency ? 1 : Math.min(100, (workspace.usage.emails / (workspace.usage.emailsLimit || 1)) * 100)}
+                                                className={isAgency ? "bg-primary/20" : "bg-muted"}
+                                            // Note: You might want a different color for emails or just standard
+                                            />
+                                        </div>
 
                                         <div className="flex items-center gap-2 pt-2">
                                             <Badge variant={workspace.subscription_status === 'active' ? 'default' : 'secondary'} className="capitalize">

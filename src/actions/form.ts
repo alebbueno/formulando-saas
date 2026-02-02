@@ -441,9 +441,21 @@ export async function incrementVisit(projectId: string) {
     )
 
     // Increment visits field directly
+    // Fetch current visits first since .raw() is not supported on the client
+    const { data: currentProject, error: fetchError } = await supabase
+        .from('projects')
+        .select('visits')
+        .eq('id', projectId)
+        .single()
+
+    if (fetchError) {
+        console.error("Error fetching project visits:", fetchError)
+        return
+    }
+
     const { error } = await supabase
         .from('projects')
-        .update({ visits: supabase.raw('COALESCE(visits, 0) + 1') })
+        .update({ visits: (currentProject?.visits ?? 0) + 1 })
         .eq('id', projectId)
 
     if (error) {
