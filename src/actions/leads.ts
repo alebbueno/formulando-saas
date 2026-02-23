@@ -462,6 +462,27 @@ export async function processNewSubmission(
                 // Don't fail the submission if automation fails
             }
         }
+
+        // 7. Dispatch Webhooks
+        if (leadId) {
+            try {
+                const { dispatchWebhooks } = await import("@/lib/webhooks")
+                await dispatchWebhooks(workspaceId, {
+                    event: "lead.created",
+                    lead: {
+                        id: leadId,
+                        name: name,
+                        email: email,
+                        company: company,
+                        job_title: jobTitle,
+                        source_id: projectId
+                    }
+                })
+            } catch (webhookError) {
+                console.error("Error dispatching webhooks:", webhookError)
+            }
+        }
+
     } else {
         // No email? We could create an anonymous lead or skip.
         // For MVP, if no email, we treat it as just a raw submission (which is already saved in `form_submissions`).

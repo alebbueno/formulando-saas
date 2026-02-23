@@ -9,17 +9,22 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Integration } from "./integration-card"
-import { Check, Clipboard, ExternalLink, HelpCircle, Code, Download, BookOpen, Key } from "lucide-react"
+import { Check, Clipboard, ExternalLink, HelpCircle, Code, Download, BookOpen, Key, AlertCircle } from "lucide-react"
 import { useWorkspace } from "@/context/workspace-context"
 import { toast } from "sonner"
+import { ApiTokensManager } from "./api-tokens-manager"
+import { WebhooksManager } from "./webhooks-manager"
 
 interface IntegrationSetupSheetProps {
     integration: Integration | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    workspaceId?: string
+    apiTokens?: any[]
+    webhooks?: any[]
 }
 
-export function IntegrationSetupSheet({ integration, open, onOpenChange }: IntegrationSetupSheetProps) {
+export function IntegrationSetupSheet({ integration, open, onOpenChange, workspaceId, apiTokens, webhooks }: IntegrationSetupSheetProps) {
     const [activeTab, setActiveTab] = useState("overview")
     const { activeWorkspace } = useWorkspace()
 
@@ -32,7 +37,7 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+            <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
                 <SheetHeader className="mb-6">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-muted rounded-lg">
@@ -90,25 +95,17 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                     </TabsContent>
 
                     <TabsContent value="setup" className="space-y-6 mt-4">
-                        {/* MOCK CONFIG FOR WEBHOOK */}
-                        {integration.id === 'webhook' && (
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>URL do Webhook</Label>
-                                    <Input placeholder="https://seu-sistema.com/webhook" />
-                                    <p className="text-xs text-muted-foreground">URL para onde enviaremos o POST request.</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Secret Key (Opcional)</Label>
-                                    <Input type="password" placeholder="wh_sec_..." />
-                                </div>
-                                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                    <div className="space-y-0.5">
-                                        <Label>Ativar disparo</Label>
-                                        <p className="text-xs text-muted-foreground">Enviar dados automaticamente</p>
-                                    </div>
-                                    <Switch />
-                                </div>
+                        {/* WEBHOOKS ACTUAL CONFIG */}
+                        {integration.id === 'webhook' && workspaceId && (
+                            <div className="space-y-4 -mx-4 sm:mx-0">
+                                <WebhooksManager workspaceId={workspaceId} initialWebhooks={webhooks || []} />
+                            </div>
+                        )}
+
+                        {/* API TOKENS ACTUAL CONFIG */}
+                        {integration.id === 'api' && workspaceId && (
+                            <div className="space-y-4 -mx-4 sm:mx-0">
+                                <ApiTokensManager workspaceId={workspaceId} initialTokens={apiTokens || []} />
                             </div>
                         )}
 
@@ -229,7 +226,7 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                         )}
 
                         {/* GENERIC MOCK FOR OTHERS */}
-                        {!['webhook', 'google-sheets', 'legacy-forms'].includes(integration.id) && (
+                        {!['webhook', 'api', 'google-sheets', 'legacy-forms'].includes(integration.id) && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>API Key</Label>
@@ -246,7 +243,7 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                         )}
 
                         <Separator />
-                        {integration.id !== 'legacy-forms' && (
+                        {!['legacy-forms', 'api', 'webhook'].includes(integration.id) && (
                             <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                                 <Button>Salvar Integração</Button>
@@ -328,8 +325,61 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange }: Integ
                                     </div>
                                 )}
 
+                                {/* API TUTORIAL */}
+                                {integration.id === 'api' && (
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Como enviar leads via API</h4>
+                                            <p className="text-muted-foreground mb-4">
+                                                Envie leads de outras plataformas, landing pages ou sistemas próprios diretamente para o seu workspace no Formulando.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Autenticação</h4>
+                                            <p className="text-muted-foreground">
+                                                Todas as requisições devem incluir o header <code>Authorization: Bearer &lt;SEU_TOKEN&gt;</code>. Gere seu token na aba Configuração.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Endpoint</h4>
+                                            <div className="flex items-center gap-3 bg-muted p-3 rounded-md mb-4 font-mono text-xs border">
+                                                <span className="font-bold text-green-500">POST</span>
+                                                <span>https://app.formulando.tech/api/v1/leads</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Payload (Body) de Exemplo</h4>
+                                            <p className="text-muted-foreground mb-4 text-xs">
+                                                O único campo estritamente obrigatório é o <code>email</code>. Quaisquer campos adicionais serão salvos como campos customizados.
+                                            </p>
+                                            <div className="relative group">
+                                                <pre className="bg-slate-950 text-green-400 p-4 rounded-md border text-xs font-mono overflow-x-auto whitespace-pre">
+                                                    {`{
+  "name": "Maria Silva",
+  "email": "maria@empresa.com", // Obrigatório
+  "phone": "11999999999",
+  "company": "Empresa S.A.",
+  "job_title": "Diretora de Vendas",
+  "minha_pergunta_customizada": "Gostaria de marcar uma demonstração."
+}`}
+                                                </pre>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Webhooks (Outbound API)</h4>
+                                            <p className="text-muted-foreground">
+                                                Se você precisa do caminho inverso (receber avisos quando o Formulando cria um lead), volte à página de Integrações e configure um <strong>Webhook</strong>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* GENERIC TUTORIAL */}
-                                {integration.id !== 'legacy-forms' && integration.id !== 'wordpress' && (
+                                {!['legacy-forms', 'wordpress', 'api'].includes(integration.id) && (
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <h4 className="font-medium text-primary">Passo 1: Preparação</h4>

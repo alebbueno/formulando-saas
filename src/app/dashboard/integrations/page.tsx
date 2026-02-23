@@ -1,9 +1,12 @@
 import { IntegrationsList } from "@/components/integrations/integrations-list"
+import { ApiTokensManager } from "@/components/integrations/api-tokens-manager"
+import { WebhooksManager } from "@/components/integrations/webhooks-manager"
+import { getApiTokens, getWebhooks } from "@/actions/integrations"
 import { getActiveWorkspace } from "@/lib/get-active-workspace"
 import { checkLimit } from "@/lib/limits"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Lock } from "lucide-react"
+import { Lock, FileText } from "lucide-react"
 
 export default async function IntegrationsPage() {
     const { activeWorkspace } = await getActiveWorkspace() || {}
@@ -35,6 +38,11 @@ export default async function IntegrationsPage() {
         )
     }
 
+    const [apiTokens, webhooks] = await Promise.all([
+        getApiTokens(activeWorkspace.id),
+        getWebhooks(activeWorkspace.id)
+    ])
+
     return (
         <div className="flex-1 space-y-8 p-8 pt-6 relative overflow-hidden">
             {/* Background elements */}
@@ -50,10 +58,18 @@ export default async function IntegrationsPage() {
                         Supercharge seus formulários conectando-os às suas ferramentas favoritas.
                     </p>
                 </div>
+                <div className="flex items-center space-x-2">
+                    <Button variant="outline" asChild>
+                        <Link href={`/dashboard/workspace/${activeWorkspace.id}/integrations/docs`} className="flex items-center">
+                            <FileText className="w-4 h-4 mr-2" />
+                            Documentação da API
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
-            <div className="h-full py-6">
-                <IntegrationsList />
+            <div className="space-y-6">
+                <IntegrationsList workspaceId={activeWorkspace.id as string} apiTokens={apiTokens || []} webhooks={webhooks || []} />
             </div>
         </div>
     )

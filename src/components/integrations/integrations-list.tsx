@@ -23,9 +23,17 @@ const MOCK_INTEGRATIONS: Integration[] = [
         category: "cms"
     },
     {
+        id: "api",
+        title: "Tokens de API",
+        description: "Gere tokens para enviar leads de outras plataformas e sistemas para o Formulando.",
+        icon: Code,
+        status: "disconnected",
+        category: "communication"
+    },
+    {
         id: "webhook",
-        title: "Webhook",
-        description: "Envie dados para qualquer sistema via requisições HTTP POST instantâneas.",
+        title: "Webhooks",
+        description: "Envie os novos leads instantaneamente para Zapier, Make ou sistemas próprios via POST.",
         icon: Webhook,
         status: "disconnected",
         category: "communication"
@@ -77,7 +85,15 @@ const MOCK_INTEGRATIONS: Integration[] = [
     }
 ]
 
-export function IntegrationsList() {
+export function IntegrationsList({
+    workspaceId,
+    apiTokens,
+    webhooks
+}: {
+    workspaceId: string,
+    apiTokens: any[],
+    webhooks: any[]
+}) {
     const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
     const [isSheetOpen, setIsSheetOpen] = useState(false)
 
@@ -102,6 +118,9 @@ export function IntegrationsList() {
                 integration={selectedIntegration}
                 open={isSheetOpen}
                 onOpenChange={setIsSheetOpen}
+                workspaceId={workspaceId}
+                apiTokens={apiTokens}
+                webhooks={webhooks}
             />
         </div>
     )
