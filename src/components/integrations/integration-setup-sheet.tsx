@@ -346,7 +346,7 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange, workspa
                                             <h4 className="font-medium text-primary">Endpoint</h4>
                                             <div className="flex items-center gap-3 bg-muted p-3 rounded-md mb-4 font-mono text-xs border">
                                                 <span className="font-bold text-green-500">POST</span>
-                                                <span>https://app.formulando.tech/api/v1/leads</span>
+                                                <span>https://formulando.app/api/v1/leads</span>
                                             </div>
                                         </div>
 

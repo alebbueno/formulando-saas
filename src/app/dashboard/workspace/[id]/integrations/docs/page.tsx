@@ -67,7 +67,7 @@ export default async function ApiDocsPage() {
                             </h3>
                             <div className="flex items-center gap-3 bg-muted p-3 rounded-md mb-4 font-mono text-sm border">
                                 <Badge variant="default">POST</Badge>
-                                <span>https://app.formulando.tech/api/v1/leads</span>
+                                <span>https://formulando.app/api/v1/leads</span>
                             </div>
 
                             <h4 className="font-medium mt-4 mb-2 text-sm text-foreground/80">Headers Requeridos</h4>
