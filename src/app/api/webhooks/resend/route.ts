@@ -45,6 +45,19 @@ export async function POST(req: NextRequest) {
         }
 
         if (newStatus) {
+            // First, get the current log to find workspace_id and lead_id
+            const { data: log, error: fetchError } = await supabase
+                .from("email_logs")
+                .select("workspace_id, lead_id, template_id")
+                .eq("resend_id", data.email_id)
+                .single()
+
+            if (fetchError || !log) {
+                console.error(`[ResendWebhook] Log not found for ${data.email_id}:`, fetchError)
+                return NextResponse.json({ error: "Log not found" }, { status: 404 })
+            }
+
+            // Update status
             const { error: updateError } = await supabase
                 .from("email_logs")
                 .update({ 
@@ -59,6 +72,20 @@ export async function POST(req: NextRequest) {
             }
 
             console.log(`[ResendWebhook] Updated ${data.email_id} to status: ${newStatus}`)
+
+            // Trigger Email Automations for Open/Click
+            if (newStatus === 'opened' || newStatus === 'clicked') {
+                const { triggerEmailAutomations } = await import("@/lib/automation-engine")
+                // Use a standard event name for the trigger matching
+                const eventType = newStatus === 'opened' ? 'email_opened' : 'email_clicked'
+                
+                await triggerEmailAutomations(
+                    log.workspace_id, 
+                    log.lead_id, 
+                    eventType, 
+                    log.template_id
+                )
+            }
         }
 
         return NextResponse.json({ success: true })

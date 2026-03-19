@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 import { CustomNode } from './custom-node';
 
@@ -121,25 +122,29 @@ export function FlowEditor({ initialData }: FlowEditorProps) {
         }
     }
 
-    const onAddNode = (type: string, label: string) => {
+    const onAddNode = (type: string, label: string, triggerSubtype?: string) => {
         const id = crypto.randomUUID()
 
         // Find positions for horizontal layout
-        // Place new node to the right of the selected node or the last node
         const referenceNode = selectedNode || nodes[nodes.length - 1]
         const refX = referenceNode?.position.x || 0
         const refY = referenceNode?.position.y || 0
 
         const newNode: Node = {
             id,
-            position: { x: refX + 250, y: refY }, // Shift right by 250px
-            data: { label, type, nodeType: type },
-            type: type, // Use the specific type so it picks up CustomNode from nodeTypes
+            position: { x: refX + 250, y: refY }, 
+            data: { 
+                label, 
+                type, 
+                nodeType: type,
+                config: triggerSubtype ? { eventType: triggerSubtype } : {}
+            },
+            type: type, 
         };
 
         setNodes((nds) => nds.concat(newNode));
 
-        // Auto Connect if we have a reference node AND it's not a condition node (force manual selection for branching)
+        // Auto Connect
         if (referenceNode && referenceNode.type !== 'condition' && (referenceNode.data as any).nodeType !== 'condition') {
             setEdges((eds) => addEdge({ source: referenceNode.id, target: id, sourceHandle: null, targetHandle: null }, eds))
         }
@@ -239,6 +244,12 @@ export function FlowEditor({ initialData }: FlowEditorProps) {
                                     <Button size="sm" variant="outline" onClick={() => onAddNode('action_webhook', 'Webhook')} className="text-xs justify-start">
                                         🔗 Webhook
                                     </Button>
+                                    <Button size="sm" variant="outline" onClick={() => onAddNode('trigger', 'Gatilho: E-mail Aberto', 'email_opened')} className="text-xs justify-start border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700">
+                                        📧 E-mail Aberto
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => onAddNode('trigger', 'Gatilho: E-mail Clicado', 'email_clicked')} className="text-xs justify-start border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700">
+                                        🖱️ E-mail Clicado
+                                    </Button>
                                     <Button size="sm" variant="outline" onClick={() => onAddNode('condition', 'Condição')} className="text-xs justify-start col-span-2 border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700">
                                         🔀 Decisão (If/Else)
                                     </Button>
@@ -288,6 +299,37 @@ export function FlowEditor({ initialData }: FlowEditorProps) {
                                     <p className="text-xs text-muted-foreground">
                                         Se vazio, executa para todos os formulários.
                                     </p>
+                                </div>
+                            )}
+
+                            {(selectedNode.type === 'trigger' && (selectedNode.data.config as any)?.eventType?.startsWith('email_')) && (
+                                <div className="grid gap-2">
+                                    <Label>Trigger de E-mail</Label>
+                                    <Badge variant="outline" className="justify-start border-primary/20 bg-primary/5">
+                                        {(selectedNode.data.config as any).eventType === 'email_opened' ? '📬 Abertura de E-mail' : '🖱️ Clique em E-mail'}
+                                    </Badge>
+                                    <div className="mt-2 space-y-3">
+                                        <Label className="text-xs">Filtrar por Template (Opcional)</Label>
+                                        <Select
+                                            value={(selectedNode.data.config as any)?.templateId || 'any'}
+                                            onValueChange={(val) => updateNodeData('templateId', val === 'any' ? null : val)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Qualquer template" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="any">Qualquer template</SelectItem>
+                                                {emailTemplates.map(template => (
+                                                    <SelectItem key={template.id} value={template.id}>
+                                                        {template.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Selecione um template específico para este gatilho ou deixe em "Qualquer template".
+                                        </p>
+                                    </div>
                                 </div>
                             )}
 
@@ -374,6 +416,17 @@ export function FlowEditor({ initialData }: FlowEditorProps) {
                                         </Select>
                                         <p className="text-xs text-muted-foreground">
                                             O email será enviado para o lead com dados personalizados.
+                                        </p>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>Prefixo do Remetente (Opcional)</Label>
+                                        <Input 
+                                            placeholder="ex: contato, financeiro, suporte"
+                                            value={(selectedNode.data.config as any)?.senderPrefix || ''}
+                                            onChange={(e) => updateNodeData('senderPrefix', e.target.value)}
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Será usado como prefixo @seu-dominio.com.br
                                         </p>
                                     </div>
                                     {(selectedNode.data.config as any)?.templateSubject && (

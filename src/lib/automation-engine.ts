@@ -198,7 +198,7 @@ async function performAction(node: FlowNode, context: ExecutionContext, supabase
 
                 // Send email via Resend with merge tags
                 const { sendAutomationEmail } = await import('@/actions/send-automation-email')
-                const result = await sendAutomationEmail(templateId, lead, context.workspaceId)
+                const result = await sendAutomationEmail(templateId, lead, context.workspaceId, data.config?.senderPrefix)
 
                 if (!result.success) {
                     throw new Error(result.error || 'Failed to send email')
@@ -229,5 +229,50 @@ async function performAction(node: FlowNode, context: ExecutionContext, supabase
 
         default:
             console.warn(`[AutomationEngine] Unknown node type: ${type}`)
+    }
+}
+
+export async function triggerEmailAutomations(workspaceId: string, leadId: string, eventType: string, templateId?: string | null) {
+    console.log(`[AutomationEngine] Triggering email automations for ${eventType} in workspace ${workspaceId}`)
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Find active automations with trigger_type = 'trigger' and config.eventType = eventType
+    // Note: in UI we set trigger_type to 'trigger' but we should probably use 'email_event' for clarity
+    // however onAddNode in flow-editor.tsx uses type='trigger' currently.
+    // Let's check both or enforce one.
+    
+    const { data: automations } = await supabase
+        .from('automations')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .eq('is_active', true)
+        .eq('trigger_type', 'trigger')
+
+    if (!automations || automations.length === 0) return
+
+    for (const auto of automations) {
+        const config = auto.trigger_config as any || (auto.flow_data as any)?.nodes?.find((n: any) => n.type === 'trigger')?.data?.config
+        
+        if (!config || config.eventType !== eventType) continue
+
+        // Filter by templateId if configured
+        if (config.templateId && config.templateId !== templateId) {
+            console.log(`[AutomationEngine] Skipping auto ${auto.id}: template mismatch (${config.templateId} vs ${templateId})`)
+            continue
+        }
+
+        console.log(`[AutomationEngine] Executing automation ${auto.id} for lead ${leadId}`)
+        
+        // Execute (don't await to avoid blocking webhook response, or await if you want reliability)
+        executeAutomation(auto.id, {
+            leadId,
+            workspaceId,
+            projectId: 'auto_triggered', // or some other identifier
+            triggerData: { eventType, templateId }
+        }).catch(err => console.error(`[AutomationEngine] Failed to execute auto ${auto.id}:`, err))
     }
 }
