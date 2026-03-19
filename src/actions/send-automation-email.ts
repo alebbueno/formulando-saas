@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { Resend } from "resend"
 import { getEmailTemplate } from "./emails"
 
@@ -56,7 +57,8 @@ function replaceMergeTags(text: string, data: MergeTagData): string {
 export async function sendAutomationEmail(
     templateId: string,
     leadData: LeadData,
-    workspaceId: string
+    workspaceId: string,
+    customPrefix?: string
 ) {
     try {
         console.log('[sendAutomationEmail] Starting...', { templateId, leadEmail: leadData.email })
@@ -153,12 +155,32 @@ export async function sendAutomationEmail(
             bodyHasWorkspaceName: personalizedBody.includes(workspace?.name || 'MISSING')
         })
 
-        // Configure sender: always send from system email, use workspace name
-        const fromName = workspace?.sender_name || workspace?.name || "Formulando"
-        const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
-
         // Use workspace sender_email as Reply-To if configured
         const replyTo = workspace?.sender_email || undefined
+
+        // CHECK FOR CUSTOM VERIFIED DOMAIN
+        const { data: verifiedDomains } = await supabase
+            .from("domains")
+            .select("domain")
+            .eq("workspace_id", workspaceId)
+            .eq("status", "verified")
+            .order("is_default", { ascending: false }) // Prioritize default
+            .limit(1)
+
+        const verifiedDomain = verifiedDomains?.[0]?.domain
+
+        console.log('[sendAutomationEmail] Custom domain check:', { verifiedDomain })
+
+        // Configure sender: use custom domain if available, otherwise fallback to system email
+        const fromName = workspace?.sender_name || workspace?.name || "Formulando"
+        let fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev"
+
+        if (verifiedDomain) {
+            // Extract prefix from customPrefix, sender_email or use contact
+            const prefix = customPrefix || (workspace?.sender_email ? workspace.sender_email.split('@')[0] : "contato")
+            fromEmail = `${prefix}@${verifiedDomain}`
+            console.log('[sendAutomationEmail] Using custom domain:', fromEmail)
+        }
 
         console.log('[sendAutomationEmail] Sending via Resend to:', leadData.email)
 
@@ -187,20 +209,21 @@ export async function sendAutomationEmail(
             // Don't fail the email send if usage tracking fails
         }
 
-        // Log the email sent event (optional - won't fail if table doesn't exist)
-        try {
-            await supabase.from("email_logs").insert({
-                workspace_id: workspaceId,
-                template_id: templateId,
-                lead_id: leadData.id,
-                recipient_email: leadData.email,
-                subject: personalizedSubject,
-                status: "sent",
-                resend_id: data?.id,
-                sent_at: new Date().toISOString(),
-            })
-        } catch (logError) {
-            console.warn('[sendAutomationEmail] Failed to log email:', logError)
+        // Log the email sent event using admin client to ensure it persists regardless of auth context
+        const adminSupabase = createAdminClient()
+        const { error: logError } = await adminSupabase.from("email_logs").insert({
+            workspace_id: workspaceId,
+            template_id: templateId,
+            lead_id: leadData.id,
+            recipient_email: leadData.email,
+            subject: personalizedSubject,
+            status: "sent",
+            resend_id: data?.id,
+            sent_at: new Date().toISOString(),
+        })
+
+        if (logError) {
+            console.error('[sendAutomationEmail] Failed to log email to database:', logError)
         }
 
         console.log(`[sendAutomationEmail] Email sent successfully to ${leadData.email}:`, data?.id)
@@ -212,21 +235,21 @@ export async function sendAutomationEmail(
     } catch (error) {
         console.error("Error sending automation email:", error)
 
-        // Log the failed attempt
-        try {
-            const supabase = await createClient()
-            await supabase.from("email_logs").insert({
-                workspace_id: workspaceId,
-                template_id: templateId,
-                lead_id: leadData.id,
-                recipient_email: leadData.email || "unknown",
-                subject: "Failed to send",
-                status: "failed",
-                error_message: error instanceof Error ? error.message : String(error),
-                sent_at: new Date().toISOString(),
-            })
-        } catch (logError) {
-            console.error("Failed to log email error:", logError)
+        // Log the failed attempt using admin client
+        const adminSupabase = createAdminClient()
+        const { error: logError } = await adminSupabase.from("email_logs").insert({
+            workspace_id: workspaceId,
+            template_id: templateId,
+            lead_id: leadData.id,
+            recipient_email: leadData.email || "unknown",
+            subject: "Failed to send",
+            status: "failed",
+            error_message: error instanceof Error ? error.message : String(error),
+            sent_at: new Date().toISOString(),
+        })
+
+        if (logError) {
+            console.error('[sendAutomationEmail] Failed to log email error to database:', logError)
         }
 
         return {

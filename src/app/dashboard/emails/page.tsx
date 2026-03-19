@@ -1,7 +1,7 @@
 import { getEmailTemplates } from "@/actions/emails"
 import { EmailTemplatesTable } from "@/components/emails/email-templates-table"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, Send, Clock } from "lucide-react"
 import Link from "next/link"
 import { UsageLimitCard } from "@/components/dashboard/usage-limit-card"
 import { getActiveWorkspace } from "@/lib/get-active-workspace"
@@ -49,12 +49,26 @@ export default async function EmailsPage() {
                             </div>
                         </div>
                     )}
-                    <Button asChild>
-                        <Link href="/dashboard/emails/new">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Novo Template
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/emails/history">
+                                <Clock className="mr-2 h-4 w-4" />
+                                Histórico
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/emails/send">
+                                <Send className="mr-2 h-4 w-4" />
+                                Enviar Campanha
+                            </Link>
+                        </Button>
+                        <Button asChild>
+                            <Link href="/dashboard/emails/new">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Novo Template
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
 

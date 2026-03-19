@@ -3,17 +3,19 @@
 import { useState } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Integration } from "./integration-card"
-import { Check, Clipboard, ExternalLink, HelpCircle, Code, Download, BookOpen, Key, AlertCircle } from "lucide-react"
+import { Check, Clipboard, ExternalLink, HelpCircle, Code, Download, BookOpen, Key, AlertCircle, Send, ShieldCheck, ArrowRight } from "lucide-react"
 import { useWorkspace } from "@/context/workspace-context"
 import { toast } from "sonner"
 import { ApiTokensManager } from "./api-tokens-manager"
 import { WebhooksManager } from "./webhooks-manager"
+import { DomainSettings } from "../settings/domain-settings"
 
 interface IntegrationSetupSheetProps {
     integration: Integration | null
@@ -65,8 +67,11 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange, workspa
                                     Como funciona
                                 </h4>
                                 <p className="text-sm text-muted-foreground">
-                                    Esta integração permite conectar o Formulando com o <strong>{integration.title}</strong> para automatizar seu fluxo de trabalho.
-                                    Os dados dos leads serão enviados automaticamente assim que um novo formulário for preenchido.
+                                    {integration.id === 'resend' ? (
+                                        "Nós utilizamos a infraestrutura do Resend para garantir que seus e-mails cheguem com segurança. Você só precisa conectar seu domínio para que os e-mails saiam com sua própria identidade, sem que você precise criar uma conta no Resend."
+                                    ) : (
+                                        `Esta integração permite conectar o Formulando com o ${integration.title} para automatizar seu fluxo de trabalho. Os dados dos leads serão enviados automaticamente assim que um novo formulário for preenchido.`
+                                    )}
                                 </p>
                             </div>
 
@@ -180,6 +185,39 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange, workspa
                             </div>
                         )}
 
+                        {/* RESEND SETUP */}
+                        {integration.id === 'resend' && (
+                            <div className="space-y-6">
+                                <div className="rounded-lg border bg-primary/5 p-6 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                                            <ShieldCheck className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-medium text-base">Configuração de Domínios</h3>
+                                            <p className="text-sm text-muted-foreground">Gerencie seus domínios Resend diretamente aqui.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="pt-2">
+                                        <DomainSettings minimal />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="font-medium text-sm">Links Úteis</h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        <Button variant="outline" size="sm" className="justify-start gap-2" asChild>
+                                            <Link href="/dashboard/settings?tab=domains">
+                                                <ExternalLink className="h-4 w-4" />
+                                                Ver página completa de domínios
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* CONFIG FOR LEGACY FORMS */}
                         {integration.id === 'legacy-forms' && (
                             <div className="space-y-6">
@@ -226,7 +264,7 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange, workspa
                         )}
 
                         {/* GENERIC MOCK FOR OTHERS */}
-                        {!['webhook', 'api', 'google-sheets', 'legacy-forms'].includes(integration.id) && (
+                        {!['webhook', 'api', 'google-sheets', 'legacy-forms', 'resend'].includes(integration.id) && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>API Key</Label>
@@ -243,7 +281,7 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange, workspa
                         )}
 
                         <Separator />
-                        {!['legacy-forms', 'api', 'webhook'].includes(integration.id) && (
+                        {!['legacy-forms', 'api', 'webhook', 'resend'].includes(integration.id) && (
                             <div className="flex justify-end gap-2">
                                 <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                                 <Button>Salvar Integração</Button>
@@ -378,8 +416,38 @@ export function IntegrationSetupSheet({ integration, open, onOpenChange, workspa
                                     </div>
                                 )}
 
+                                {/* RESEND TUTORIAL */}
+                                {integration.id === 'resend' && (
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Email com Domínio Próprio</h4>
+                                            <p className="text-muted-foreground">
+                                                Com esta integração, os e-mails de automação do seu workspace serão enviados usando o seu domínio (ex: contato@suaempresa.com.br).
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 1: Adicionar Domínio</h4>
+                                            <p className="text-muted-foreground">
+                                                Na aba <strong>Configuração</strong>, insira o domínio ou subdomínio que deseja utilizar.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 2: Configurar DNS</h4>
+                                            <p className="text-muted-foreground">
+                                                Acesse o painel do seu provedor de domínio (GoDaddy, Registro.br, Cloudflare, etc.) e adicione os registros que aparecerão aqui no dashboard.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium text-primary">Passo 3: Verificação</h4>
+                                            <p className="text-muted-foreground">
+                                                Uma vez configurado, clique em "Verificar". Após a confirmação, o Formulando começará a enviar seus e-mails automaticamente por esse domínio.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* GENERIC TUTORIAL */}
-                                {!['legacy-forms', 'wordpress', 'api'].includes(integration.id) && (
+                                {!['legacy-forms', 'wordpress', 'api', 'resend'].includes(integration.id) && (
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <h4 className="font-medium text-primary">Passo 1: Preparação</h4>

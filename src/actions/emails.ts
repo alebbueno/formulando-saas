@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { checkLimit } from "@/lib/limits"
+import { sendAutomationEmail } from "./send-automation-email"
 
 export interface EmailTemplate {
     id: string
@@ -196,4 +197,126 @@ export async function toggleEmailTemplateStatus(id: string, isActive: boolean) {
     }
 
     revalidatePath("/dashboard/emails")
+}
+
+/**
+ * Get available "bases" (tags and statuses) for a workspace
+ */
+export async function getTargetBases(workspaceId: string) {
+    const supabase = await createClient()
+    
+    // 1. Get unique statuses from kanban columns or leads
+    const { data: workspace } = await supabase
+        .from("workspaces")
+        .select("kanban_columns")
+        .eq("id", workspaceId)
+        .single()
+    
+    const statuses = workspace?.kanban_columns?.map((c: any) => c.id) || []
+    
+    // 2. Get unique tags from leads
+    const { data: leadsTags } = await supabase
+        .from("leads")
+        .select("tags")
+        .eq("workspace_id", workspaceId)
+
+    const allTags = new Set<string>()
+    leadsTags?.forEach(lead => {
+        if (Array.isArray(lead.tags)) {
+            lead.tags.forEach(tag => allTags.add(tag))
+        }
+    })
+
+    return {
+        statuses: statuses as string[],
+        tags: Array.from(allTags),
+    }
+}
+
+/**
+ * Send a manual email campaign to a base or specific lead
+ */
+export async function sendManualCampaign(
+    workspaceId: string,
+    templateId: string,
+    target: {
+        type: 'all' | 'tag' | 'status' | 'single'
+        value?: string // tag name, status name, or lead id
+    },
+    fromPrefix?: string
+) {
+    try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) throw new Error("Não autenticado")
+
+        // 1. Fetch template
+        const template = await getEmailTemplate(templateId)
+        if (!template) throw new Error("Template não encontrado")
+
+        // 2. Identify target leads
+        let leadsQuery = supabase
+            .from("leads")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+
+        if (target.type === 'tag') {
+            leadsQuery = leadsQuery.contains('tags', [target.value])
+        } else if (target.type === 'status') {
+            leadsQuery = leadsQuery.eq('status', target.value)
+        } else if (target.type === 'single') {
+            leadsQuery = leadsQuery.eq('id', target.value)
+        }
+        
+        const { data: leads, error: leadsError } = await leadsQuery
+
+        if (leadsError) throw leadsError
+        if (!leads || leads.length === 0) {
+            return { success: false, error: "Nenhum lead encontrado para este público." }
+        }
+
+        // 3. Send emails
+        let sentCount = 0
+        let errorCount = 0
+        const errors: string[] = []
+
+        // In a real production app, we might want to use a queue or limit concurrency
+        // For now, we process them in parallel with a small batching or just map
+        const results = await Promise.all(
+            leads.map(async (lead) => {
+                try {
+                    const res = await sendAutomationEmail(templateId, lead, workspaceId, fromPrefix)
+                    if (res.success) {
+                        sentCount++
+                    } else {
+                        errorCount++
+                        errors.push(`Erro para ${lead.email}: ${res.error}`)
+                    }
+                    return res
+                } catch (e) {
+                    errorCount++
+                    errors.push(`Erro para ${lead.email}: ${e instanceof Error ? e.message : 'Erro genérico'}`)
+                    return { success: false }
+                }
+            })
+        )
+
+        revalidatePath("/dashboard/emails")
+        
+        return {
+            success: true,
+            sentCount,
+            errorCount,
+            errors: errors.slice(0, 10), // Limit error list
+            totalAttempted: leads.length
+        }
+
+    } catch (error) {
+        console.error("sendManualCampaign Error:", error)
+        return { 
+            success: false, 
+            error: error instanceof Error ? error.message : "Erro ao disparar campanha." 
+        }
+    }
 }

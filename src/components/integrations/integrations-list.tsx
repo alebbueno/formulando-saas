@@ -3,9 +3,17 @@
 import { useState } from "react"
 import { Integration, IntegrationCard } from "./integration-card"
 import { IntegrationSetupSheet } from "./integration-setup-sheet"
-import { Webhook, TableProperties, Zap, Slack, Mail, MessageSquare, Code, Globe } from "lucide-react"
+import { Webhook, TableProperties, Zap, Slack, Mail, MessageSquare, Code, Globe, Send } from "lucide-react"
 
 const MOCK_INTEGRATIONS: Integration[] = [
+    {
+        id: "resend",
+        title: "Resend (Email)",
+        description: "Conecte seu próprio domínio para enviar e-mails personalizados e profissionais.",
+        icon: Send,
+        status: "connected",
+        category: "communication"
+    },
     {
         id: "legacy-forms",
         title: "Formulários Existentes", // Legacy Forms
@@ -88,14 +96,31 @@ const MOCK_INTEGRATIONS: Integration[] = [
 export function IntegrationsList({
     workspaceId,
     apiTokens,
-    webhooks
+    webhooks,
+    domains = []
 }: {
     workspaceId: string,
     apiTokens: any[],
-    webhooks: any[]
+    webhooks: any[],
+    domains: any[]
 }) {
     const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
     const [isSheetOpen, setIsSheetOpen] = useState(false)
+
+    // Dynamically update Resend status
+    const integrations = MOCK_INTEGRATIONS.map(integration => {
+        if (integration.id === 'resend') {
+            const hasVerified = domains.some(d => d.status === 'verified')
+            const hasDomain = domains.length > 0
+            
+            return {
+                ...integration,
+                status: hasVerified ? "connected" : hasDomain ? "disconnected" : "disconnected"
+                // If it has a domain but not verified, it's technically disconnected from sending custom emails
+            } as Integration
+        }
+        return integration
+    })
 
     const handleIntegrationClick = (integration: Integration) => {
         setSelectedIntegration(integration)
@@ -105,7 +130,7 @@ export function IntegrationsList({
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {MOCK_INTEGRATIONS.map((integration) => (
+                {integrations.map((integration) => (
                     <IntegrationCard
                         key={integration.id}
                         integration={integration}

@@ -7,7 +7,10 @@ import { BillingSettings } from "./billing-settings"
 import { CollaboratorsList } from "./collaborators-list"
 
 import { ProfileSettings } from "./profile-settings"
+import { DomainSettings } from "./domain-settings"
 import { useWorkspace } from "@/context/workspace-context"
+import { useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function SettingsTabs() {
     const { activeWorkspace } = useWorkspace()
@@ -23,8 +26,18 @@ export function SettingsTabs() {
     // If I look closely at the request "Aba de perfil: so aparece se o usuario foi do tipo cliente ou cliente financeiro"
     // "Aba geral...". "Aba Usuarios...". "Aba Financeiro..."
 
+    const searchParams = useSearchParams()
+    const tabParam = searchParams.get("tab")
+    const [selectedTab, setSelectedTab] = useState(tabParam || (showProfile ? "profile" : "general"))
+
+    useEffect(() => {
+        if (tabParam) {
+            setSelectedTab(tabParam)
+        }
+    }, [tabParam])
+
     return (
-        <Tabs defaultValue={showProfile ? "profile" : "general"} className="space-y-8">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
             <div className="border-b border-border/40 pb-px">
                 <TabsList className="h-auto p-0 bg-transparent gap-6">
                     {showProfile && (
@@ -58,6 +71,15 @@ export function SettingsTabs() {
                             Financeiro
                         </TabsTrigger>
                     )}
+                    
+                    {role === "owner" && (
+                        <TabsTrigger
+                            value="domains"
+                            className="relative h-10 rounded-none border-b-2 border-transparent bg-transparent px-2 pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none hover:text-foreground/80 transition-colors"
+                        >
+                            Domínios
+                        </TabsTrigger>
+                    )}
                 </TabsList>
             </div>
 
@@ -78,6 +100,12 @@ export function SettingsTabs() {
             {showBilling && (
                 <TabsContent value="billing" className="space-y-6 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-500">
                     <BillingSettings />
+                </TabsContent>
+            )}
+
+            {role === "owner" && (
+                <TabsContent value="domains" className="space-y-6 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <DomainSettings />
                 </TabsContent>
             )}
         </Tabs>

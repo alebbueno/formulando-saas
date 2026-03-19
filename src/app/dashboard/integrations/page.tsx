@@ -2,6 +2,7 @@ import { IntegrationsList } from "@/components/integrations/integrations-list"
 import { ApiTokensManager } from "@/components/integrations/api-tokens-manager"
 import { WebhooksManager } from "@/components/integrations/webhooks-manager"
 import { getApiTokens, getWebhooks } from "@/actions/integrations"
+import { getDomains } from "@/actions/domain-actions"
 import { getActiveWorkspace } from "@/lib/get-active-workspace"
 import { checkLimit } from "@/lib/limits"
 import { Button } from "@/components/ui/button"
@@ -38,10 +39,13 @@ export default async function IntegrationsPage() {
         )
     }
 
-    const [apiTokens, webhooks] = await Promise.all([
+    const [apiTokens, webhooks, domainsResult] = await Promise.all([
         getApiTokens(activeWorkspace.id),
-        getWebhooks(activeWorkspace.id)
+        getWebhooks(activeWorkspace.id),
+        getDomains(activeWorkspace.id)
     ])
+
+    const domains = domainsResult?.success ? domainsResult.data : []
 
     return (
         <div className="flex-1 space-y-8 p-8 pt-6 relative overflow-hidden">
@@ -69,7 +73,12 @@ export default async function IntegrationsPage() {
             </div>
 
             <div className="space-y-6">
-                <IntegrationsList workspaceId={activeWorkspace.id as string} apiTokens={apiTokens || []} webhooks={webhooks || []} />
+                <IntegrationsList 
+                    workspaceId={activeWorkspace.id as string} 
+                    apiTokens={apiTokens || []} 
+                    webhooks={webhooks || []}
+                    domains={domains || []}
+                />
             </div>
         </div>
     )

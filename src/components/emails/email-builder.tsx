@@ -15,7 +15,7 @@ import { EmailCreationModeSelector } from "./email-creation-mode-selector"
 import { EmailTemplatesGallery } from "./email-templates-gallery"
 import { AIEmailGenerator } from "./ai-email-generator"
 import { toast } from "sonner"
-import { ArrowLeft, Save, Monitor, Smartphone, Eye, Send, FileText, Settings2, Sparkles, Code2 } from "lucide-react"
+import { ArrowLeft, Save, Monitor, Smartphone, Eye, Send, FileText, Settings2, Sparkles, Code2, Layers } from "lucide-react"
 import Link from "next/link"
 import { useWorkspace } from "@/context/workspace-context"
 import { cn } from "@/lib/utils"
@@ -23,6 +23,8 @@ import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EmailTemplateDefinition } from "@/lib/email-templates"
 import { GenerateEmailResult } from "@/actions/generate-email"
+import { EmailDesigner } from "@/components/email-builder/email-designer"
+import { extractBuilderDataFromHtml } from "@/components/email-builder/html-export"
 
 interface EmailBuilderProps {
     template?: EmailTemplate
@@ -42,6 +44,7 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
     const [category, setCategory] = useState(template?.category || "general")
     const [saving, setSaving] = useState(false)
     const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop")
+    const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual')
 
     const handleSave = async () => {
         if (!activeWorkspace) {
@@ -191,6 +194,29 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* Editor mode toggle */}
+                    <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                        <button
+                            onClick={() => setEditorMode('visual')}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                editorMode === 'visual' ? "bg-white shadow-sm text-indigo-700" : "text-slate-500 hover:text-slate-700"
+                            )}
+                        >
+                            <Layers className="h-3.5 w-3.5" />
+                            Modo Visual
+                        </button>
+                        <button
+                            onClick={() => setEditorMode('html')}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                editorMode === 'html' ? "bg-white shadow-sm text-indigo-700" : "text-slate-500 hover:text-slate-700"
+                            )}
+                        >
+                            <Code2 className="h-3.5 w-3.5" />
+                            HTML
+                        </button>
+                    </div>
                     <Button
                         onClick={handleSave}
                         disabled={saving}
@@ -208,7 +234,30 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
                 </div>
             </div>
 
-            <div className="flex-1 flex overflow-hidden">
+            {/* Visual Editor Mode - Full canvas */}
+            {editorMode === 'visual' && (
+                <div className="flex-1 overflow-hidden flex flex-col">
+                    {/* Subject line (compact) */}
+                    <div className="px-4 py-2 border-b bg-white flex items-center gap-3 shrink-0">
+                        <Label className="text-xs text-slate-500 shrink-0">Assunto:</Label>
+                        <Input
+                            placeholder="Ex: Oferta especial para {{lead.name}}"
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 flex-1"
+                        />
+                        <MergeTagPicker onSelect={(tag) => insertMergeTag(tag, "subject")} />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <EmailDesigner
+                            initialElements={extractBuilderDataFromHtml(bodyHtml) || undefined}
+                            onHtmlChange={setBodyHtml}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {editorMode === 'html' && <div className="flex-1 flex overflow-hidden">
                 {/* Left Panel - Editor Inputs */}
                 <div className="w-[55%] flex flex-col border-r border-slate-200 bg-white overflow-hidden">
                     <Tabs defaultValue="content" className="flex-1 flex flex-col">
@@ -366,6 +415,7 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
                     </div>
                 </div>
             </div>
+            }
         </div>
     )
 }
