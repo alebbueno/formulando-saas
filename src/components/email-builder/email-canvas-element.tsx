@@ -8,7 +8,7 @@ import { EmailElementInstance, EmailElementType } from "./types"
 import { EmailElements } from "./elements"
 import { useEmailBuilder } from "./context/email-builder-context"
 import { Button } from "@/components/ui/button"
-import { ChevronUp, ChevronDown, Copy, Trash2 } from "lucide-react"
+import { ChevronUp, ChevronDown, Copy, Trash2, GripVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // ── Drop zone ID prefixes ─────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ function SectionDropZone({ parentId }: { parentId: string }) {
 
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
-function ElementToolbar({ element }: { element: EmailElementInstance }) {
+function ElementToolbar({ element, dragHandleProps }: { element: EmailElementInstance, dragHandleProps?: any }) {
     const { removeElement, moveElementDirection, duplicateElement, setSelectedElement } = useEmailBuilder()
     return (
         <div
@@ -44,6 +44,14 @@ function ElementToolbar({ element }: { element: EmailElementInstance }) {
             onPointerDown={e => e.stopPropagation()}
             onClick={e => e.stopPropagation()}
         >
+            <div 
+                {...dragHandleProps}
+                className="flex items-center px-1 cursor-grab active:cursor-grabbing hover:bg-slate-50 rounded h-6"
+                title="Arraste para mover"
+            >
+                <GripVertical className="h-3 w-3 text-muted-foreground" />
+            </div>
+            <div className="w-px h-3 bg-border mx-0.5" />
             <div className="flex items-center px-1 text-[10px] font-mono text-muted-foreground border-r mr-1 select-none">
                 {element.type.replace('email-', '')}
             </div>
@@ -134,12 +142,15 @@ export function EmailCanvasElement({ element }: { element: EmailElementInstance 
     if (isContainer) {
         const sectionChildren = element.children || []
         return (
-            <div ref={setNodeRef} style={style} {...attributes} {...listeners}
+            <div ref={setNodeRef} style={style}
                 className={wrapperClass}
-                onClick={e => { e.stopPropagation(); setSelectedElement(element) }}
+            onClick={(e) => { 
+                e.stopPropagation(); 
+                setSelectedElement(element) 
+            }}
             >
                 {typeLabel}
-                {isSelected && <ElementToolbar element={element} />}
+                {isSelected && <ElementToolbar element={element} dragHandleProps={{ ...attributes, ...listeners }} />}
                 <div
                     className={cn("min-h-[72px] border-2 border-dashed rounded transition-all p-2",
                         isSelected ? "border-indigo-400" : "border-slate-300")}
@@ -179,12 +190,12 @@ export function EmailCanvasElement({ element }: { element: EmailElementInstance 
             : [col1W, 100 - col1W]
 
         return (
-            <div ref={setNodeRef} style={style} {...attributes} {...listeners}
+            <div ref={setNodeRef} style={style}
                 className={wrapperClass}
                 onClick={e => { e.stopPropagation(); setSelectedElement(element) }}
             >
                 {typeLabel}
-                {isSelected && <ElementToolbar element={element} />}
+                {isSelected && <ElementToolbar element={element} dragHandleProps={{ ...attributes, ...listeners }} />}
                 <div
                     className={cn("border-2 border-dashed rounded transition-all p-2",
                         isSelected ? "border-indigo-400" : "border-slate-300")}
@@ -209,12 +220,12 @@ export function EmailCanvasElement({ element }: { element: EmailElementInstance 
     // ── Leaf element ────────────────────────────────────────────────────────
     const DesignerComponent = def.designerComponent
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}
+        <div ref={setNodeRef} style={style}
             className={wrapperClass}
             onClick={e => { e.stopPropagation(); setSelectedElement(element) }}
         >
             {typeLabel}
-            {isSelected && <ElementToolbar element={element} />}
+            {isSelected && <ElementToolbar element={element} dragHandleProps={{ ...attributes, ...listeners }} />}
             <DesignerComponent element={element} />
         </div>
     )

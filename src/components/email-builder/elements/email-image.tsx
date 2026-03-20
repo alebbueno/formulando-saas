@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImageUploadControl } from "../controls/image-upload-control"
 import { Slider } from "@/components/ui/slider"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 function DesignerComponent({ element }: { element: EmailElementInstance }) {
     const { selectedElement, setSelectedElement } = useEmailBuilder()
@@ -43,60 +44,72 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
     const update = (key: string, value: any) => updateElementProperties(element.id, { [key]: value })
 
     return (
-        <div className="space-y-4">
-            <div>
-                <ImageUploadControl value={p.src || ''} onChange={val => update('src', val)} label="Imagem do E-mail" />
-            </div>
-            <div>
-                <Label className="text-xs">Texto alternativo (alt)</Label>
-                <Input value={p.alt || ''} onChange={e => update('alt', e.target.value)} className="h-8 text-xs mt-1" />
-            </div>
-            <div>
-                <Label className="text-xs">Link (opcional)</Label>
-                <Input value={p.href || ''} onChange={e => update('href', e.target.value)} className="h-8 text-xs mt-1" placeholder="https://" />
-            </div>
-            <div>
-                <div className="flex justify-between items-center mb-1">
-                    <Label className="text-xs">Largura da Imagem</Label>
-                    <span className="text-[10px] text-slate-500 font-mono">{p.width ? `${p.width}px` : '100%'}</span>
-                </div>
-                <div className="flex items-center gap-3 mt-2 px-1">
-                    <Slider 
-                        value={[p.width || 600]} 
-                        min={50} 
-                        max={600} 
-                        step={10} 
-                        onValueChange={([v]) => update('width', v === 600 ? undefined : v)}
-                    />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1">Máximo 600px para largura total do e-mail</p>
-            </div>
-            <div>
-                <Label className="text-xs">Border radius (px)</Label>
-                <Input type="number" value={p.borderRadius || 0} onChange={e => update('borderRadius', Number(e.target.value))} className="h-8 text-xs mt-1" />
-            </div>
-            <div>
-                <Label className="text-xs">Alinhamento</Label>
-                <Select value={p.align || 'center'} onValueChange={v => update('align', v)}>
-                    <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="left">Esquerda</SelectItem>
-                        <SelectItem value="center">Centro</SelectItem>
-                        <SelectItem value="right">Direita</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+        <Tabs defaultValue="content" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="content" className="text-xs">Conteúdo</TabsTrigger>
+                <TabsTrigger value="style" className="text-xs">Estilo</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="content" className="space-y-4">
                 <div>
-                    <Label className="text-xs">Padding cima</Label>
-                    <Input type="number" value={p.paddingTop ?? 8} onChange={e => update('paddingTop', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    <ImageUploadControl value={p.src || ''} onChange={val => update('src', val)} label="Imagem do E-mail" />
                 </div>
                 <div>
-                    <Label className="text-xs">Padding baixo</Label>
-                    <Input type="number" value={p.paddingBottom ?? 8} onChange={e => update('paddingBottom', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    <Label className="text-xs font-semibold">Texto alternativo (alt)</Label>
+                    <Input value={p.alt || ''} onChange={e => update('alt', e.target.value)} className="h-8 text-xs mt-1" />
                 </div>
-            </div>
-        </div>
+                <div>
+                    <Label className="text-xs font-semibold">Link (opcional)</Label>
+                    <Input value={p.href || ''} onChange={e => update('href', e.target.value)} className="h-8 text-xs mt-1" placeholder="https://" />
+                </div>
+                <div>
+                    <Label className="text-xs font-semibold">Alinhamento</Label>
+                    <Select value={p.align || 'center'} onValueChange={v => update('align', v)}>
+                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="left">Esquerda</SelectItem>
+                            <SelectItem value="center">Centro</SelectItem>
+                            <SelectItem value="right">Direita</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </TabsContent>
+
+            <TabsContent value="style" className="space-y-4">
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <Label className="text-xs font-semibold">Largura da Imagem</Label>
+                        <span className="text-[10px] text-slate-500 font-mono">{p.width ? `${p.width}px` : '100%'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 px-1">
+                        <Slider 
+                            value={[p.width || 600]} 
+                            min={50} 
+                            max={600} 
+                            step={10} 
+                            onValueChange={([v]) => update('width', v === 600 ? undefined : v)}
+                        />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">Máximo 600px recomendado.</p>
+                </div>
+
+                <div>
+                    <Label className="text-xs font-semibold">Border radius (px)</Label>
+                    <Input type="number" value={p.borderRadius || 0} onChange={e => update('borderRadius', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 border-t pt-4">
+                    <div>
+                        <Label className="text-xs font-semibold">Padding Cima</Label>
+                        <Input type="number" value={p.paddingTop ?? 8} onChange={e => update('paddingTop', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    </div>
+                    <div>
+                        <Label className="text-xs font-semibold">Padding Baixo</Label>
+                        <Input type="number" value={p.paddingBottom ?? 8} onChange={e => update('paddingBottom', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    </div>
+                </div>
+            </TabsContent>
+        </Tabs>
     )
 }
 

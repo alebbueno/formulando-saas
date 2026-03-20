@@ -45,6 +45,7 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
     const [saving, setSaving] = useState(false)
     const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop")
     const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual')
+    const [errors, setErrors] = useState<{ name?: boolean; subject?: boolean }>({})
 
     const handleSave = async () => {
         if (!activeWorkspace) {
@@ -52,8 +53,19 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
             return
         }
 
-        if (!name || !subject || !bodyHtml) {
-            toast.error("Preencha todos os campos obrigatórios")
+        const newErrors: { name?: boolean; subject?: boolean } = {}
+        if (!name) newErrors.name = true
+        if (!subject) newErrors.subject = true
+        
+        setErrors(newErrors)
+
+        if (Object.keys(newErrors).length > 0) {
+            toast.error("Por favor, preencha os campos destacados em vermelho")
+            return
+        }
+
+        if (!bodyHtml || bodyHtml === "<div></div>") {
+            toast.error("O conteúdo do e-mail não pode estar vazio")
             return
         }
 
@@ -184,12 +196,32 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
             {/* Toolbar - Estilo Editor */}
             <div className="h-16 border-b bg-white flex items-center justify-between px-6 shrink-0">
                 <div className="flex items-center gap-4">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setCreationMode('select')}
+                        className="h-8 w-8 text-slate-500 hover:text-slate-900"
+                        title="Voltar"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Button>
                     <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
                         <FileText className="w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="font-semibold text-slate-900">Editor de Email</h2>
-                        <p className="text-xs text-slate-500">{template ? "Editando template existente" : "Novo template"}</p>
+                        <Input 
+                            value={name} 
+                            onChange={(e) => {
+                                setName(e.target.value)
+                                if (e.target.value) setErrors(prev => ({ ...prev, name: false }))
+                            }} 
+                            className={cn(
+                                "h-7 text-sm font-semibold border-0 shadow-none focus-visible:ring-0 p-0 bg-transparent w-[200px]",
+                                errors.name && "border-b border-red-500 rounded-none placeholder:text-red-300"
+                            )}
+                            placeholder="Nome do Template..."
+                        />
+                        <p className="text-[10px] text-slate-500">{template ? "Editando template existente" : "Novo template"}</p>
                     </div>
                 </div>
 
@@ -243,8 +275,14 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
                         <Input
                             placeholder="Ex: Oferta especial para {{lead.name}}"
                             value={subject}
-                            onChange={(e) => setSubject(e.target.value)}
-                            className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 flex-1"
+                            onChange={(e) => {
+                                setSubject(e.target.value)
+                                if (e.target.value) setErrors(prev => ({ ...prev, subject: false }))
+                            }}
+                            className={cn(
+                                "h-7 text-xs border-0 shadow-none focus-visible:ring-0 flex-1",
+                                errors.subject && "border-b border-red-500 rounded-none placeholder:text-red-300"
+                            )}
                         />
                         <MergeTagPicker onSelect={(tag) => insertMergeTag(tag, "subject")} />
                     </div>

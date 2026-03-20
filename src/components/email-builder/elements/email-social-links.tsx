@@ -3,11 +3,12 @@
 import React from "react"
 import { EmailElementDefinition, EmailElementInstance } from "../types"
 import { useEmailBuilder } from "../context/email-builder-context"
-import { Share2, Plus, Trash2, Facebook, Instagram, Linkedin, Twitter, Youtube, Github, Mail, Globe, Phone } from "lucide-react"
+import { Share2, Plus, Trash2, Facebook, Instagram, Linkedin, Twitter, Youtube, Phone, Globe, Mail } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const PLATFORMS_CONFIG: Record<string, { label: string; icon: any; color: string; icon8: string }> = {
     instagram: { label: 'Instagram', icon: Instagram, color: '#E1306C', icon8: 'instagram-new' },
@@ -33,7 +34,7 @@ function DesignerComponent({ element }: { element: EmailElementInstance }) {
     return (
         <div
             onClick={(e) => { e.stopPropagation(); setSelectedElement(element) }}
-            className={`cursor-pointer rounded transition-all py-3 ${isSelected ? 'ring-2 ring-indigo-400' : 'hover:ring-1 hover:ring-indigo-200'}`}
+            className={`relative cursor-pointer rounded transition-all py-3 ${isSelected ? 'ring-2 ring-indigo-400' : 'hover:ring-1 hover:ring-indigo-200'}`}
             style={{ textAlign: p.align || 'center' }}
         >
             <div style={{ display: 'inline-flex', gap: `${p.gap || 8}px`, alignItems: 'center' }}>
@@ -79,85 +80,106 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
     const removeItem = (index: number) => update('items', items.filter((_, i) => i !== index))
 
     return (
-        <div className="space-y-4">
-            <div>
-                <Label className="text-xs">Redes sociais</Label>
-                <div className="space-y-2 mt-2">
-                    {items.map((item, i) => (
-                        <div key={i} className="space-y-1 border rounded p-2">
-                            <div className="flex gap-1 items-center">
-                                <Select value={item.platform} onValueChange={v => updateItem(i, 'platform', v)}>
-                                    <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        {PLATFORMS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 shrink-0" onClick={() => removeItem(i)}>
-                                    <Trash2 className="h-3 w-3" />
-                                </Button>
+        <Tabs defaultValue="content" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="content" className="text-xs">Conteúdo</TabsTrigger>
+                <TabsTrigger value="style" className="text-xs">Estilo</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="content" className="space-y-4">
+                <div>
+                    <Label className="text-xs font-semibold">Links das Redes</Label>
+                    <div className="space-y-2 mt-2">
+                        {items.map((item, i) => (
+                            <div key={i} className="space-y-2 border rounded p-2 bg-white shadow-sm">
+                                <div className="flex gap-1 items-center">
+                                    <Select value={item.platform} onValueChange={v => updateItem(i, 'platform', v)}>
+                                        <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {PLATFORMS.map(p => <SelectItem key={p} value={p} className="text-[10px]">{PLATFORMS_CONFIG[p].label}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 shrink-0" onClick={() => removeItem(i)}>
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                                <Input value={item.url} onChange={e => updateItem(i, 'url', e.target.value)} className="h-7 text-[10px]" placeholder="URL do perfil" />
                             </div>
-                            <Input value={item.url} onChange={e => updateItem(i, 'url', e.target.value)} className="h-7 text-xs" placeholder="URL" />
-                        </div>
-                    ))}
-                    <Button variant="outline" size="sm" className="w-full h-7 text-xs" onClick={addItem}>
-                        <Plus className="h-3 w-3 mr-1" /> Adicionar rede
-                    </Button>
+                        ))}
+                        <Button variant="outline" size="sm" className="w-full h-8 text-xs border-dashed" onClick={addItem}>
+                            <Plus className="h-3 w-3 mr-1" /> Adicionar Perfil
+                        </Button>
+                    </div>
                 </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-                <div>
-                    <Label className="text-xs">Variante</Label>
-                    <Select value={p.variant || 'color'} onValueChange={v => update('variant', v)}>
-                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="color">Original</SelectItem>
-                            <SelectItem value="custom">Customizado</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div>
-                    <Label className="text-xs">Formato</Label>
-                    <Select value={p.roundness || 'circle'} onValueChange={v => update('roundness', v)}>
-                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="circle">Círculo</SelectItem>
-                            <SelectItem value="square">Quadrado</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-            {p.variant === 'custom' && (
+            </TabsContent>
+
+            <TabsContent value="style" className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
                     <div>
-                        <Label className="text-xs">Cor Ícone</Label>
-                        <Input type="color" value={p.iconColor || '#ffffff'} onChange={e => update('iconColor', e.target.value)} className="h-8 p-1 mt-1" />
+                        <Label className="text-xs font-semibold">Variante</Label>
+                        <Select value={p.variant || 'color'} onValueChange={v => update('variant', v)}>
+                            <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="color" className="text-xs">Original</SelectItem>
+                                <SelectItem value="custom" className="text-xs">Customizado</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div>
-                        <Label className="text-xs">Cor Fundo</Label>
-                        <Input type="color" value={p.backgroundColor || '#333333'} onChange={e => update('backgroundColor', e.target.value)} className="h-8 p-1 mt-1" />
+                        <Label className="text-xs font-semibold">Formato</Label>
+                        <Select value={p.roundness || 'circle'} onValueChange={v => update('roundness', v)}>
+                            <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="circle" className="text-xs">Círculo</SelectItem>
+                                <SelectItem value="square" className="text-xs">Quadrado</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
-            )}
-            <div>
-                <Label className="text-xs">Tamanho dos ícones (px)</Label>
-                <Input type="number" value={p.iconSize || 32} onChange={e => update('iconSize', Number(e.target.value))} className="h-8 text-xs mt-1" />
-            </div>
-            <div>
-                <Label className="text-xs">Espaço entre ícones (px)</Label>
-                <Input type="number" value={p.gap || 8} onChange={e => update('gap', Number(e.target.value))} className="h-8 text-xs mt-1" />
-            </div>
-            <div>
-                <Label className="text-xs">Alinhamento</Label>
-                <Select value={p.align || 'center'} onValueChange={v => update('align', v)}>
-                    <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="left">Esquerda</SelectItem>
-                        <SelectItem value="center">Centro</SelectItem>
-                        <SelectItem value="right">Direita</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
+
+                {p.variant === 'custom' && (
+                    <div className="grid grid-cols-2 gap-2 p-2 border rounded bg-slate-50 animate-in fade-in zoom-in-95 duration-200">
+                        <div>
+                            <Label className="text-[10px] font-bold">Cor Ícone</Label>
+                            <div className="flex gap-1 mt-1">
+                                <input type="color" value={p.iconColor || '#ffffff'} onChange={e => update('iconColor', e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                <Input value={p.iconColor || '#ffffff'} onChange={e => update('iconColor', e.target.value)} className="h-6 text-[9px] font-mono p-1" />
+                            </div>
+                        </div>
+                        <div>
+                            <Label className="text-[10px] font-bold">Cor Fundo</Label>
+                            <div className="flex gap-1 mt-1">
+                                <input type="color" value={p.backgroundColor || '#333333'} onChange={e => update('backgroundColor', e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                                <Input value={p.backgroundColor || '#333333'} onChange={e => update('backgroundColor', e.target.value)} className="h-6 text-[9px] font-mono p-1" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 border-t pt-4">
+                    <div>
+                        <Label className="text-xs font-semibold">Tam. Ícones</Label>
+                        <Input type="number" value={p.iconSize || 32} onChange={e => update('iconSize', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    </div>
+                    <div>
+                        <Label className="text-xs font-semibold">Espaço</Label>
+                        <Input type="number" value={p.gap || 12} onChange={e => update('gap', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    </div>
+                </div>
+
+                <div>
+                    <Label className="text-xs font-semibold">Alinhamento</Label>
+                    <Select value={p.align || 'center'} onValueChange={v => update('align', v)}>
+                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="left" className="text-xs">Esquerda</SelectItem>
+                            <SelectItem value="center" className="text-xs">Centro</SelectItem>
+                            <SelectItem value="right" className="text-xs">Direita</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </TabsContent>
+        </Tabs>
     )
 }
 
@@ -186,9 +208,6 @@ export const EmailSocialLinksElement: EmailElementDefinition = {
             const iconUrl = item.platform === 'website' 
                 ? 'https://img.icons8.com/material-outlined/48/ffffff/globe.png'
                 : `https://img.icons8.com/fluent-systems-filled/48/ffffff/${config.icon8}.png`
-            
-            // For 'color' variant with white icons, we use the platform color as background
-            // If they want custom, they can set it.
             
             return `<td style="padding:0 ${(p.gap || 12) / 2}px;">
 <a href="${item.url}" target="_blank" style="display:inline-block;text-decoration:none;">

@@ -6,6 +6,7 @@ import { useEmailBuilder } from "../context/email-builder-context"
 import { LayoutGrid } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 function DesignerComponent({ element }: { element: EmailElementInstance }) {
     const { selectedElement, setSelectedElement } = useEmailBuilder()
@@ -35,30 +36,40 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
     const update = (key: string, value: any) => updateElementProperties(element.id, { [key]: value })
 
     return (
-        <div className="space-y-4">
-            <div>
-                <Label className="text-xs">Espaço entre colunas (px)</Label>
-                <Input type="number" value={p.gap || 16} onChange={e => update('gap', Number(e.target.value))} className="h-8 text-xs mt-1" />
-            </div>
-            <div>
-                <Label className="text-xs">Cor de fundo</Label>
-                <div className="flex gap-2 mt-1">
-                    <input type="color" value={p.backgroundColor || '#ffffff'} onChange={e => update('backgroundColor', e.target.value)} className="w-10 h-8 rounded border cursor-pointer" />
-                    <Input value={p.backgroundColor || 'transparent'} onChange={e => update('backgroundColor', e.target.value)} className="h-8 text-xs font-mono" />
-                </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+        <Tabs defaultValue="content" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="content" className="text-xs">Conteúdo</TabsTrigger>
+                <TabsTrigger value="style" className="text-xs">Estilo</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="content" className="space-y-4">
                 <div>
-                    <Label className="text-xs">Padding cima</Label>
-                    <Input type="number" value={p.paddingTop ?? 8} onChange={e => update('paddingTop', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    <Label className="text-xs font-semibold">Espaço entre colunas (px)</Label>
+                    <Input type="number" value={p.gap || 16} onChange={e => update('gap', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    <p className="text-[10px] text-slate-400 mt-1">As 3 colunas possuem larguras iguais (33% cada).</p>
                 </div>
+            </TabsContent>
+
+            <TabsContent value="style" className="space-y-4">
                 <div>
-                    <Label className="text-xs">Padding baixo</Label>
-                    <Input type="number" value={p.paddingBottom ?? 8} onChange={e => update('paddingBottom', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    <Label className="text-xs font-semibold">Cor de Fundo</Label>
+                    <div className="flex gap-2 mt-1">
+                        <input type="color" value={p.backgroundColor === 'transparent' ? '#ffffff' : (p.backgroundColor || '#ffffff')} onChange={e => update('backgroundColor', e.target.value)} className="w-10 h-8 rounded border cursor-pointer shrink-0" />
+                        <Input value={p.backgroundColor || 'transparent'} onChange={e => update('backgroundColor', e.target.value)} className="h-8 text-xs font-mono" />
+                    </div>
                 </div>
-            </div>
-            <p className="text-xs text-slate-500 bg-slate-50 rounded p-2">Para adicionar conteúdo, use col1Html, col2Html, col3Html via modo HTML avançado.</p>
-        </div>
+                <div className="grid grid-cols-2 gap-2 border-t pt-4">
+                    <div>
+                        <Label className="text-xs font-semibold">Padding Cima</Label>
+                        <Input type="number" value={p.paddingTop ?? 8} onChange={e => update('paddingTop', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    </div>
+                    <div>
+                        <Label className="text-xs font-semibold">Padding Baixo</Label>
+                        <Input type="number" value={p.paddingBottom ?? 8} onChange={e => update('paddingBottom', Number(e.target.value))} className="h-8 text-xs mt-1" />
+                    </div>
+                </div>
+            </TabsContent>
+        </Tabs>
     )
 }
 

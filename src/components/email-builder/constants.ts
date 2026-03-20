@@ -15,3 +15,13 @@ export const FONT_WEIGHTS = [
     { label: 'Semi-Negrito', value: '600' },
     { label: 'Negrito', value: 'bold' },
 ]
+
+export const MERGE_TAGS = [
+    { label: 'Nome do Lead', value: '{{lead.name}}' },
+    { label: 'Email do Lead', value: '{{lead.email}}' },
+    { label: 'Empresa', value: '{{lead.company}}' },
+    { label: 'Cargo', value: '{{lead.job_title}}' },
+    { label: 'Nome da Empresa/Workspace', value: '{{workspace.name}}' },
+    { label: 'Seu Nome (Remetente)', value: '{{user.name}}' },
+    { label: 'Data Atual', value: '{{current_date}}' },
+]
