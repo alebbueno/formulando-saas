@@ -7,6 +7,7 @@ import { Heading1 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EMAIL_SAFE_FONTS, FONT_WEIGHTS } from "../constants"
 
 function DesignerComponent({ element }: { element: EmailElementInstance }) {
     const { selectedElement, setSelectedElement, updateElementProperties } = useEmailBuilder()
@@ -30,7 +31,7 @@ function DesignerComponent({ element }: { element: EmailElementInstance }) {
                     textAlign: p.textAlign || 'left',
                     margin: 0,
                     padding: `${p.paddingTop ?? 8}px 0 ${p.paddingBottom ?? 8}px`,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
+                    fontFamily: p.fontFamily || 'Arial, "Helvetica Neue", Helvetica, sans-serif',
                     outline: 'none',
                     lineHeight: p.lineHeight || 1.3,
                 }}
@@ -62,6 +63,26 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
                         <SelectItem value="h3">H3</SelectItem>
                     </SelectContent>
                 </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <div>
+                    <Label className="text-xs">Fonte</Label>
+                    <Select value={p.fontFamily || 'Arial, "Helvetica Neue", Helvetica, sans-serif'} onValueChange={v => update('fontFamily', v)}>
+                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent className="w-[180px]">
+                            {EMAIL_SAFE_FONTS.map(f => <SelectItem key={f.value} value={f.value} className="text-xs">{f.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Label className="text-xs">Peso da Fonte</Label>
+                    <Select value={p.fontWeight || 'bold'} onValueChange={v => update('fontWeight', v)}>
+                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {FONT_WEIGHTS.map(f => <SelectItem key={f.value} value={f.value} className="text-xs">{f.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             <div>
                 <Label className="text-xs">Tamanho da fonte (px)</Label>
@@ -105,13 +126,23 @@ export const EmailHeadingElement: EmailElementDefinition = {
     construct: (id) => ({
         id,
         type: 'email-heading',
-        properties: { text: 'Título do email', level: 'h2', fontSize: 28, fontWeight: 'bold', color: '#0f172a', textAlign: 'left', paddingTop: 8, paddingBottom: 8, lineHeight: 1.3 },
+        properties: { text: 'Título do email', level: 'h2', fontSize: 28, fontWeight: 'bold', color: '#0f172a', textAlign: 'left', paddingTop: 8, paddingBottom: 8, lineHeight: 1.3, fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif' },
     }),
     designerComponent: DesignerComponent,
     propertiesComponent: PropertiesComponent,
     toEmailHtml: (element) => {
         const p = element.properties
         const tag = p.level || 'h2'
-        return `<${tag} style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:${p.fontSize || 28}px;font-weight:${p.fontWeight || 'bold'};color:${p.color || '#0f172a'};text-align:${p.textAlign || 'left'};margin:0;padding:${p.paddingTop ?? 8}px 0 ${p.paddingBottom ?? 8}px;line-height:${p.lineHeight || 1.3};">${p.text || ''}</${tag}>`
+        const style = [
+            `font-family:${p.fontFamily || 'Arial, \"Helvetica Neue\", Helvetica, sans-serif'}`,
+            `font-size:${p.fontSize || 28}px`,
+            `font-weight:${p.fontWeight || 'bold'}`,
+            `color:${p.color || '#0f172a'}`,
+            `text-align:${p.textAlign || 'left'}`,
+            `padding:${p.paddingTop ?? 8}px 0 ${p.paddingBottom ?? 8}px`,
+            `line-height:${p.lineHeight || 1.3}`,
+            'margin:0'
+        ].join(';')
+        return `<${tag} style="${style}">${p.text || ''}</${tag}>`
     }
 }

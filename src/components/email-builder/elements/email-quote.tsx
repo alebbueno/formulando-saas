@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { EMAIL_SAFE_FONTS } from "../constants"
 
 function DesignerComponent({ element }: { element: EmailElementInstance }) {
     const { selectedElement, setSelectedElement, updateElementProperties } = useEmailBuilder()
@@ -24,12 +25,12 @@ function DesignerComponent({ element }: { element: EmailElementInstance }) {
                 contentEditable={isSelected}
                 suppressContentEditableWarning
                 onBlur={(e: React.FocusEvent<HTMLElement>) => updateElementProperties(element.id, { text: e.currentTarget.innerText })}
-                style={{ fontSize: `${p.fontSize || 18}px`, color: p.textColor || '#334155', fontStyle: p.fontStyle || 'italic', margin: '0 0 8px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif', outline: 'none', lineHeight: 1.6 }}
+                style={{ fontSize: `${p.fontSize || 18}px`, color: p.textColor || '#334155', fontStyle: p.fontStyle || 'italic', margin: '0 0 8px', fontFamily: p.fontFamily || 'Arial, \"Helvetica Neue\", Helvetica, sans-serif', outline: 'none', lineHeight: 1.6 }}
             >
                 {p.text || '"Citação inspiradora aqui"'}
             </p>
             {p.author && (
-                <p style={{ fontSize: '14px', color: '#64748b', margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif' }}>
+                <p style={{ fontSize: '14px', color: '#64748b', margin: 0, fontFamily: p.fontFamily || 'Arial, \"Helvetica Neue\", Helvetica, sans-serif' }}>
                     — {p.author}
                 </p>
             )}
@@ -74,6 +75,15 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
                 </div>
             </div>
             <div>
+                <Label className="text-xs">Fonte</Label>
+                <Select value={p.fontFamily || 'Arial, \"Helvetica Neue\", Helvetica, sans-serif'} onValueChange={v => update('fontFamily', v)}>
+                    <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        {EMAIL_SAFE_FONTS.map(f => <SelectItem key={f.value} value={f.value} className="text-xs">{f.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div>
                 <Label className="text-xs">Estilo da fonte</Label>
                 <Select value={p.fontStyle || 'italic'} onValueChange={v => update('fontStyle', v)}>
                     <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
@@ -97,13 +107,13 @@ export const EmailQuoteElement: EmailElementDefinition = {
     construct: (id) => ({
         id,
         type: 'email-quote',
-        properties: { text: '"Citação inspiradora aqui"', author: '', borderColor: '#3b82f6', backgroundColor: '#f8fafc', textColor: '#334155', fontStyle: 'italic', fontSize: 18 },
+        properties: { text: '"Citação inspiradora aqui"', author: '', borderColor: '#3b82f6', backgroundColor: '#f8fafc', textColor: '#334155', fontStyle: 'italic', fontSize: 18, fontFamily: 'Arial, \"Helvetica Neue\", Helvetica, sans-serif' },
     }),
     designerComponent: DesignerComponent,
     propertiesComponent: PropertiesComponent,
     toEmailHtml: (element) => {
         const p = element.properties
-        const font = `-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif`
+        const font = p.fontFamily || 'Arial, \"Helvetica Neue\", Helvetica, sans-serif'
         const authorHtml = p.author ? `<p style="font-family:${font};font-size:14px;color:#64748b;margin:8px 0 0;">— ${p.author}</p>` : ''
         return `<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;"><tr><td style="padding:8px 0;">
 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background-color:${p.backgroundColor || '#f8fafc'};border-left:4px solid ${p.borderColor || '#3b82f6'};"><tr><td style="padding:16px 20px;">

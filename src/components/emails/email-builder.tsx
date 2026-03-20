@@ -139,7 +139,7 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
     // Show templates gallery if in 'templates' mode
     if (creationMode === 'templates') {
         return (
-            <div className="flex flex-col h-[calc(100vh-140px)] bg-slate-50/50 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+            <div className="flex flex-col h-full bg-slate-50/50 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                 <div className="h-16 border-b bg-white flex items-center justify-between px-6 shrink-0">
                     <Button
                         variant="ghost"
@@ -160,7 +160,7 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
     // Show AI generator if in 'ai' mode
     if (creationMode === 'ai') {
         return (
-            <div className="flex flex-col h-[calc(100vh-140px)] bg-slate-50/50 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+            <div className="flex flex-col h-full bg-slate-50/50 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                 <div className="h-16 border-b bg-white flex items-center justify-between px-6 shrink-0">
                     <Button
                         variant="ghost"
@@ -180,7 +180,7 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
 
     // Show manual editor (default)
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] bg-slate-50/50 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+        <div className="flex flex-col h-full bg-slate-50/50 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
             {/* Toolbar - Estilo Editor */}
             <div className="h-16 border-b bg-white flex items-center justify-between px-6 shrink-0">
                 <div className="flex items-center gap-4">

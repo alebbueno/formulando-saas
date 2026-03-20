@@ -15,7 +15,7 @@ export default async function EditEmailTemplatePage({
     }
 
     return (
-        <div className="flex-1 h-screen flex flex-col">
+        <div className="flex-1 h-full flex flex-col overflow-hidden">
             <EmailBuilder template={template} />
         </div>
     )

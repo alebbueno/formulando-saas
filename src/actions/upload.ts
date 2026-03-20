@@ -18,14 +18,22 @@ export async function uploadFile(formData: FormData, bucket: string = 'landing-p
         }
 
         // Validate file type (basic)
-        const validTypes = ['image/png', 'image/x-icon', 'image/vnd.microsoft.icon']
+        const validTypes = [
+            'image/png', 
+            'image/jpeg', 
+            'image/jpg', 
+            'image/webp', 
+            'image/gif',
+            'image/x-icon', 
+            'image/vnd.microsoft.icon'
+        ]
         if (!validTypes.includes(file.type)) {
-            return { error: "Tipo de arquivo inválido. Apenas .png e .ico são permitidos." }
+            return { error: "Tipo de arquivo inválido. Apenas PNG, JPG, WEBP e GIF são permitidos." }
         }
 
-        // Validate file size (e.g., 2MB max for favicon)
-        if (file.size > 2 * 1024 * 1024) {
-            return { error: "Arquivo muito grande. Máximo 2MB." }
+        // Validate file size (e.g., 5MB max for builder images)
+        if (file.size > 5 * 1024 * 1024) {
+            return { error: "Arquivo muito grande. Máximo 5MB." }
         }
 
         const fileExt = file.name.split('.').pop()

@@ -3,25 +3,25 @@
 import React from "react"
 import { EmailElementDefinition, EmailElementInstance } from "../types"
 import { useEmailBuilder } from "../context/email-builder-context"
-import { Share2, Plus, Trash2 } from "lucide-react"
+import { Share2, Plus, Trash2, Facebook, Instagram, Linkedin, Twitter, Youtube, Github, Mail, Globe, Phone } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const PLATFORMS = ['instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'whatsapp', 'tiktok', 'website', 'email']
-
-const PLATFORM_COLORS: Record<string, string> = {
-    instagram: '#E1306C',
-    facebook: '#1877F2',
-    linkedin: '#0A66C2',
-    twitter: '#1DA1F2',
-    youtube: '#FF0000',
-    whatsapp: '#25D366',
-    tiktok: '#000000',
-    website: '#3b82f6',
-    email: '#6366f1',
+const PLATFORMS_CONFIG: Record<string, { label: string; icon: any; color: string; icon8: string }> = {
+    instagram: { label: 'Instagram', icon: Instagram, color: '#E1306C', icon8: 'instagram-new' },
+    facebook: { label: 'Facebook', icon: Facebook, color: '#1877F2', icon8: 'facebook-new' },
+    linkedin: { label: 'LinkedIn', icon: Linkedin, color: '#0A66C2', icon8: 'linkedin' },
+    twitter: { label: 'Twitter', icon: Twitter, color: '#000000', icon8: 'twitterx' },
+    youtube: { label: 'YouTube', icon: Youtube, color: '#FF0000', icon8: 'youtube' },
+    whatsapp: { label: 'WhatsApp', icon: Phone, color: '#25D366', icon8: 'whatsapp' },
+    tiktok: { label: 'TikTok', icon: Share2, color: '#000000', icon8: 'tiktok' },
+    website: { label: 'Website', icon: Globe, color: '#3b82f6', icon8: 'icons8-web-48' },
+    email: { label: 'Email', icon: Mail, color: '#6366f1', icon8: 'email' },
 }
+
+const PLATFORMS = Object.keys(PLATFORMS_CONFIG)
 
 function DesignerComponent({ element }: { element: EmailElementInstance }) {
     const { selectedElement, setSelectedElement } = useEmailBuilder()
@@ -37,25 +37,28 @@ function DesignerComponent({ element }: { element: EmailElementInstance }) {
             style={{ textAlign: p.align || 'center' }}
         >
             <div style={{ display: 'inline-flex', gap: `${p.gap || 8}px`, alignItems: 'center' }}>
-                {items.map((item, i) => (
-                    <div
-                        key={i}
-                        style={{
-                            width: `${iconSize + 8}px`,
-                            height: `${iconSize + 8}px`,
-                            borderRadius: '50%',
-                            backgroundColor: PLATFORM_COLORS[item.platform] || '#333',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#fff',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                        }}
-                    >
-                        {item.platform.slice(0, 2).toUpperCase()}
-                    </div>
-                ))}
+                {items.map((item, i) => {
+                    const config = PLATFORMS_CONFIG[item.platform] || PLATFORMS_CONFIG.website
+                    const Icon = config.icon
+                    return (
+                        <div
+                            key={i}
+                            style={{
+                                width: `${iconSize + 8}px`,
+                                height: `${iconSize + 8}px`,
+                                borderRadius: p.roundness === 'square' ? '4px' : '50%',
+                                backgroundColor: p.variant === 'color' ? config.color : p.backgroundColor || '#333',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: p.iconColor || '#fff',
+                            }}
+                            className="flex items-center justify-center overflow-hidden"
+                        >
+                            <Icon size={iconSize * 0.6} strokeWidth={2.5} />
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )
@@ -101,6 +104,40 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
                     </Button>
                 </div>
             </div>
+            <div className="grid grid-cols-2 gap-2">
+                <div>
+                    <Label className="text-xs">Variante</Label>
+                    <Select value={p.variant || 'color'} onValueChange={v => update('variant', v)}>
+                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="color">Original</SelectItem>
+                            <SelectItem value="custom">Customizado</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div>
+                    <Label className="text-xs">Formato</Label>
+                    <Select value={p.roundness || 'circle'} onValueChange={v => update('roundness', v)}>
+                        <SelectTrigger className="h-8 text-xs mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="circle">Círculo</SelectItem>
+                            <SelectItem value="square">Quadrado</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            {p.variant === 'custom' && (
+                <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <Label className="text-xs">Cor Ícone</Label>
+                        <Input type="color" value={p.iconColor || '#ffffff'} onChange={e => update('iconColor', e.target.value)} className="h-8 p-1 mt-1" />
+                    </div>
+                    <div>
+                        <Label className="text-xs">Cor Fundo</Label>
+                        <Input type="color" value={p.backgroundColor || '#333333'} onChange={e => update('backgroundColor', e.target.value)} className="h-8 p-1 mt-1" />
+                    </div>
+                </div>
+            )}
             <div>
                 <Label className="text-xs">Tamanho dos ícones (px)</Label>
                 <Input type="number" value={p.iconSize || 32} onChange={e => update('iconSize', Number(e.target.value))} className="h-8 text-xs mt-1" />
@@ -131,8 +168,8 @@ export const EmailSocialLinksElement: EmailElementDefinition = {
         id,
         type: 'email-social-links',
         properties: {
-            items: [{ platform: 'instagram', url: '#' }, { platform: 'facebook', url: '#' }, { platform: 'linkedin', url: '#' }],
-            iconSize: 32, gap: 8, align: 'center'
+            items: [{ platform: 'instagram', url: '#' }, { platform: 'facebook', url: '#' }, { platform: 'whatsapp', url: '#' }],
+            iconSize: 32, gap: 12, align: 'center', variant: 'color', roundness: 'circle'
         },
     }),
     designerComponent: DesignerComponent,
@@ -144,12 +181,19 @@ export const EmailSocialLinksElement: EmailElementDefinition = {
         const cellSize = iconSize + 8
 
         const iconsHtml = items.map(item => {
-            const color = PLATFORM_COLORS[item.platform] || '#333333'
-            const label = item.platform.charAt(0).toUpperCase() + item.platform.slice(1)
-            return `<td style="padding:0 ${(p.gap || 8) / 2}px;">
+            const config = PLATFORMS_CONFIG[item.platform] || PLATFORMS_CONFIG.website
+            const bgColor = p.variant === 'color' ? config.color : p.backgroundColor || '#333333'
+            const iconUrl = item.platform === 'website' 
+                ? 'https://img.icons8.com/material-outlined/48/ffffff/globe.png'
+                : `https://img.icons8.com/fluent-systems-filled/48/ffffff/${config.icon8}.png`
+            
+            // For 'color' variant with white icons, we use the platform color as background
+            // If they want custom, they can set it.
+            
+            return `<td style="padding:0 ${(p.gap || 12) / 2}px;">
 <a href="${item.url}" target="_blank" style="display:inline-block;text-decoration:none;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><td bgcolor="${color}" style="width:${cellSize}px;height:${cellSize}px;border-radius:${cellSize / 2}px;text-align:center;vertical-align:middle;">
-<span style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;color:#ffffff;line-height:${cellSize}px;">${label.slice(0, 2).toUpperCase()}</span>
+<table border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><td bgcolor="${bgColor}" style="width:${cellSize}px;height:${cellSize}px;border-radius:${p.roundness === 'square' ? '4px' : '50%'};text-align:center;vertical-align:middle;">
+<img src="${iconUrl}" width="${iconSize * 0.6}" height="${iconSize * 0.6}" alt="${item.platform}" style="display:block;border:0;margin:0 auto;" />
 </td></tr></table></a></td>`
         }).join('\n')
 

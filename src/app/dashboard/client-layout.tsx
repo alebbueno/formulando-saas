@@ -39,7 +39,13 @@ function DashboardLayoutContent({
             )}
             <div className="flex flex-col flex-1 overflow-hidden">
                 <Header />
-                <main className="flex-1 overflow-y-auto p-6 md:p-8">
+                <main className={cn(
+                    "flex-1 overflow-hidden",
+                    (pathname?.includes("/emails/") && (pathname?.includes("/new") || pathname?.split('/').length > 4)) || 
+                    pathname?.includes("/automations/") && pathname?.includes("/edit")
+                        ? "p-0" 
+                        : "overflow-y-auto p-6 md:p-8"
+                )}>
                     {children}
                 </main>
             </div>

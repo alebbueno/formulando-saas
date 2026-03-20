@@ -7,6 +7,8 @@ import { ImageIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ImageUploadControl } from "../controls/image-upload-control"
+import { Slider } from "@/components/ui/slider"
 
 function DesignerComponent({ element }: { element: EmailElementInstance }) {
     const { selectedElement, setSelectedElement } = useEmailBuilder()
@@ -43,8 +45,7 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
     return (
         <div className="space-y-4">
             <div>
-                <Label className="text-xs">URL da imagem</Label>
-                <Input value={p.src || ''} onChange={e => update('src', e.target.value)} className="h-8 text-xs mt-1" placeholder="https://..." />
+                <ImageUploadControl value={p.src || ''} onChange={val => update('src', val)} label="Imagem do E-mail" />
             </div>
             <div>
                 <Label className="text-xs">Texto alternativo (alt)</Label>
@@ -55,8 +56,20 @@ function PropertiesComponent({ element }: { element: EmailElementInstance }) {
                 <Input value={p.href || ''} onChange={e => update('href', e.target.value)} className="h-8 text-xs mt-1" placeholder="https://" />
             </div>
             <div>
-                <Label className="text-xs">Largura (px, deixe vazio para 100%)</Label>
-                <Input type="number" value={p.width || ''} onChange={e => update('width', e.target.value ? Number(e.target.value) : undefined)} className="h-8 text-xs mt-1" />
+                <div className="flex justify-between items-center mb-1">
+                    <Label className="text-xs">Largura da Imagem</Label>
+                    <span className="text-[10px] text-slate-500 font-mono">{p.width ? `${p.width}px` : '100%'}</span>
+                </div>
+                <div className="flex items-center gap-3 mt-2 px-1">
+                    <Slider 
+                        value={[p.width || 600]} 
+                        min={50} 
+                        max={600} 
+                        step={10} 
+                        onValueChange={([v]) => update('width', v === 600 ? undefined : v)}
+                    />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Máximo 600px para largura total do e-mail</p>
             </div>
             <div>
                 <Label className="text-xs">Border radius (px)</Label>
