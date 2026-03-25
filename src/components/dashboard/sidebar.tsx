@@ -309,7 +309,6 @@ export function Sidebar({ className }: SidebarProps) {
                 return button;
               })}
             </div>
-            {/* Usage Box - Hide usage if locked? Or keep showing to shame them? */}
             {isOpen && <UsageSidebar />}
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import * as XLSX from 'xlsx'
 import { createLead } from "./leads"
+import { checkLimit } from "@/lib/limits"
 
 export async function getWorkspaceProjects(workspaceId: string) {
     const supabase = await createClient()
@@ -268,4 +269,36 @@ export async function executeImport(
         failed: failedCount,
         errors: errors.slice(0, 10) // Limit errors returned
     }
+}
+
+export async function createProjectInline(workspaceId: string, name: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) throw new Error("Usuário não autenticado")
+
+    const limitCheck = await checkLimit(workspaceId, "forms")
+    if (!limitCheck.allowed) {
+        return { success: false, error: limitCheck.error || "Limite de formulários atingido." }
+    }
+
+    const { data: project, error } = await supabase
+        .from("projects")
+        .insert({
+            workspace_id: workspaceId,
+            name: name,
+            slug: `form-${crypto.randomUUID().slice(0, 8)}`,
+            content: [],
+            settings: {},
+            is_published: false,
+        })
+        .select("id, name")
+        .single()
+
+    if (error || !project) {
+        console.error("Error creating project inline:", error)
+        return { success: false, error: "Falha ao criar o projeto." }
+    }
+
+    return { success: true, project }
 }
