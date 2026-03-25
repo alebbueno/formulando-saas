@@ -17,10 +17,11 @@ import {
     XCircle, 
     Clock, 
     AlertTriangle,
-    Mail,
     User,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    CalendarClock,
+    Mail
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -60,6 +61,9 @@ export function EmailHistoryTable({
 
     const getStatusBadge = (status: string) => {
         switch (status) {
+            case 'scheduled':
+            case 'pending':
+                return <Badge variant="outline" className="gap-1 bg-yellow-500/10 text-yellow-600 border-yellow-200"><CalendarClock className="h-3 w-3" /> Agendado</Badge>
             case 'sent':
                 return <Badge variant="secondary" className="gap-1 bg-blue-500/10 text-blue-600 border-blue-200"><Clock className="h-3 w-3" /> Enviado</Badge>
             case 'delivered':
@@ -131,8 +135,8 @@ export function EmailHistoryTable({
                                     )}
                                 </TableCell>
                                 <TableCell className="text-xs text-muted-foreground">
-                                    <span title={log.sent_at}>
-                                        {formatDistanceToNow(new Date(log.sent_at), { 
+                                    <span title={log.status === 'scheduled' || log.status === 'pending' ? (log.scheduled_for || log.sent_at) : log.sent_at}>
+                                        {formatDistanceToNow(new Date(log.status === 'scheduled' || log.status === 'pending' ? (log.scheduled_for || log.sent_at) : log.sent_at), { 
                                             addSuffix: true,
                                             locale: ptBR
                                         })}

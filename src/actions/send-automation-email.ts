@@ -58,7 +58,11 @@ export async function sendAutomationEmail(
     templateId: string,
     leadData: LeadData,
     workspaceId: string,
-    customPrefix?: string
+    customPrefix?: string,
+    options?: {
+        scheduledFor?: Date,
+        existingLogId?: string
+    }
 ) {
     try {
         console.log('[sendAutomationEmail] Starting...', { templateId, leadEmail: leadData.email })
@@ -182,6 +186,28 @@ export async function sendAutomationEmail(
             console.log('[sendAutomationEmail] Using custom domain:', fromEmail)
         }
 
+        if (options?.scheduledFor) {
+            console.log('[sendAutomationEmail] Scheduling email for:', options.scheduledFor)
+            const adminSupabase = createAdminClient()
+            const { error: logError } = await adminSupabase.from("email_logs").insert({
+                workspace_id: workspaceId,
+                template_id: templateId,
+                lead_id: leadData.id,
+                recipient_email: leadData.email,
+                subject: personalizedSubject,
+                status: "scheduled",
+                scheduled_for: options.scheduledFor.toISOString(),
+            })
+            if (logError) {
+                console.error('[sendAutomationEmail] Failed to schedule email:', logError)
+                throw new Error(`Erro ao agendar email: ${logError.message}`)
+            }
+            return {
+                success: true,
+                scheduled: true,
+            }
+        }
+
         console.log('[sendAutomationEmail] Sending via Resend to:', leadData.email)
 
         // Send email via Resend
@@ -211,19 +237,31 @@ export async function sendAutomationEmail(
 
         // Log the email sent event using admin client to ensure it persists regardless of auth context
         const adminSupabase = createAdminClient()
-        const { error: logError } = await adminSupabase.from("email_logs").insert({
-            workspace_id: workspaceId,
-            template_id: templateId,
-            lead_id: leadData.id,
-            recipient_email: leadData.email,
-            subject: personalizedSubject,
-            status: "sent",
-            resend_id: data?.id,
-            sent_at: new Date().toISOString(),
-        })
+        if (options?.existingLogId) {
+            const { error: logError } = await adminSupabase.from("email_logs").update({
+                resend_id: data?.id,
+                status: "sent",
+                sent_at: new Date().toISOString(),
+            }).eq("id", options.existingLogId)
 
-        if (logError) {
-            console.error('[sendAutomationEmail] Failed to log email to database:', logError)
+            if (logError) {
+                console.error('[sendAutomationEmail] Failed to update scheduled email log to database:', logError)
+            }
+        } else {
+            const { error: logError } = await adminSupabase.from("email_logs").insert({
+                workspace_id: workspaceId,
+                template_id: templateId,
+                lead_id: leadData.id,
+                recipient_email: leadData.email,
+                subject: personalizedSubject,
+                status: "sent",
+                resend_id: data?.id,
+                sent_at: new Date().toISOString(),
+            })
+
+            if (logError) {
+                console.error('[sendAutomationEmail] Failed to log email to database:', logError)
+            }
         }
 
         console.log(`[sendAutomationEmail] Email sent successfully to ${leadData.email}:`, data?.id)
@@ -237,19 +275,32 @@ export async function sendAutomationEmail(
 
         // Log the failed attempt using admin client
         const adminSupabase = createAdminClient()
-        const { error: logError } = await adminSupabase.from("email_logs").insert({
-            workspace_id: workspaceId,
-            template_id: templateId,
-            lead_id: leadData.id,
-            recipient_email: leadData.email || "unknown",
-            subject: "Failed to send",
-            status: "failed",
-            error_message: error instanceof Error ? error.message : String(error),
-            sent_at: new Date().toISOString(),
-        })
+        
+        if (options?.existingLogId) {
+             const { error: logError } = await adminSupabase.from("email_logs").update({
+                status: "failed",
+                error_message: error instanceof Error ? error.message : String(error),
+                sent_at: new Date().toISOString(),
+            }).eq("id", options.existingLogId)
 
-        if (logError) {
-            console.error('[sendAutomationEmail] Failed to log email error to database:', logError)
+            if (logError) {
+                console.error('[sendAutomationEmail] Failed to log email error to database (update):', logError)
+            }
+        } else {
+            const { error: logError } = await adminSupabase.from("email_logs").insert({
+                workspace_id: workspaceId,
+                template_id: templateId,
+                lead_id: leadData.id,
+                recipient_email: leadData.email || "unknown",
+                subject: "Failed to send",
+                status: "failed",
+                error_message: error instanceof Error ? error.message : String(error),
+                sent_at: new Date().toISOString(),
+            })
+
+            if (logError) {
+                console.error('[sendAutomationEmail] Failed to log email error to database:', logError)
+            }
         }
 
         return {

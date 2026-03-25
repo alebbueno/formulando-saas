@@ -179,6 +179,12 @@ export function ConfigStep({ config, setConfig }: ConfigStepProps) {
                             value={tagInput}
                             onChange={(e) => setTagInput(e.target.value)}
                             onKeyDown={addTag}
+                            onBlur={() => {
+                                if (tagInput.trim() && !config.tags.includes(tagInput.trim())) {
+                                    setConfig(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }))
+                                    setTagInput("")
+                                }
+                            }}
                         />
                     </div>
                 </div>

@@ -278,26 +278,38 @@ export async function sendManualCampaign(
 
         // 3. Send emails
         let sentCount = 0
+        let scheduledCount = 0
         let errorCount = 0
         const errors: string[] = []
 
         // In a real production app, we might want to use a queue or limit concurrency
-        // For now, we process them in parallel with a small batching or just map
-        const results = await Promise.all(
-            leads.map(async (lead) => {
+        // For the Growth plan, we split the load into multiple days (100 per day)
+        // If a campaign has 350 leads, Day 0: 100, Day 1: 100, Day 2: 100, Day 3: 50.
+        const dailyLimit = 100;
+        
+        await Promise.all(
+            leads.map(async (lead, index) => {
                 try {
-                    const res = await sendAutomationEmail(templateId, lead, workspaceId, fromPrefix)
+                    const delayDays = Math.floor(index / dailyLimit);
+                    const scheduledFor = delayDays > 0 
+                        ? new Date(Date.now() + delayDays * 24 * 60 * 60 * 1000)
+                        : undefined;
+
+                    const res = await sendAutomationEmail(templateId, lead, workspaceId, fromPrefix, { scheduledFor })
+                    
                     if (res.success) {
-                        sentCount++
+                        if ((res as any).scheduled) {
+                            scheduledCount++
+                        } else {
+                            sentCount++
+                        }
                     } else {
                         errorCount++
                         errors.push(`Erro para ${lead.email}: ${res.error}`)
                     }
-                    return res
                 } catch (e) {
                     errorCount++
                     errors.push(`Erro para ${lead.email}: ${e instanceof Error ? e.message : 'Erro genérico'}`)
-                    return { success: false }
                 }
             })
         )
@@ -307,6 +319,7 @@ export async function sendManualCampaign(
         return {
             success: true,
             sentCount,
+            scheduledCount,
             errorCount,
             errors: errors.slice(0, 10), // Limit error list
             totalAttempted: leads.length
@@ -320,3 +333,4 @@ export async function sendManualCampaign(
         }
     }
 }
+
