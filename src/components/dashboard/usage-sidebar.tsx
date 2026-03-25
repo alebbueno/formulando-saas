@@ -44,6 +44,9 @@ export function UsageSidebar() {
 
     const { plan, usage } = usageData
     const percentage = Math.min(100, (usage.leads / usage.leadsLimit) * 100)
+    const emailPercentage = usage.emailsSentLimit > 0 
+        ? Math.min(100, (usage.emailsSent / usage.emailsSentLimit) * 100) 
+        : 0
     const isFree = plan.slug === 'free'
     const isAgency = plan.slug === 'agency-pro'
 
@@ -63,10 +66,11 @@ export function UsageSidebar() {
                     )}
                 </div>
 
+                {/* Leads usage */}
                 {!isAgency ? (
                     <div className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Leads/mês</span>
+                            <span className="text-muted-foreground">Leads</span>
                             <span className={percentage > 90 ? "text-red-500 font-bold" : ""}>
                                 {usage.leads} / {usage.leadsLimit}
                             </span>
@@ -76,14 +80,35 @@ export function UsageSidebar() {
                 ) : (
                     <div className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Leads/mês</span>
+                            <span className="text-muted-foreground">Leads</span>
                             <span className="text-primary font-bold">Ilimitado</span>
                         </div>
                         <Progress value={100} className="h-2 bg-primary/20" />
                     </div>
                 )}
 
-                {(isFree || percentage > 80) && (
+                {/* Email usage */}
+                {!isAgency ? (
+                    <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Emails/mês</span>
+                            <span className={emailPercentage > 90 ? "text-red-500 font-bold" : ""}>
+                                {usage.emailsSent} / {usage.emailsSentLimit}
+                            </span>
+                        </div>
+                        <Progress value={emailPercentage} className="h-2" />
+                    </div>
+                ) : (
+                    <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Emails/mês</span>
+                            <span className="text-primary font-bold">Ilimitado</span>
+                        </div>
+                        <Progress value={100} className="h-2 bg-primary/20" />
+                    </div>
+                )}
+
+                {(isFree || percentage > 80 || emailPercentage > 80) && (
                     <Button variant="outline" size="sm" className="w-full text-xs gap-2 h-8 border-primary/20 hover:bg-primary/5 hover:text-primary" asChild>
                         <Link href="/dashboard/plans">
                             <Zap className="h-3 w-3" />

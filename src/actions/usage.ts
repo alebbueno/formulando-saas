@@ -109,7 +109,12 @@ export async function getWorkspaceUsage(workspaceId: string) {
             .eq("workspace_id", workspaceId),
 
         // Emails sent this month
-        Promise.resolve({ count: 0 })
+        adminSupabase
+            .from("email_logs")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspaceId)
+            .in("status", ["sent", "delivered"])
+            .gte("sent_at", startOfMonth)
     ])
 
     return {
