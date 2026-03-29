@@ -13,11 +13,12 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Edit, Trash2, Mail } from "lucide-react"
+import { Eye, Edit, Trash2, Mail, Send } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { SendTestModal } from "./send-test-modal"
 
 interface EmailTemplatesTableProps {
     templates: EmailTemplate[]
@@ -25,6 +26,8 @@ interface EmailTemplatesTableProps {
 
 export function EmailTemplatesTable({ templates }: EmailTemplatesTableProps) {
     const router = useRouter()
+    const [testModalOpen, setTestModalOpen] = useState(false)
+    const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null)
 
     if (templates.length === 0) {
         return (
@@ -88,10 +91,23 @@ export function EmailTemplatesTable({ templates }: EmailTemplatesTableProps) {
                                 {formatDistanceToNow(new Date(template.created_at), {
                                     addSuffix: true,
                                     locale: ptBR,
-                                })}
+                                }).replace('cerca de ', '')}
                             </TableCell>
                             <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                                        title="Enviar Teste"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setSelectedTemplate(template)
+                                            setTestModalOpen(true)
+                                        }}
+                                    >
+                                        <Send className="h-4 w-4" />
+                                    </Button>
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -103,12 +119,33 @@ export function EmailTemplatesTable({ templates }: EmailTemplatesTableProps) {
                                     >
                                         <Edit className="h-4 w-4" />
                                     </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            // TODO: Implement delete confirmation
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
             </Table>
+
+            {selectedTemplate && (
+                <SendTestModal 
+                    isOpen={testModalOpen}
+                    onOpenChange={setTestModalOpen}
+                    templateId={selectedTemplate.id}
+                    templateName={selectedTemplate.name}
+                    workspaceId={selectedTemplate.workspace_id}
+                />
+            )}
         </div>
     )
 }

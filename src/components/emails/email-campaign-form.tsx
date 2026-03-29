@@ -59,6 +59,8 @@ export function EmailCampaignForm({
     const [senderPrefix, setSenderPrefix] = useState("contato")
     const [targetType, setTargetType] = useState<"all" | "tag" | "status" | "single">("all")
     const [targetValue, setTargetValue] = useState("")
+    const [isScheduled, setIsScheduled] = useState(false)
+    const [scheduledAt, setScheduledAt] = useState("")
     
     // Derived state
     const selectedTemplate = useMemo(() => 
@@ -81,20 +83,35 @@ export function EmailCampaignForm({
         return 0
     }, [targetType, targetValue, leads])
 
-    const canSubmit = templateId && (targetType === "all" || targetValue) && (domains.length > 0 ? domainId : true)
+    const canSubmit = templateId && (targetType === "all" || targetValue) && (domains.length > 0 ? domainId : true) && (!isScheduled || scheduledAt)
 
     const handleSubmit = async () => {
         if (!canSubmit) return
 
         setIsLoading(true)
         try {
-            const result = await sendManualCampaign(workspaceId, templateId, {
-                type: targetType,
-                value: targetValue
-            }, senderPrefix)
+            const result = await sendManualCampaign(
+                workspaceId, 
+                templateId, 
+                {
+                    type: targetType,
+                    value: targetValue
+                }, 
+                senderPrefix,
+                isScheduled ? scheduledAt : null
+            )
 
             if (result.success) {
-                toast.success(`Campanha enviada! ${result.sentCount} e-mails entregues.`)
+                if (isScheduled) {
+                    toast.success(`Campanha agendada com sucesso para ${new Date(scheduledAt).toLocaleString()}!`)
+                } else {
+                    toast.success(`Campanha enviada! ${result.sentCount} e-mails entregues.`)
+                }
+                
+                if (result.scheduledCount > 0 && !isScheduled) {
+                    toast.info(`${result.scheduledCount} e-mails foram agendados para os próximos dias devido ao limite diário.`)
+                }
+
                 if (result.errorCount && result.errorCount > 0) {
                     toast.warning(`${result.errorCount} e-mails falharam. Verifique os logs.`)
                 }
@@ -271,6 +288,83 @@ export function EmailCampaignForm({
                         </Tabs>
                     </CardContent>
                 </Card>
+
+                {/* 3. Scheduling */}
+                <Card className="border-primary/10 shadow-sm overflow-hidden">
+                    <CardHeader className="pb-4 bg-muted/30">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Send className="h-5 w-5 text-primary" />
+                                Opções de Envio
+                            </CardTitle>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="schedule-toggle" className="text-xs font-normal text-muted-foreground mr-1">
+                                    Agendar para depois
+                                </Label>
+                                <div className="flex h-6 items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        id="schedule-toggle"
+                                        checked={isScheduled}
+                                        onChange={(e) => setIsScheduled(e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    {isScheduled && (
+                        <CardContent className="pt-6 animate-in slide-in-from-top-2 duration-300">
+                            <div className="space-y-4">
+                                <AlertCircle className="h-5 w-5 text-amber-500 float-left mr-3 mt-1" />
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium">Configure a data e hora do disparo</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Seu envio começará exatamente no horário selecionado. Caso haja mais de 100 leads, o sistema continuará enviando nos dias seguintes.
+                                    </p>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 gap-4 pt-2">
+                                    <div className="space-y-2">
+                                        <Label>Data e Hora de Início</Label>
+                                        <Input 
+                                            type="datetime-local" 
+                                            value={scheduledAt}
+                                            onChange={(e) => setScheduledAt(e.target.value)}
+                                            min={new Date().toISOString().slice(0, 16)}
+                                            className="w-full md:w-auto"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    )}
+                    {!isScheduled && (
+                        <CardContent className="pt-6">
+                            <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Info className="h-4 w-4" />
+                                O envio será iniciado imediatamente após a confirmação.
+                            </p>
+                        </CardContent>
+                    )}
+                </Card>
+
+                {domains.length === 0 && (
+                    <Card className="bg-amber-500/10 border-amber-500/20">
+                        <CardContent className="pt-6 space-y-2">
+                            <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
+                                <AlertCircle className="h-4 w-4" />
+                                Domínio de Envio
+                            </div>
+                            <p className="text-xs text-amber-700">
+                                Você não tem domínios verificados. O e-mail será enviado via endereço padrão do sistema.
+                            </p>
+                            <Button variant="link" asChild className="p-0 h-auto text-amber-700 font-bold">
+                                <a href="/dashboard/integrations">Configurar Domínio</a>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
             {/* Side Summary */}
@@ -299,6 +393,12 @@ export function EmailCampaignForm({
                                     {targetType === "all" ? "Todos os Leads" : targetType === "tag" ? "Por Tag" : targetType === "status" ? "Por Status" : "Lead Único"}
                                 </Badge>
                             </div>
+                            <div className="flex justify-between items-center text-muted-foreground">
+                                <span>Quando</span>
+                                <span className={isScheduled ? "text-primary font-bold" : "font-medium text-foreground"}>
+                                    {isScheduled ? (scheduledAt ? new Date(scheduledAt).toLocaleDateString() : "Definir data") : "Imediato"}
+                                </span>
+                            </div>
                             <div className="pt-4 border-t border-primary/10">
                                 <div className="flex justify-between items-center text-lg font-bold">
                                     <span>Destinatários</span>
@@ -325,30 +425,16 @@ export function EmailCampaignForm({
                             ) : (
                                 <Send className="h-5 w-5" />
                             )}
-                            Disparar Agora
+                            {isScheduled ? "Agendar Campanha" : "Disparar Agora"}
                         </Button>
                         <p className="text-[10px] text-center text-muted-foreground px-4">
-                            Ao clicar em disparar, os e-mails serão processados e enviados individualmente para todos os leads selecionados.
+                            {isScheduled 
+                                ? "Os emails serão agendados para processamento automático no horário definido." 
+                                : "Ao clicar em disparar, os e-mails serão processados e enviados individualmente imediatamente."
+                            }
                         </p>
                     </CardFooter>
                 </Card>
-
-                {domains.length === 0 && (
-                    <Card className="bg-amber-500/10 border-amber-500/20">
-                        <CardContent className="pt-6 space-y-2">
-                            <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
-                                <AlertCircle className="h-4 w-4" />
-                                Domínio de Envio
-                            </div>
-                            <p className="text-xs text-amber-700">
-                                Você não tem domínios verificados. O e-mail será enviado via endereço padrão do sistema.
-                            </p>
-                            <Button variant="link" asChild className="p-0 h-auto text-amber-700 font-bold">
-                                <a href="/dashboard/integrations">Configurar Domínio</a>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
         </div>
     )

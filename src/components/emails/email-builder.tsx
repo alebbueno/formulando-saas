@@ -25,6 +25,7 @@ import { EmailTemplateDefinition } from "@/lib/email-templates"
 import { GenerateEmailResult } from "@/actions/generate-email"
 import { EmailDesigner } from "@/components/email-builder/email-designer"
 import { extractBuilderDataFromHtml } from "@/components/email-builder/html-export"
+import { SendTestModal } from "./send-test-modal"
 
 interface EmailBuilderProps {
     template?: EmailTemplate
@@ -46,6 +47,7 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
     const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop")
     const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual')
     const [errors, setErrors] = useState<{ name?: boolean; subject?: boolean }>({})
+    const [testModalOpen, setTestModalOpen] = useState(false)
 
     const handleSave = async () => {
         if (!activeWorkspace) {
@@ -249,6 +251,22 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
                             HTML
                         </button>
                     </div>
+
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            if (!template) {
+                                toast.info("Salve o template primeiro para habilitar o envio de teste.")
+                                return
+                            }
+                            setTestModalOpen(true)
+                        }}
+                        className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                    >
+                        <Send className="mr-2 h-4 w-4" />
+                        Enviar Teste
+                    </Button>
+
                     <Button
                         onClick={handleSave}
                         disabled={saving}
@@ -454,6 +472,16 @@ export function EmailBuilder({ template, initialSubject, initialBody }: EmailBui
                 </div>
             </div>
             }
+
+            {template && activeWorkspace && (
+                <SendTestModal 
+                    isOpen={testModalOpen}
+                    onOpenChange={setTestModalOpen}
+                    templateId={template.id}
+                    templateName={template.name}
+                    workspaceId={activeWorkspace.id}
+                />
+            )}
         </div>
     )
 }

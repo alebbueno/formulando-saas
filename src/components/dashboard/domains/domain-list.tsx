@@ -123,10 +123,10 @@ export function DomainList({ domains, isLoading, onRefresh }: DomainListProps) {
                                         <ShieldCheck className="h-3 w-3" />
                                         Verificado
                                     </Badge>
-                                ) : domain.status === "pending" ? (
+                                ) : domain.status === "pending" || domain.status === "unverified" ? (
                                     <Badge variant="outline" className="gap-1 text-amber-500 border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10">
                                         <Clock className="h-3 w-3" />
-                                        Pendente
+                                        {domain.status === "pending" ? "Pendente" : "Aguardando DNS"}
                                     </Badge>
                                 ) : (
                                     <Badge variant="destructive" className="gap-1">

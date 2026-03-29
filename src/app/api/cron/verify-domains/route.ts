@@ -18,11 +18,11 @@ export async function GET(request: Request) {
     try {
         const supabase = createAdminClient();
 
-        // 1. Fetch pending domains
+        // 1. Fetch domains that are not yet verified
         const { data: pendingDomains, error: fetchError } = await supabase
             .from("domains")
             .select("id, resend_domain_id, domain")
-            .eq("status", "pending")
+            .neq("status", "verified")
             .limit(20); // Process in batches
 
         if (fetchError) throw fetchError;
@@ -38,28 +38,43 @@ export async function GET(request: Request) {
             try {
                 if (!domain.resend_domain_id) continue;
 
+                console.log(`[Cron] Checking domain: ${domain.domain}`);
+
                 // Trigger verification
-                await resend.domains.verify(domain.resend_domain_id);
+                try {
+                    await resend.domains.verify(domain.resend_domain_id);
+                } catch (vErr) {
+                    console.warn(`[Cron] Verify trigger warning for ${domain.domain}:`, vErr);
+                }
 
                 // Get status
-                const { data: resendDomain } = await resend.domains.get(domain.resend_domain_id);
+                const { data: resendDomain, error: getErr } = await resend.domains.get(domain.resend_domain_id);
+
+                if (getErr) {
+                    console.error(`[Cron] Error getting domain ${domain.domain}:`, getErr);
+                    continue;
+                }
 
                 if (resendDomain) {
-                    const isVerified = resendDomain.status === "verified";
+                    const currentStatus = (resendDomain.status || "pending").toLowerCase();
+                    const isVerified = currentStatus === "verified";
                     
+                    console.log(`[Cron] Domain ${domain.domain} status: ${currentStatus}`);
+
                     await supabase
                         .from("domains")
                         .update({
-                            status: resendDomain.status,
+                            status: currentStatus,
                             dns_records: resendDomain.records,
-                            verified_at: isVerified ? new Date().toISOString() : null,
+                            verified_at: isVerified ? new Date().toISOString() : null, // Reset if lost verification
+                            updated_at: new Date().toISOString()
                         })
                         .eq("id", domain.id);
                     
-                    results.push({ domain: domain.domain, status: resendDomain.status });
+                    results.push({ domain: domain.domain, status: currentStatus });
                 }
             } catch (innerError) {
-                console.error(`Error verifying domain ${domain.domain}:`, innerError);
+                console.error(`[Cron] Unexpected error for domain ${domain.domain}:`, innerError);
             }
         }
 

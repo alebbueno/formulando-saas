@@ -243,7 +243,8 @@ export async function sendManualCampaign(
         type: 'all' | 'tag' | 'status' | 'single'
         value?: string // tag name, status name, or lead id
     },
-    fromPrefix?: string
+    fromPrefix?: string,
+    scheduledAt?: string | null
 ) {
     try {
         const supabase = await createClient()
@@ -286,13 +287,17 @@ export async function sendManualCampaign(
         // For the Growth plan, we split the load into multiple days (100 per day)
         // If a campaign has 350 leads, Day 0: 100, Day 1: 100, Day 2: 100, Day 3: 50.
         const dailyLimit = 100;
+        const baseTime = scheduledAt ? new Date(scheduledAt).getTime() : Date.now();
         
         await Promise.all(
             leads.map(async (lead, index) => {
                 try {
                     const delayDays = Math.floor(index / dailyLimit);
-                    const scheduledFor = delayDays > 0 
-                        ? new Date(Date.now() + delayDays * 24 * 60 * 60 * 1000)
+                    
+                    // If scheduledAt is provided OR we are beyond the first 100 (batching), we schedule it.
+                    // Otherwise, we send immediate.
+                    const scheduledFor = (scheduledAt || delayDays > 0)
+                        ? new Date(baseTime + (delayDays * 24 * 60 * 60 * 1000))
                         : undefined;
 
                     const res = await sendAutomationEmail(templateId, lead, workspaceId, fromPrefix, { scheduledFor })
@@ -330,6 +335,53 @@ export async function sendManualCampaign(
         return { 
             success: false, 
             error: error instanceof Error ? error.message : "Erro ao disparar campanha." 
+        }
+    }
+}
+
+/**
+ * Send a single test email using a template
+ */
+export async function sendTestEmail(
+    templateId: string,
+    recipientEmail: string,
+    workspaceId: string,
+    fromPrefix?: string
+) {
+    try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) throw new Error("Não autenticado")
+
+        // Create a synthetic lead for merge tags to work correctly
+        const testLead = {
+            id: `test_${Date.now()}`,
+            email: recipientEmail,
+            name: user.user_metadata?.name || user.email?.split('@')[0] || "Usuário de Teste",
+            first_name: (user.user_metadata?.name || user.email?.split('@')[0] || "Usuário").split(' ')[0],
+            last_name: "Teste",
+            company: "Sua Empresa",
+            phone: "(99) 99999-9999",
+            status: "lead",
+            tags: ["teste text"]
+        }
+
+        // Call our core sender
+        // This will verify domains and apply limits automatically
+        const res = await sendAutomationEmail(
+            templateId, 
+            testLead, 
+            workspaceId, 
+            fromPrefix
+        )
+
+        return res
+    } catch (error) {
+        console.error("sendTestEmail Error:", error)
+        return { 
+            success: false, 
+            error: error instanceof Error ? error.message : "Erro ao enviar e-mail de teste." 
         }
     }
 }
