@@ -102,22 +102,23 @@ export function EmailCampaignForm({
             )
 
             if (result.success) {
+                const res = result as any;
                 if (isScheduled) {
-                    toast.success(`Campanha agendada com sucesso para ${new Date(scheduledAt).toLocaleString()}!`)
+                    toast.success(`Campanha agendada com sucesso para ${scheduledAt ? new Date(scheduledAt).toLocaleString() : "data definida"}!`)
                 } else {
-                    toast.success(`Campanha enviada! ${result.sentCount} e-mails entregues.`)
+                    toast.success(`Campanha enviada! ${res.sentCount || 0} e-mails entregues.`)
                 }
                 
-                if (result.scheduledCount > 0 && !isScheduled) {
-                    toast.info(`${result.scheduledCount} e-mails foram agendados para os próximos dias devido ao limite diário.`)
+                if (res.scheduledCount > 0 && !isScheduled) {
+                    toast.info(`${res.scheduledCount} e-mails foram agendados para os próximos dias devido ao limite diário.`)
                 }
 
-                if (result.errorCount && result.errorCount > 0) {
-                    toast.warning(`${result.errorCount} e-mails falharam. Verifique os logs.`)
+                if (res.errorCount && res.errorCount > 0) {
+                    toast.warning(`${res.errorCount} e-mails falharam. Verifique os logs.`)
                 }
                 router.push("/dashboard/emails")
             } else {
-                toast.error(result.error || "Erro ao disparar campanha.")
+                toast.error((result as any).error || "Erro ao disparar campanha.")
             }
         } catch (error) {
             toast.error("Ocorreu um erro inesperado.")
