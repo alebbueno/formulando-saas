@@ -214,3 +214,87 @@ export async function getScheduledQueueIds(workspaceId: string) {
 
     return data.map((item: any) => item.id)
 }
+
+/**
+ * Get metrics for a specific template/automation
+ */
+export async function getTemplateStats(templateId: string, workspaceId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Não autenticado")
+
+    const now = new Date()
+    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+
+    const [
+        { count: scheduledCount },
+        { count: pendingCount },
+        { count: sentCount },
+        { count: failedCount }
+    ] = await Promise.all([
+        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId).eq("workspace_id", workspaceId).eq("status", "scheduled"),
+        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId).eq("workspace_id", workspaceId).eq("status", "pending"),
+        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId).eq("workspace_id", workspaceId).eq("status", "sent"),
+        supabase.from("email_logs").select("*", { count: "exact", head: true }).eq("template_id", templateId).eq("workspace_id", workspaceId).eq("status", "failed")
+    ])
+
+    return {
+        scheduled: scheduledCount || 0,
+        pending: pendingCount || 0,
+        sent: sentCount || 0,
+        failed: failedCount || 0,
+        total: (scheduledCount || 0) + (pendingCount || 0) + (sentCount || 0) + (failedCount || 0)
+    }
+}
+
+/**
+ * Get all logs for a specific template
+ */
+export async function getTemplateLogs(templateId: string, workspaceId: string, status?: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Não autenticado")
+
+    let query = supabase
+        .from("email_logs")
+        .select(`
+            *,
+            email_template:template_id (name),
+            lead:lead_id (name, email)
+        `)
+        .eq("template_id", templateId)
+        .eq("workspace_id", workspaceId)
+
+    if (status && status !== "all") {
+        query = query.eq("status", status)
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(200)
+
+    if (error) {
+        console.error("Error fetching template logs:", error)
+        return []
+    }
+
+    return data
+}
+
+/**
+ * Get IDs for a specific template (for batch processing)
+ */
+export async function getScheduledIdsByTemplate(templateId: string, workspaceId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Não autenticado")
+
+    const { data, error } = await supabase
+        .from("email_logs")
+        .select("id")
+        .eq("template_id", templateId)
+        .eq("workspace_id", workspaceId)
+        .in("status", ["scheduled", "pending"])
+        .order("scheduled_for", { ascending: true })
+
+    if (error) return []
+    return data.map((item: any) => item.id)
+}
