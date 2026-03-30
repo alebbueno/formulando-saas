@@ -51,15 +51,15 @@ export default async function EmailsPage() {
                     )}
                     <div className="flex items-center gap-2">
                         <Button asChild variant="outline">
-                            <Link href="/dashboard/emails/history">
+                            <Link href="/dashboard/emails/scheduler">
                                 <Clock className="mr-2 h-4 w-4" />
-                                Histórico
+                                Fila de Agendamento
                             </Link>
                         </Button>
                         <Button asChild variant="outline">
-                            <Link href="/dashboard/emails/send">
+                            <Link href="/dashboard/emails/history">
                                 <Send className="mr-2 h-4 w-4" />
-                                Enviar Campanha
+                                Histórico
                             </Link>
                         </Button>
                         <Button asChild>

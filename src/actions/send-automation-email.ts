@@ -86,12 +86,16 @@ export async function sendAutomationEmail(
         })
 
         // Use service role client for automation context (no user auth required)
-        const supabase = await createClient()
+        const supabase = createAdminClient()
 
-        // Fetch the email template
-        const template = await getEmailTemplate(templateId)
+        // Fetch the email template directly with admin client to bypass RLS
+        const { data: template, error: templateError } = await supabase
+            .from("email_templates")
+            .select("*")
+            .eq("id", templateId)
+            .single()
 
-        if (!template) {
+        if (templateError || !template) {
             throw new Error(`Template de email não encontrado: ${templateId}`)
         }
 
