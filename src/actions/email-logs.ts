@@ -269,7 +269,7 @@ export async function getTemplateLogs(templateId: string, workspaceId: string, s
         query = query.eq("status", status)
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false }).limit(200)
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(1000)
 
     if (error) {
         console.error("Error fetching template logs:", error)

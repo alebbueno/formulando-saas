@@ -10,6 +10,17 @@ import {
     TableHeader, 
     TableRow 
 } from "@/components/ui/table"
+import { 
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,7 +43,8 @@ import { toast } from "sonner"
 import { 
     deleteScheduledLog, 
     processScheduledLogNow, 
-    getScheduledIdsByTemplate 
+    getScheduledIdsByTemplate,
+    resendEmail
 } from "@/actions/email-logs"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -44,6 +56,7 @@ interface AutomationDetailViewProps {
     initialStats: {
         sent: number
         pending: number
+        scheduled: number
         failed: number
         total: number
     }
@@ -64,6 +77,7 @@ export function AutomationDetailView({
     const [processedCount, setProcessedCount] = useState(0)
     const [totalToProcess, setTotalToProcess] = useState(0)
     const [filter, setFilter] = useState<string>("all")
+    const [showConfirmModal, setShowConfirmModal] = useState(false)
 
     const filteredLogs = initialLogs.filter(log => {
         if (filter === "all") return true
@@ -95,8 +109,21 @@ export function AutomationDetailView({
         })
     }
 
+    const handleResend = async (id: string) => {
+        setProcessingIds(prev => [...prev, id])
+        const result = await resendEmail(id)
+        setProcessingIds(prev => prev.filter(item => item !== id))
+
+        if (result.success) {
+            toast.success("E-mail reenviado com sucesso")
+            router.refresh()
+        } else {
+            toast.error(result.error)
+        }
+    }
+
     const handleProcessQueue = async () => {
-        if (!confirm(`Deseja processar os e-mails pendentes para "${templateName}"?`)) return
+        setShowConfirmModal(false)
         
         setIsBulkProcessing(true)
         setProcessedCount(0)
@@ -153,21 +180,43 @@ export function AutomationDetailView({
                             {processedCount} / {totalToProcess}
                         </div>
                     ) : (
-                        <Button 
-                            onClick={handleProcessQueue}
-                            disabled={initialStats.pending === 0}
-                            className="gap-2"
-                        >
-                            <Play className="h-3 w-3 fill-current" />
-                            Processar Agora
-                        </Button>
+                        <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+                            <AlertDialogTrigger asChild>
+                                <Button 
+                                    disabled={initialStats.pending + initialStats.scheduled === 0}
+                                    className="gap-2"
+                                >
+                                    <Play className="h-3 w-3 fill-current" />
+                                    Processar Agora
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirmar Processamento</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Deseja processar os e-mails pendentes da automação "{templateName}"? 
+                                        Isso enviará {initialStats.pending + initialStats.scheduled} e-mails agora.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Agora não</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleProcessQueue}>Sim, processar tudo</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     )}
                 </div>
             </div>
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">
-                <Card className="border-emerald-500/10 bg-emerald-500/5">
+                <Card 
+                    className={cn(
+                        "border-emerald-500/10 bg-emerald-500/5 cursor-pointer transition-all hover:ring-2 hover:ring-emerald-500/30",
+                        filter === "sent" && "ring-2 ring-emerald-500 shadow-lg"
+                    )}
+                    onClick={() => setFilter(filter === "sent" ? "all" : "sent")}
+                >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-xs font-bold uppercase text-muted-foreground">Enviados</CardTitle>
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -177,17 +226,29 @@ export function AutomationDetailView({
                     </CardContent>
                 </Card>
 
-                <Card className="border-primary/10 bg-primary/5">
+                <Card 
+                    className={cn(
+                        "border-primary/10 bg-primary/5 cursor-pointer transition-all hover:ring-2 hover:ring-primary/30",
+                        filter === "pending" && "ring-2 ring-primary shadow-lg"
+                    )}
+                    onClick={() => setFilter(filter === "pending" ? "all" : "pending")}
+                >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-xs font-bold uppercase text-muted-foreground">Aguardando</CardTitle>
                         <Clock className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{initialStats.pending}</div>
+                        <div className="text-3xl font-bold">{initialStats.pending + initialStats.scheduled}</div>
                     </CardContent>
                 </Card>
 
-                <Card className="border-rose-500/10 bg-rose-500/5">
+                <Card 
+                    className={cn(
+                        "border-rose-500/10 bg-rose-500/5 cursor-pointer transition-all hover:ring-2 hover:ring-rose-500/30",
+                        filter === "failed" && "ring-2 ring-rose-500 shadow-lg"
+                    )}
+                    onClick={() => setFilter(filter === "failed" ? "all" : "failed")}
+                >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-xs font-bold uppercase text-muted-foreground">Erros</CardTitle>
                         <AlertCircle className="h-4 w-4 text-rose-500" />
@@ -264,33 +325,23 @@ export function AutomationDetailView({
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {["scheduled", "pending"].includes(log.status) ? (
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 text-emerald-600"
-                                                    onClick={() => handleProcessNow(log.id)}
-                                                    disabled={processingIds.includes(log.id) || isBulkProcessing}
-                                                >
-                                                    {processingIds.includes(log.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
-                                                </Button>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 text-rose-600"
-                                                    onClick={() => handleDelete(log.id)}
-                                                    disabled={isPending || isBulkProcessing}
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                                                <Link href={`/dashboard/emails/history`}>
-                                                    <ArrowRight className="h-3 w-3" />
-                                                </Link>
+                                        {log.status === "failed" ? (
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="h-8 gap-2 text-rose-600 hover:text-rose-700"
+                                                onClick={() => handleResend(log.id)}
+                                                disabled={processingIds.includes(log.id)}
+                                            >
+                                                {processingIds.includes(log.id) ? (
+                                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                                ) : (
+                                                    <RefreshCw className="h-3 w-3" />
+                                                )}
+                                                Reenviar
                                             </Button>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground italic pr-4">Sem ações</span>
                                         )}
                                     </TableCell>
                                 </TableRow>

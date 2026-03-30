@@ -2,30 +2,38 @@ import { getActiveWorkspace } from "@/lib/get-active-workspace"
 import { getTemplateStats, getTemplateLogs } from "@/actions/email-logs"
 import { AutomationDetailView } from "@/components/emails/automation-detail-view"
 import { createClient } from "@/lib/supabase/server"
-import { notFound } from "next/navigation"
 
 export default async function AutomationDetailPage({
     params
 }: {
-    params: { templateId: string }
+    params: Promise<{ templateId: string }>
 }) {
+    const resolvedParams = await params
+    const { templateId } = resolvedParams
     const workspaceData = await getActiveWorkspace()
     const activeWorkspace = workspaceData?.activeWorkspace
-    const { templateId } = params
 
     if (!activeWorkspace) {
         return <div>Selecione um workspace</div>
     }
 
     const supabase = await createClient()
-    const { data: template } = await supabase
-        .from("email_templates")
-        .select("name")
-        .eq("id", templateId)
-        .single()
+    let templateName = "Envio Direto"
 
-    if (!template) {
-        notFound()
+    if (templateId !== "direct") {
+        const { data: template } = await supabase
+            .from("email_templates")
+            .select("name")
+            .eq("id", templateId)
+            .single()
+
+        if (!template) {
+            // Se não achar o template, mas houver logs, não damos 404
+            // Apenas usamos um nome genérico
+            templateName = "Template Removido"
+        } else {
+            templateName = template.name
+        }
     }
 
     const [stats, logs] = await Promise.all([
@@ -37,7 +45,7 @@ export default async function AutomationDetailPage({
         <AutomationDetailView 
             templateId={templateId}
             workspaceId={activeWorkspace.id}
-            templateName={template.name}
+            templateName={templateName}
             initialStats={stats}
             initialLogs={logs}
         />

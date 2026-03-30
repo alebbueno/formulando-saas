@@ -10,6 +10,17 @@ import {
     TableHeader, 
     TableRow 
 } from "@/components/ui/table"
+import { 
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -24,19 +35,12 @@ import {
     Activity,
     Layers,
     ArrowRight,
-    ExternalLink,
-    Info,
     ChevronRight
 } from "lucide-react"
 import { toast } from "sonner"
 import { processScheduledLogNow, getScheduledQueueIds } from "@/actions/email-logs"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
-import { 
-    Alert,
-    AlertDescription,
-    AlertTitle,
-} from "@/components/ui/alert"
 
 interface SchedulerViewProps {
     workspaceId: string
@@ -55,6 +59,7 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
     const [isBulkProcessing, setIsBulkProcessing] = useState(false)
     const [processedCount, setProcessedCount] = useState(0)
     const [totalToProcess, setTotalToProcess] = useState(0)
+    const [showConfirmModal, setShowConfirmModal] = useState(false)
 
     // Grouping Logic for the summary table
     const groupedQueue = useMemo(() => {
@@ -75,7 +80,7 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
     }, [initialQueue])
 
     const handleProcessAll = async () => {
-        if (!confirm("Isso irá processar todos os emails agendados sequencialmente. IMPORTANTE: Mantenha esta aba aberta até o fim! Deseja continuar?")) return
+        setShowConfirmModal(false)
         
         setIsBulkProcessing(true)
         setProcessedCount(0)
@@ -158,26 +163,6 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
                 </Card>
             </div>
 
-            {/* Hobby Plan Cron Alert */}
-            <Alert className="border-amber-500/30 bg-amber-500/5 items-start">
-                <Info className="h-5 w-5 text-amber-600 mt-0.5" />
-                <div className="ml-2">
-                    <AlertTitle className="text-amber-700 font-bold flex items-center gap-2">
-                        Como Automatizar o Envio (Tutorial para Plano Hobby)
-                    </AlertTitle>
-                    <AlertDescription className="text-amber-800 text-sm opacity-90 mt-1">
-                        Devido às limitações da Vercel Free, o envio automático ocorre apenas uma vez por dia. 
-                        <strong> Para rodar em segundo plano sem precisar abrir o dashboard:</strong>
-                        <ol className="list-decimal ml-5 mt-2 space-y-1">
-                            <li>Acesse o site gratuito <a href="https://cron-job.org" target="_blank" className="font-bold underline flex-inline items-center gap-1">cron-job.org <ExternalLink className="h-3 w-3 inline" /></a></li>
-                            <li>Crie um agendamento para cada 1 minuto (ou 5 min)</li>
-                            <li>URL do Job: <code className="bg-amber-100 px-1.5 py-0.5 rounded text-rose-700 font-mono text-[10px]">https://{typeof window !== 'undefined' ? window.location.host : 'sua-url'}/api/cron/process-emails</code></li>
-                            <li>Adicione o Header: <code className="bg-amber-100 px-1.5 py-0.5 rounded text-rose-700 font-mono text-[10px]">Authorization: Bearer CRON_SECRET</code> (Veja seu .env)</li>
-                        </ol>
-                    </AlertDescription>
-                </div>
-            </Alert>
-
             {/* Queue Table Summary */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between bg-muted/30 p-4 rounded-xl border border-dashed">
@@ -198,16 +183,33 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
                                 Processando: {processedCount} / {totalToProcess}
                             </div>
                         ) : (
-                            <Button 
-                                variant="default" 
-                                size="sm" 
-                                className="h-10 gap-2 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
-                                onClick={handleProcessAll}
-                                disabled={initialQueue.length === 0}
-                            >
-                                <Play className="h-3 w-3 fill-current" />
-                                Processar Toda a Fila
-                            </Button>
+                            <AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+                                <AlertDialogTrigger asChild>
+                                    <Button 
+                                        variant="default" 
+                                        size="sm" 
+                                        className="h-10 gap-2 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
+                                        disabled={initialQueue.length === 0}
+                                    >
+                                        <Play className="h-3 w-3 fill-current" />
+                                        Processar Toda a Fila
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar Processamento em Lote</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Isso irá processar todos os e-mails agendados sequencialmente. 
+                                            <br /><br />
+                                            <strong>IMPORTANTE:</strong> Mantenha esta aba aberta até o final do processamento para garantir o envio.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Agora não</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleProcessAll}>Sim, processar tudo</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         )}
                         <Button 
                             variant="outline" 
