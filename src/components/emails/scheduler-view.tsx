@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
     Table, 
@@ -14,6 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
+import { 
     Clock, 
     CheckCircle2, 
     AlertCircle, 
@@ -23,7 +29,9 @@ import {
     Calendar,
     Mail,
     RefreshCw,
-    Activity
+    Activity,
+    Layers,
+    ChevronRight
 } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -49,6 +57,23 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
     const [isBulkProcessing, setIsBulkProcessing] = useState(false)
     const [processedCount, setProcessedCount] = useState(0)
     const [totalToProcess, setTotalToProcess] = useState(0)
+
+    // Grouping Logic
+    const groupedQueue = useMemo(() => {
+        const groups: Record<string, { name: string, items: any[] }> = {}
+        
+        initialQueue.forEach(item => {
+            const templateName = item.email_template?.name || "Envio Direto / Sem Template"
+            const templateId = item.template_id || "direct"
+            
+            if (!groups[templateId]) {
+                groups[templateId] = { name: templateName, items: [] }
+            }
+            groups[templateId].items.push(item)
+        })
+        
+        return Object.entries(groups).sort((a, b) => b[1].items.length - a[1].items.length)
+    }, [initialQueue])
 
     const handleDelete = async (id: string) => {
         if (!confirm("Tem certeza que deseja cancelar este agendamento?")) return
@@ -93,7 +118,6 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
                 return
             }
 
-            // Process in small batches of 3 to avoid overwhelming
             const batchSize = 3
             for (let i = 0; i < allIds.length; i += batchSize) {
                 const batch = allIds.slice(i, i + batchSize)
@@ -102,7 +126,6 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
                     setProcessedCount(prev => prev + 1)
                 }))
                 
-                // Optional: small delay between batches
                 if (i + batchSize < allIds.length) {
                     await new Promise(resolve => setTimeout(resolve, 500))
                 }
@@ -118,215 +141,256 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
         }
     }
 
+    const handleProcessGroup = async (items: any[], groupName: string) => {
+        if (!confirm(`Deseja processar todos os ${items.length} emails da automação "${groupName}"?`)) return
+        
+        setIsBulkProcessing(true)
+        setProcessedCount(0)
+        setTotalToProcess(items.length)
+        
+        try {
+            const batchSize = 3
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize)
+                await Promise.all(batch.map(async (item) => {
+                    await processScheduledLogNow(item.id)
+                    setProcessedCount(prev => prev + 1)
+                }))
+                
+                if (i + batchSize < items.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                }
+            }
+            toast.success(`Grupo "${groupName}" processado com sucesso!`)
+        } catch (error) {
+            toast.error("Erro ao processar grupo")
+        } finally {
+            setIsBulkProcessing(false)
+            router.refresh()
+        }
+    }
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-20">
             {/* Stats Overview */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-primary/10 bg-primary/5">
+                <Card className="border-primary/10 bg-primary/5 shadow-sm shadow-primary/5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Aguardando Envio</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Aguardando Envio</CardTitle>
                         <Clock className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{initialMetrics.scheduled + initialMetrics.pending}</div>
-                        <p className="text-xs text-muted-foreground mt-1 text-primary/80">
+                        <div className="text-3xl font-bold">{initialMetrics.scheduled + initialMetrics.pending}</div>
+                        <p className="text-[10px] uppercase font-semibold text-primary/70 mt-1">
                             Prontos para processamento
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-emerald-500/10 bg-emerald-500/5">
+                <Card className="border-emerald-500/10 bg-emerald-500/5 shadow-sm shadow-emerald-500/5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Enviados (24h)</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Enviados (24h)</CardTitle>
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{initialMetrics.sent24h}</div>
-                        <p className="text-xs text-muted-foreground mt-1 text-emerald-600/80">
-                            Volume de entregas recente
+                        <div className="text-3xl font-bold">{initialMetrics.sent24h}</div>
+                        <p className="text-[10px] uppercase font-semibold text-emerald-600/70 mt-1">
+                            Volume de entregas hoje
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-rose-500/10 bg-rose-500/5">
+                <Card className="border-rose-500/10 bg-rose-500/5 shadow-sm shadow-rose-500/5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Falhas (24h)</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Falhas (24h)</CardTitle>
                         <AlertCircle className="h-4 w-4 text-rose-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{initialMetrics.failed24h}</div>
-                        <p className="text-xs text-muted-foreground mt-1 text-rose-600/80">
-                            Erros detectados hoje
+                        <div className="text-3xl font-bold">{initialMetrics.failed24h}</div>
+                        <p className="text-[10px] uppercase font-semibold text-rose-600/70 mt-1">
+                            Erros detectados
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-orange-500/10 bg-orange-500/5">
+                <Card className="border-orange-500/10 bg-orange-500/5 shadow-sm shadow-orange-500/5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Estado do Cron</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado do Cron</CardTitle>
                         <Activity className="h-4 w-4 text-orange-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-sm font-bold uppercase text-orange-600">Ativo</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Ciclo: Cada 10 minutos
+                        <div className="text-sm font-black uppercase text-orange-600 flex items-center gap-1.5">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                            </span>
+                            Ativo (Daily)
+                        </div>
+                        <p className="text-[10px] font-semibold text-muted-foreground mt-1">
+                            Plano Hobby: Execução Diária
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Config Info */}
-            <Card className="border-dashed">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <RefreshCw className="h-5 w-5 text-muted-foreground" />
-                        Configurações do Agendador
-                    </CardTitle>
-                    <CardDescription>
-                        Entenda como o formulando processa seus envios automáticos.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm space-y-2 text-muted-foreground">
-                    <p>• O sistema verifica a fila a cada <span className="font-bold text-foreground">10 minutos</span>.</p>
-                    <p>• Em cada ciclo, são processados até <span className="font-bold text-foreground">100 e-mails</span> pendentes.</p>
-                    <p>• O horário de referência do servidor é <span className="font-bold text-foreground">UTC</span>.</p>
-                </CardContent>
-            </Card>
-
-            {/* Queue Table */}
-            <Card className="rounded-xl overflow-hidden border-none shadow-sm shadow-primary/10">
-                <CardHeader className="bg-muted/30 pb-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="text-xl flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-primary" />
-                                Fila Próximos Envios
-                            </CardTitle>
-                            <CardDescription>
-                                E-mails agendados aguardando o próximo ciclo de cron.
-                            </CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {isBulkProcessing ? (
-                                <div className="flex items-center gap-3 bg-primary/10 px-3 py-1 rounded-md text-xs font-medium text-primary border border-primary/20">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Processando: {processedCount} / {totalToProcess}
-                                </div>
-                            ) : (
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="h-9 gap-2 text-primary border-primary/20 hover:bg-primary/10"
-                                    onClick={handleProcessAll}
-                                    disabled={initialQueue.length === 0}
-                                >
-                                    <RefreshCw className="h-4 w-4" />
-                                    Processar Tudo
-                                </Button>
-                            )}
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-9"
-                                onClick={() => {
-                                    router.refresh()
-                                    toast.info("Atualizando fila...")
-                                }}
-                                disabled={isBulkProcessing}
-                            >
-                                <RefreshCw className={cn("mr-2 h-4 w-4", isPending && "animate-spin")} />
-                                Atualizar
-                            </Button>
-                        </div>
+            {/* Queue Table Grouped */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between bg-muted/30 p-4 rounded-xl border border-dashed">
+                    <div>
+                        <h3 className="text-lg font-bold flex items-center gap-2">
+                            <Layers className="h-5 w-5 text-primary" />
+                            Fila Agrupada por Automação
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                            Visualize os agendamentos organizados por template de origem.
+                        </p>
                     </div>
-                </CardHeader>
-                <Table>
-                    <TableHeader className="bg-muted/40 font-bold">
-                        <TableRow>
-                            <TableHead>Lead</TableHead>
-                            <TableHead>Template</TableHead>
-                            <TableHead>Agendado Para</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {initialQueue.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                                    <div className="flex flex-col items-center justify-center gap-2">
-                                        <Mail className="h-8 w-8 opacity-20" />
-                                        <p>Nenhum envio agendado no momento.</p>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+                    
+                    <div className="flex items-center gap-2">
+                        {isBulkProcessing ? (
+                            <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-full text-xs font-bold text-primary border border-primary/20 animate-pulse">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Processando: {processedCount} / {totalToProcess}
+                            </div>
                         ) : (
-                            initialQueue.map((item) => (
-                                <TableRow key={item.id} className="group hover:bg-muted/20">
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{item.lead?.name || "Sem Nome"}</span>
-                                            <span className="text-xs text-muted-foreground">{item.lead?.email}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary px-2 py-0">
-                                            {item.email_template?.name || "Email Direto"}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-sm font-mono text-muted-foreground">
-                                        <div className="flex flex-col">
-                                            <span>{format(new Date(item.scheduled_for), "dd/MM/yyyy HH:mm")}</span>
-                                            <span className="text-[10px]">
-                                                {formatDistanceToNow(new Date(item.scheduled_for), { addSuffix: true, locale: ptBR })}
-                                            </span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge 
-                                            variant="secondary"
-                                            className={cn(
-                                                "capitalize",
-                                                item.status === 'scheduled' ? "bg-amber-100 text-amber-700 font-bold" : "bg-blue-100 text-blue-700"
-                                            )}
-                                        >
-                                            {item.status === 'scheduled' ? 'Agendado' : 'Pendente'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                className="h-8 gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                                                onClick={() => handleProcessNow(item.id)}
-                                                disabled={processingIds.includes(item.id)}
-                                            >
-                                                {processingIds.includes(item.id) ? (
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                ) : (
-                                                    <Play className="h-3 w-3 fill-emerald-600" />
-                                                )}
-                                                Enviar Agora
-                                            </Button>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                className="h-8 gap-1 text-rose-600 border-rose-200 hover:bg-rose-50"
-                                                onClick={() => handleDelete(item.id)}
-                                                disabled={isPending}
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                                Cancelar
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                            <Button 
+                                variant="default" 
+                                size="sm" 
+                                className="h-10 gap-2 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
+                                onClick={handleProcessAll}
+                                disabled={initialQueue.length === 0}
+                            >
+                                <Play className="h-3 w-3 fill-current" />
+                                Processar Toda a Fila
+                            </Button>
                         )}
-                    </TableBody>
-                </Table>
-            </Card>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-10 w-10 p-0"
+                            onClick={() => {
+                                router.refresh()
+                                toast.info("Atualizando fila...")
+                            }}
+                            disabled={isBulkProcessing}
+                        >
+                            <RefreshCw className={cn("h-4 w-4", (isPending || isBulkProcessing) && "animate-spin")} />
+                        </Button>
+                    </div>
+                </div>
+
+                {groupedQueue.length === 0 ? (
+                    <Card className="flex flex-col items-center justify-center p-20 border-dashed bg-muted/10">
+                        <Mail className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                        <h4 className="text-xl font-semibold text-muted-foreground/50">Fila vazia</h4>
+                        <p className="text-sm text-muted-foreground/40">Não há e-mails aguardando envio neste momento.</p>
+                    </Card>
+                ) : (
+                    <Accordion type="multiple" className="space-y-3" defaultValue={[groupedQueue[0]?.[0]]}>
+                        {groupedQueue.map(([id, group]) => (
+                            <AccordionItem key={id} value={id} className="border bg-card rounded-xl px-4 first:mt-0 overflow-hidden shadow-sm hover:shadow-md transition-all border-primary/5">
+                                <div className="flex items-center justify-between">
+                                    <AccordionTrigger className="hover:no-underline flex-1 py-4">
+                                        <div className="flex items-center gap-4 text-left">
+                                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                                <Mail className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-sm lg:text-base leading-none mb-1">{group.name}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="secondary" className="text-[10px] h-4 bg-muted/50 text-muted-foreground border-none">
+                                                        {group.items.length} {group.items.length === 1 ? 'e-mail' : 'e-mails'}
+                                                    </Badge>
+                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        Pendente
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <div className="flex items-center gap-3 pr-4">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="h-8 gap-2 border-primary/20 text-primary hover:bg-primary/5 font-semibold text-xs rounded-full"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleProcessGroup(group.items, group.name)
+                                            }}
+                                            disabled={isBulkProcessing}
+                                        >
+                                            <Play className="h-3 w-3 fill-current" />
+                                            Enviar Grupo
+                                        </Button>
+                                    </div>
+                                </div>
+                                <AccordionContent className="pb-4 pt-2 border-t border-dashed">
+                                    <div className="rounded-lg border overflow-hidden">
+                                        <Table>
+                                            <TableHeader className="bg-muted/30">
+                                                <TableRow className="hover:bg-transparent">
+                                                    <TableHead className="py-2 h-auto text-[10px] uppercase font-bold text-muted-foreground/70">Lead / Destinatário</TableHead>
+                                                    <TableHead className="py-2 h-auto text-[10px] uppercase font-bold text-muted-foreground/70 text-center">Agendado Para</TableHead>
+                                                    <TableHead className="py-2 h-auto text-[10px] uppercase font-bold text-muted-foreground/70 text-right">Ações</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {group.items.map((item) => (
+                                                    <TableRow key={item.id} className="group/row hover:bg-muted/10 border-transparent">
+                                                        <TableCell className="py-2">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-sm text-foreground/90">{item.lead?.name || "Sem Nome"}</span>
+                                                                <span className="text-[10px] text-muted-foreground font-medium">{item.lead?.email}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="py-2 text-center">
+                                                            <div className="flex flex-col items-center">
+                                                                <span className="text-xs font-mono font-bold text-muted-foreground/80">{format(new Date(item.scheduled_for), "HH:mm")}</span>
+                                                                <span className="text-[9px] text-muted-foreground/60 uppercase">
+                                                                    {formatDistanceToNow(new Date(item.scheduled_for), { addSuffix: true, locale: ptBR })}
+                                                                </span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="py-2 text-right">
+                                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                                                    onClick={() => handleProcessNow(item.id)}
+                                                                    disabled={processingIds.includes(item.id) || isBulkProcessing}
+                                                                    title="Enviar Agora"
+                                                                >
+                                                                    {processingIds.includes(item.id) ? (
+                                                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                                                    ) : (
+                                                                        <Play className="h-3 w-3 fill-current" />
+                                                                    )}
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    className="h-7 w-7 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                                                    onClick={() => handleDelete(item.id)}
+                                                                    disabled={isPending || isBulkProcessing}
+                                                                    title="Cancelar"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
+            </div>
         </div>
     )
 }
