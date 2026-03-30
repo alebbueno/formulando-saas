@@ -191,3 +191,26 @@ export async function processScheduledLogNow(logId: string) {
     
     return result
 }
+
+/**
+ * Get all scheduled email IDs for a workspace (for batch processing)
+ */
+export async function getScheduledQueueIds(workspaceId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Não autenticado")
+
+    const { data, error } = await supabase
+        .from("email_logs")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .in("status", ["scheduled", "pending"])
+        .order("scheduled_for", { ascending: true })
+
+    if (error) {
+        console.error("Error fetching scheduled queue IDs:", error)
+        return []
+    }
+
+    return data.map((item: any) => item.id)
+}

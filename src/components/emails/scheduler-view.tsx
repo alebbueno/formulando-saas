@@ -28,7 +28,7 @@ import {
 import { formatDistanceToNow, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { toast } from "sonner"
-import { deleteScheduledLog, processScheduledLogNow } from "@/actions/email-logs"
+import { deleteScheduledLog, processScheduledLogNow, getScheduledQueueIds } from "@/actions/email-logs"
 import { cn } from "@/lib/utils"
 
 interface SchedulerViewProps {
@@ -46,6 +46,9 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [processingIds, setProcessingIds] = useState<string[]>([])
+    const [isBulkProcessing, setIsBulkProcessing] = useState(false)
+    const [processedCount, setProcessedCount] = useState(0)
+    const [totalToProcess, setTotalToProcess] = useState(0)
 
     const handleDelete = async (id: string) => {
         if (!confirm("Tem certeza que deseja cancelar este agendamento?")) return
@@ -71,6 +74,47 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
             router.refresh()
         } else {
             toast.error(result.error)
+        }
+    }
+
+    const handleProcessAll = async () => {
+        if (!confirm("Isso irá processar todos os emails agendados sequencialmente. Pode levar alguns minutos. Deseja continuar?")) return
+        
+        setIsBulkProcessing(true)
+        setProcessedCount(0)
+        
+        try {
+            const allIds = await getScheduledQueueIds(workspaceId)
+            setTotalToProcess(allIds.length)
+            
+            if (allIds.length === 0) {
+                toast.info("Nenhum email na fila para processar")
+                setIsBulkProcessing(false)
+                return
+            }
+
+            // Process in small batches of 3 to avoid overwhelming
+            const batchSize = 3
+            for (let i = 0; i < allIds.length; i += batchSize) {
+                const batch = allIds.slice(i, i + batchSize)
+                await Promise.all(batch.map(async (id) => {
+                    await processScheduledLogNow(id)
+                    setProcessedCount(prev => prev + 1)
+                }))
+                
+                // Optional: small delay between batches
+                if (i + batchSize < allIds.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                }
+            }
+            
+            toast.success("Todos os emails foram processados com sucesso!")
+        } catch (error) {
+            console.error("Bulk process error:", error)
+            toast.error("Ocorreu um erro durante o processamento em massa")
+        } finally {
+            setIsBulkProcessing(false)
+            router.refresh()
         }
     }
 
@@ -162,17 +206,38 @@ export function SchedulerView({ workspaceId, initialMetrics, initialQueue }: Sch
                                 E-mails agendados aguardando o próximo ciclo de cron.
                             </CardDescription>
                         </div>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                                router.refresh()
-                                toast.info("Atualizando fila...")
-                            }}
-                        >
-                            <RefreshCw className={cn("mr-2 h-4 w-4", isPending && "animate-spin")} />
-                            Atualizar
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {isBulkProcessing ? (
+                                <div className="flex items-center gap-3 bg-primary/10 px-3 py-1 rounded-md text-xs font-medium text-primary border border-primary/20">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    Processando: {processedCount} / {totalToProcess}
+                                </div>
+                            ) : (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-9 gap-2 text-primary border-primary/20 hover:bg-primary/10"
+                                    onClick={handleProcessAll}
+                                    disabled={initialQueue.length === 0}
+                                >
+                                    <RefreshCw className="h-4 w-4" />
+                                    Processar Tudo
+                                </Button>
+                            )}
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-9"
+                                onClick={() => {
+                                    router.refresh()
+                                    toast.info("Atualizando fila...")
+                                }}
+                                disabled={isBulkProcessing}
+                            >
+                                <RefreshCw className={cn("mr-2 h-4 w-4", isPending && "animate-spin")} />
+                                Atualizar
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <Table>
