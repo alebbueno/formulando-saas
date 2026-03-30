@@ -9,10 +9,13 @@ export default async function AutomationDetailPage({
 }: {
     params: { templateId: string }
 }) {
-    const workspace = await getActiveWorkspace()
+    const workspaceData = await getActiveWorkspace()
+    const activeWorkspace = workspaceData?.activeWorkspace
     const { templateId } = params
 
-    if (!workspace) return null
+    if (!activeWorkspace) {
+        return <div>Selecione um workspace</div>
+    }
 
     const supabase = await createClient()
     const { data: template } = await supabase
@@ -26,14 +29,14 @@ export default async function AutomationDetailPage({
     }
 
     const [stats, logs] = await Promise.all([
-        getTemplateStats(templateId, workspace.id),
-        getTemplateLogs(templateId, workspace.id)
+        getTemplateStats(templateId, activeWorkspace.id),
+        getTemplateLogs(templateId, activeWorkspace.id)
     ])
 
     return (
         <AutomationDetailView 
             templateId={templateId}
-            workspaceId={workspace.id}
+            workspaceId={activeWorkspace.id}
             templateName={template.name}
             initialStats={stats}
             initialLogs={logs}
